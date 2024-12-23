@@ -1,9 +1,10 @@
 import { createRouter, createWebHistory } from "vue-router";
 import type { RouteRecordRaw } from "vue-router";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import RegisterView from "@/views/RegisterView.vue";
-import LoginView from "@/views/LoginView.vue";
-import MainView from "@/views/MainView.vue";
+import RegisterView from "@/views/Register.vue";
+import LoginView from "@/views/Login.vue";
+import MainView from "@/views/Main.vue";
+import NotFound from "@/views/NotFound.vue";
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -23,6 +24,11 @@ const routes: Array<RouteRecordRaw> = [
     meta: {
       requiresAuth: true,
     },
+  },
+  {
+    path: "/:catchAll(.*)", // Catch-all route for invalid paths
+    name: "not-found",
+    component: NotFound,
   },
 ];
 
