@@ -1,17 +1,26 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import { auth } from "../firebase";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 
 const username = ref("");
 const password = ref("");
 const errorMessage = ref("");
+const auth = getAuth();
 const router = useRouter();
 
 // Login handler
 const login = async () => {
   errorMessage.value = "";
+
+  // Check if the user is already logged in
+  if (auth.currentUser) {
+    console.log("User is already logged in");
+    // Redirect to /about since the user is already authenticated
+    await router.push("/about");
+    return;
+  }
+
   try {
     // Just expose username to frontend
     const dummyEmail = username.value + "@dummy.com";
@@ -33,6 +42,18 @@ const login = async () => {
     }
   }
 };
+
+// const logout = async () => {
+//   const auth = getAuth();
+//   try {
+//     await signOut(auth);
+//     console.log("User logged out");
+//     // Redirect to login or home page
+//     router.push("/login");
+//   } catch (error: any) {
+//     console.error("Logout error:", error.message);
+//   }
+// };
 </script>
 
 <template>
