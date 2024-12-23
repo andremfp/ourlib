@@ -40,15 +40,9 @@ const login = async () => {
     class="h-screen w-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center"
   >
     <!-- Login Form Section -->
-    <div
-      class="w-full max-w-md px-6 py-10 bg-white dark:bg-gray-800 shadow-lg rounded-lg"
-    >
+    <div class="w-full max-w-md px-6 py-10">
       <div class="text-center">
-        <img
-          class="w-auto h-10 sm:h-12 mx-auto"
-          src="https://merakiui.com/images/logo.svg"
-          alt="Logo"
-        />
+        <img class="w-auto h-28 m:h-24 mx-auto" src="/favicon.svg" alt="Logo" />
         <h1 class="text-2xl font-bold mt-4 text-gray-800 dark:text-gray-200">
           Sign In
         </h1>
