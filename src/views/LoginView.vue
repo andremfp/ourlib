@@ -17,7 +17,7 @@ const login = async () => {
   if (auth.currentUser) {
     console.log("User is already logged in");
     // Redirect to /about since the user is already authenticated
-    await router.push("/about");
+    await router.push("/main");
     return;
   }
 
@@ -28,7 +28,7 @@ const login = async () => {
     console.log("User logged in successfully");
 
     // Redirect to main page
-    await router.push("/about");
+    await router.push("/main");
   } catch (error: any) {
     console.error("Login error:", error.message);
 
@@ -42,18 +42,6 @@ const login = async () => {
     }
   }
 };
-
-// const logout = async () => {
-//   const auth = getAuth();
-//   try {
-//     await signOut(auth);
-//     console.log("User logged out");
-//     // Redirect to login or home page
-//     router.push("/login");
-//   } catch (error: any) {
-//     console.error("Logout error:", error.message);
-//   }
-// };
 </script>
 
 <template>

@@ -3,7 +3,7 @@ import type { RouteRecordRaw } from "vue-router";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import RegisterView from "@/views/RegisterView.vue";
 import LoginView from "@/views/LoginView.vue";
-import AboutView from "@/views/AboutView.vue";
+import MainView from "@/views/MainView.vue";
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -17,9 +17,9 @@ const routes: Array<RouteRecordRaw> = [
     component: RegisterView,
   },
   {
-    path: "/about",
-    name: "about",
-    component: AboutView,
+    path: "/main",
+    name: "main",
+    component: MainView,
     meta: {
       requiresAuth: true,
     },
@@ -53,7 +53,7 @@ router.beforeEach(async (to, _, next) => {
     next("/"); // Redirect to login if not authenticated
   } else if (to.path === "/" && user) {
     console.log("User is authenticated, skipping login");
-    next("/about"); // Redirect logged-in users from login to the main page
+    next("/main"); // Redirect logged-in users from login to the main page
   } else {
     next(); // Allow navigation
   }
