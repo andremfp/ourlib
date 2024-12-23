@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import { auth } from "../firebase";
+import { auth, firestore } from "../firebase";
 import { createUserWithEmailAndPassword, signOut } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
 
 const username = ref("");
 const password = ref("");
@@ -14,8 +15,21 @@ const register = async () => {
 
   try {
     const dummyEmail = username.value + "@dummy.com";
-    await createUserWithEmailAndPassword(auth, dummyEmail, password.value);
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      dummyEmail,
+      password.value
+    );
+    const user = userCredential.user;
+
     console.log("User registered successfully");
+
+    // Store user information in Firestore
+    const userRef = doc(firestore, "users", user.uid);
+    await setDoc(userRef, {
+      username: username.value,
+      createdAt: new Date(),
+    });
 
     await signOut(auth);
     router.push("/");
