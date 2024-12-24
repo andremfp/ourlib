@@ -37,6 +37,9 @@ const login = async () => {
       case "auth/invalid-credential":
         errorMessage.value = "Incorrect password. Please try again.";
         break;
+      case "auth/invalid-email":
+        errorMessage.value = "Invalid username. Please try again.";
+        break;
       default:
         errorMessage.value = "An error occurred. Please try again.";
     }
