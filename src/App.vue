@@ -4,11 +4,11 @@
       <!-- The router-view renders the matched route's component -->
       <router-view />
     </main>
-    <footer class="flex bg-white dark:bg-gray-900">
+    <footer class="flex bg-gray-100 dark:bg-gray-900">
       <div
         class="container flex flex-col items-center justify-between p-6 mx-auto space-y-4 sm:space-y-0 sm:flex-row"
       >
-        <div class="flex -mx-2">
+        <div class="flex mx-auto">
           <a
             href="https://github.com/andremfp/vue-firebase-pwa-template"
             class="mx-2 text-gray-600 transition-colors duration-300 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400"
