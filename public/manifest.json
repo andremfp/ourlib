@@ -1,6 +1,6 @@
 {
-  "name": "OurLib",
-  "short_name": "OurLib",
+  "name": "PWATemplate",
+  "short_name": "PWATemplate",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",
