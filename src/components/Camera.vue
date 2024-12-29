@@ -51,12 +51,19 @@ export default {
   mounted() {
     this.isMobile = /Mobi|Android/i.test(navigator.userAgent);
     if (this.isMobile) {
-      this.startCamera();
+      this.$nextTick(() => {
+        this.startCamera(); // Ensure DOM is ready before accessing refs
+      });
     }
   },
   methods: {
     async startCamera() {
       const videoElement = this.$refs.video;
+      if (!videoElement) {
+        this.logMessage("Video element not found.");
+        return;
+      }
+
       try {
         this.logMessage("Requesting camera access...");
         this.stream = await navigator.mediaDevices.getUserMedia({
@@ -82,6 +89,11 @@ export default {
     },
     capturePhoto() {
       const videoElement = this.$refs.video;
+      if (!videoElement) {
+        this.logMessage("Video element not found.");
+        return;
+      }
+
       const canvas = document.createElement("canvas");
       canvas.width = videoElement.videoWidth;
       canvas.height = videoElement.videoHeight;
