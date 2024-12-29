@@ -31,6 +31,10 @@
     <p v-else class="text-center text-gray-700 dark:text-gray-300">
       Please use a mobile device to access the camera.
     </p>
+    <div class="mt-4">
+      <p class="text-sm text-gray-500 dark:text-gray-400">Log Output:</p>
+      <pre class="bg-gray-800 text-white p-4 rounded-md">{{ logOutput }}</pre>
+    </div>
   </div>
 </template>
 
@@ -41,6 +45,7 @@ export default {
       isMobile: false,
       stream: null,
       photo: null,
+      logOutput: "", // To store log output
     };
   },
   mounted() {
@@ -53,12 +58,15 @@ export default {
     async startCamera() {
       const videoElement = this.$refs.video;
       try {
+        this.logMessage("Requesting camera access...");
         this.stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: { exact: "environment" } }, // Rear camera
         });
         videoElement.srcObject = this.stream;
+        this.logMessage("Camera access granted.");
       } catch (error) {
         console.error("Camera access error:", error);
+        this.logMessage(`Camera access error: ${error.message}`);
         alert(
           "Could not access the camera. Please ensure permissions are granted."
         );
@@ -69,6 +77,7 @@ export default {
         const tracks = this.stream.getTracks();
         tracks.forEach((track) => track.stop());
         this.stream = null;
+        this.logMessage("Camera stopped.");
       }
     },
     capturePhoto() {
@@ -79,6 +88,10 @@ export default {
       const ctx = canvas.getContext("2d");
       ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
       this.photo = canvas.toDataURL("image/png"); // Store the captured photo as Base64
+      this.logMessage("Photo captured.");
+    },
+    logMessage(message) {
+      this.logOutput += `${message}\n`;
     },
   },
 };
