@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { useRouter } from "vue-router";
 import { getAuth, signOut } from "firebase/auth";
+import CameraComponent from "@/components/Camera.vue";
+
+export default {
+  components: {
+    CameraComponent,
+  },
+};
 
 const auth = getAuth();
 const router = useRouter();
@@ -41,5 +48,6 @@ const logout = async () => {
 
       <span class="mx-1">Logout</span>
     </button>
+    <CameraComponent />
   </div>
 </template>
