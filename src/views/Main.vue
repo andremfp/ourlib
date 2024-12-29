@@ -2,6 +2,7 @@
 import { useRouter } from "vue-router";
 import { getAuth, signOut } from "firebase/auth";
 import CameraComponent from "@/components/Camera.vue";
+import { ref } from "vue";
 
 const auth = getAuth();
 const router = useRouter();
