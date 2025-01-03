@@ -142,6 +142,8 @@ export default defineComponent({
 
         if (videoElement.value) {
           videoElement.value.srcObject = stream.value;
+          videoElement.value.style.transform = "scale(2)"; // Zoom in by 1.5x
+          videoElement.value.style.transformOrigin = "center"; // Keep the center focused
 
           // Wait for video to be ready before initializing scanner
           videoElement.value.onloadedmetadata = () => {
