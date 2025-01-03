@@ -1,106 +1,155 @@
-<script setup lang="ts">
-import { onMounted, onUnmounted, ref, nextTick } from "vue";
-import Quagga from "quagga";
+<script lang="ts">
+import { defineComponent, ref } from "vue";
 
-// Video container reference
-const videoRef = ref<HTMLDivElement | null>(null);
-const errorMessage = ref<string | null>(null); // To hold error message if camera is unavailable
+interface CameraStatus {
+  loading: boolean;
+  error: boolean;
+  message: string;
+}
 
-// Emit detected ISBN
-const emit = defineEmits(["onISBN"]);
+interface VideoConstraints {
+  facingMode: string;
+  width: {
+    ideal: number;
+  };
+  height: {
+    ideal: number;
+  };
+}
 
-// Initialize Quagga
-const initializeScanner = () => {
-  nextTick(() => {
-    // Ensure DOM is updated before Quagga tries to access the video container
-    if (!videoRef.value) {
-      console.error("Video container not found.");
-      return;
-    }
+interface MediaConstraints {
+  video: VideoConstraints;
+}
 
-    console.log("Initializing Quagga scanner...");
+export default defineComponent({
+  name: "CameraFeed",
 
-    // Attempt to access the camera
-    navigator.mediaDevices
-      .getUserMedia({ video: { facingMode: "environment" } })
-      .then((stream) => {
-        if (videoRef.value) {
-          videoRef.value.srcObject = stream;
-          videoRef.value.play();
-        }
+  setup() {
+    const videoElement = ref<HTMLVideoElement | null>(null);
+    const stream = ref<MediaStream | null>(null);
+    const status = ref<CameraStatus>({
+      loading: true,
+      error: false,
+      message: "Initializing camera...",
+    });
 
-        // Initialize Quagga after stream is set up
-        Quagga.init(
-          {
-            inputStream: {
-              name: "Live",
-              type: "LiveStream",
-              target: videoRef.value, // Target is the container element
-              constraints: {
-                facingMode: "environment", // Try this for rear camera, front for desktop fallback
-              },
-            },
-            decoder: {
-              readers: ["ean_reader"], // Supports ISBN barcodes
-            },
+    const handleError = (error: Error): void => {
+      status.value.error = true;
+      status.value.loading = false;
+
+      let errorMessage = "An error occurred while accessing the camera";
+
+      switch (error.name) {
+        case "NotFoundError":
+          errorMessage = "No camera found on this device";
+          break;
+        case "NotAllowedError":
+          errorMessage = "Camera access denied by user";
+          break;
+        case "NotReadableError":
+          errorMessage = "Camera is already in use";
+          break;
+        case "OverconstrainedError":
+          errorMessage = "Camera cannot satisfy the requested constraints";
+          break;
+      }
+
+      status.value.message = errorMessage;
+      console.log(`[Camera Debug] Error: ${error.name} - ${error.message}`);
+    };
+
+    const initializeCamera = async (): Promise<void> => {
+      try {
+        console.log("[Camera Debug] Requesting camera permissions...");
+
+        const constraints: MediaConstraints = {
+          video: {
+            facingMode: "environment",
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
           },
-          (err) => {
-            if (err) {
-              console.error("Quagga initialization error:", err);
-              errorMessage.value =
-                "Failed to initialize barcode scanner. Please try again.";
-              return;
-            }
-            console.log("Quagga initialized successfully.");
-            Quagga.start();
-          }
+        };
+
+        console.log(
+          "[Camera Debug] Getting user media with constraints: " +
+            JSON.stringify(constraints)
+        );
+        stream.value = await navigator.mediaDevices.getUserMedia(constraints);
+
+        console.log("[Camera Debug] Camera stream obtained successfully");
+
+        const trackSettings = stream.value.getVideoTracks()[0].getSettings();
+        console.log(
+          `[Camera Debug] Stream settings: ${JSON.stringify(trackSettings)}`
         );
 
-        // Barcode detection handler
-        Quagga.onDetected((result) => {
-          const code = result?.codeResult?.code;
-          if (code) {
-            console.log("Detected ISBN:", code);
-            Quagga.stop(); // Stop scanning after detection
-            emit("onISBN", code); // Emit the detected ISBN
-          }
-        });
-      })
-      .catch((err) => {
-        console.error("Camera access error:", err);
-        errorMessage.value =
-          "Could not access the camera. Please ensure permissions are granted.";
+        if (videoElement.value) {
+          videoElement.value.srcObject = stream.value;
+          status.value.loading = false;
+          status.value.message = "Camera active";
+          console.log("[Camera Debug] Video element configured and playing");
+        } else {
+          throw new Error("Video element not found");
+        }
+      } catch (error) {
+        handleError(error as Error);
+      }
+    };
+
+    return {
+      videoElement,
+      stream,
+      status,
+      initializeCamera,
+    };
+  },
+
+  mounted() {
+    console.log("[Camera Debug] Component mounted");
+    this.initializeCamera();
+  },
+
+  beforeUnmount() {
+    if (this.stream) {
+      console.log("[Camera Debug] Stopping all camera tracks");
+      this.stream.getTracks().forEach((track: MediaStreamTrack) => {
+        track.stop();
+        console.log(`[Camera Debug] Track ${track.id} stopped`);
       });
-  });
-};
-
-// Cleanup Quagga when component unmounts
-const cleanupScanner = () => {
-  Quagga.stop();
-  Quagga.offDetected();
-};
-
-onMounted(() => {
-  console.log("Component mounted. Attempting to initialize scanner...");
-  initializeScanner();
-});
-
-onUnmounted(() => {
-  cleanupScanner();
+    }
+  },
 });
 </script>
 
 <template>
-  <div>
-    <!-- Video container for camera stream -->
-    <div
-      ref="video"
-      class="w-full max-w-sm h-auto rounded border border-gray-300 shadow"
-    ></div>
+  <div
+    class="flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-900 space-y-6"
+  >
+    <!-- Status messages -->
+    <div class="mb-4">
+      <p :class="`text-lg ${status.error ? 'text-red-500' : 'text-green-500'}`">
+        {{ status.message }}
+      </p>
+    </div>
 
-    <!-- Display error message if camera is unavailable -->
-    <p v-if="errorMessage" class="text-red-500 text-center mt-4">
-      {{ errorMessage }}
-    </p>
+    <!-- Video feed container -->
+    <div class="relative w-full max-w-2xl rounded-lg overflow-hidden shadow-lg">
+      <video
+        ref="videoElement"
+        class="w-full h-full object-cover"
+        autoplay
+        playsinline
+      ></video>
+
+      <!-- Loading spinner -->
+      <div
+        v-if="status.loading"
+        class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50"
+      >
+        <div
+          class="animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent"
+        ></div>
+      </div>
+    </div>
   </div>
 </template>

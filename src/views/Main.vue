@@ -5,12 +5,19 @@ import CameraComponent from "@/components/Camera.vue";
 import { ref } from "vue";
 import { fetchBookDetails } from "@/utils/bookAPI"; // Assume this utility fetches book details via ISBN
 
+interface BookDetails {
+  title: string;
+  author: string;
+  publisher: string;
+  publishedDate: string;
+}
+
 const auth = getAuth();
 const router = useRouter();
 
 const showCamera = ref(false); // State to toggle camera visibility
 const scannedISBN = ref(""); // Store the scanned ISBN
-const bookDetails = ref(null); // Store fetched book details
+const bookDetails = ref<BookDetails | null>(null); // Store fetched book details
 
 // Logout handler
 const logout = async () => {
@@ -54,7 +61,7 @@ const resetScanning = () => {
 
 <template>
   <div
-    class="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 space-y-6"
+    class="flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-900 space-y-6"
   >
     <!-- Logout button -->
     <button
@@ -87,7 +94,7 @@ const resetScanning = () => {
     </button>
 
     <!-- Camera Component -->
-    <CameraComponent v-if="showCamera" @onISBN="handleISBN" />
+    <CameraComponent v-if="showCamera" />
 
     <!-- ISBN and Book Details -->
     <div v-if="scannedISBN" class="mt-4 space-y-4 text-center">
