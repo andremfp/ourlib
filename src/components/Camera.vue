@@ -1,5 +1,6 @@
 <script lang="ts">
-import { defineComponent, ref } from "vue";
+import { defineComponent, ref, onMounted, onBeforeUnmount } from "vue";
+import { BrowserMultiFormatReader } from "@zxing/library";
 
 interface CameraStatus {
   loading: boolean;
@@ -24,7 +25,7 @@ interface MediaConstraints {
 export default defineComponent({
   name: "CameraFeed",
 
-  setup() {
+  setup(_, { emit }) {
     const videoElement = ref<HTMLVideoElement | null>(null);
     const stream = ref<MediaStream | null>(null);
     const status = ref<CameraStatus>({
@@ -32,6 +33,11 @@ export default defineComponent({
       error: false,
       message: "Initializing camera...",
     });
+
+    const barcodeReader = ref<BrowserMultiFormatReader | null>(null);
+    let scanning = false;
+    let lastScannedCode: string | null = null;
+    let lastScannedTime = 0;
 
     const handleError = (error: Error): void => {
       status.value.error = true;
@@ -55,7 +61,68 @@ export default defineComponent({
       }
 
       status.value.message = errorMessage;
-      console.log(`[Camera Debug] Error: ${error.name} - ${error.message}`);
+      console.error(`[Camera Debug] Error: ${error.name} - ${error.message}`);
+    };
+
+    const isValidISBN = (code: string): boolean => {
+      const cleanCode = code.replace(/[-\s]/g, "");
+      return /^(\d{10}|\d{13})$/.test(cleanCode);
+    };
+
+    const startScanning = async () => {
+      console.log("[ZXing Debug] Scanning for barcodes...");
+      if (!videoElement.value || !barcodeReader.value || !scanning) return;
+
+      try {
+        const result = await barcodeReader.value.decodeFromVideoElement(
+          videoElement.value
+        );
+
+        if (result) {
+          const text = result.getText();
+          const currentTime = Date.now();
+
+          if (
+            isValidISBN(text) &&
+            (text !== lastScannedCode || currentTime - lastScannedTime > 3000)
+          ) {
+            console.log("[ZXing Debug] Valid ISBN detected:", text);
+            lastScannedCode = text;
+            lastScannedTime = currentTime;
+            emit("isbn-scanned", text);
+          }
+        }
+      } catch (error) {
+        // Only log non-standard errors
+        if (
+          error instanceof Error &&
+          !error.message.includes("No MultiFormat Readers were able to detect")
+        ) {
+          console.warn("[ZXing Debug] Scanning error:", error);
+        }
+      }
+
+      // Continue scanning if still active
+      if (scanning) {
+        requestAnimationFrame(startScanning);
+      }
+    };
+
+    const initializeBarcodeScanner = () => {
+      if (!videoElement.value) return;
+
+      try {
+        // Initialize reader
+        barcodeReader.value = new BrowserMultiFormatReader();
+        scanning = true;
+
+        // Start the scanning loop
+        startScanning();
+        console.log("[ZXing Debug] Barcode scanner initialized");
+      } catch (error) {
+        console.error("[ZXing Debug] Failed to initialize scanner:", error);
+        handleError(error as Error);
+      }
     };
 
     const initializeCamera = async (): Promise<void> => {
@@ -65,29 +132,26 @@ export default defineComponent({
         const constraints: MediaConstraints = {
           video: {
             facingMode: "environment",
-            width: { ideal: 1920 },
-            height: { ideal: 1080 },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
           },
         };
 
-        console.log(
-          "[Camera Debug] Getting user media with constraints: " +
-            JSON.stringify(constraints)
-        );
         stream.value = await navigator.mediaDevices.getUserMedia(constraints);
-
         console.log("[Camera Debug] Camera stream obtained successfully");
-
-        const trackSettings = stream.value.getVideoTracks()[0].getSettings();
-        console.log(
-          `[Camera Debug] Stream settings: ${JSON.stringify(trackSettings)}`
-        );
 
         if (videoElement.value) {
           videoElement.value.srcObject = stream.value;
-          status.value.loading = false;
-          status.value.message = "Camera active";
-          console.log("[Camera Debug] Video element configured and playing");
+
+          // Wait for video to be ready before initializing scanner
+          videoElement.value.onloadedmetadata = () => {
+            status.value.loading = false;
+            status.value.message = "Camera active - Ready to scan";
+            console.log(
+              "[Camera Debug] Video element ready, initializing scanner"
+            );
+            initializeBarcodeScanner();
+          };
         } else {
           throw new Error("Video element not found");
         }
@@ -96,27 +160,33 @@ export default defineComponent({
       }
     };
 
+    onMounted(() => {
+      console.log("[Camera Debug] Component mounted");
+      initializeCamera();
+    });
+
+    onBeforeUnmount(() => {
+      scanning = false;
+
+      if (stream.value) {
+        console.log("[Camera Debug] Stopping all camera tracks");
+        stream.value.getTracks().forEach((track: MediaStreamTrack) => {
+          track.stop();
+        });
+      }
+
+      if (barcodeReader.value) {
+        console.log("[ZXing Debug] Resetting barcode reader");
+        barcodeReader.value.reset();
+        barcodeReader.value = null;
+      }
+    });
+
     return {
       videoElement,
       stream,
       status,
-      initializeCamera,
     };
-  },
-
-  mounted() {
-    console.log("[Camera Debug] Component mounted");
-    this.initializeCamera();
-  },
-
-  beforeUnmount() {
-    if (this.stream) {
-      console.log("[Camera Debug] Stopping all camera tracks");
-      this.stream.getTracks().forEach((track: MediaStreamTrack) => {
-        track.stop();
-        console.log(`[Camera Debug] Track ${track.id} stopped`);
-      });
-    }
   },
 });
 </script>
@@ -133,7 +203,7 @@ export default defineComponent({
     </div>
 
     <!-- Video feed container -->
-    <div class="relative w-full max-w-2xl rounded-lg overflow-hidden shadow-lg">
+    <div class="relative w-full max-w-md rounded-lg overflow-hidden shadow-lg">
       <video
         ref="videoElement"
         class="w-full h-full object-cover"

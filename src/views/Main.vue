@@ -3,7 +3,7 @@ import { useRouter } from "vue-router";
 import { getAuth, signOut } from "firebase/auth";
 import CameraComponent from "@/components/Camera.vue";
 import { ref } from "vue";
-// import { fetchBookDetails } from "@/utils/bookAPI"; // Assume this utility fetches book details via ISBN
+import { fetchBookDetails } from "@/utils/bookAPI"; // Assume this utility fetches book details via ISBN
 
 interface BookDetails {
   title: string;
@@ -38,19 +38,20 @@ const toggleCamera = () => {
   }
 };
 
-// Handle ISBN detected
-// const handleISBN = async (isbn: string) => {
-//   scannedISBN.value = isbn;
-//   showCamera.value = false; // Hide camera after detection
+// Handle ISBN detected from child component
+const handleISBN = async (isbn: string) => {
+  scannedISBN.value = isbn;
+  showCamera.value = false; // Hide camera after detection
 
-//   // Fetch book details using the scanned ISBN
-//   try {
-//     bookDetails.value = await fetchBookDetails(isbn);
-//   } catch (error) {
-//     console.error("Error fetching book details:", error);
-//     bookDetails.value = null;
-//   }
-// };
+  console.log("Scanned ISBN:", isbn);
+  // Fetch book details using the scanned ISBN
+  try {
+    bookDetails.value = await fetchBookDetails(isbn);
+  } catch (error) {
+    console.error("Error fetching book details:", error);
+    bookDetails.value = null;
+  }
+};
 
 // Reset scanning state
 const resetScanning = () => {
@@ -94,7 +95,7 @@ const resetScanning = () => {
     </button>
 
     <!-- Camera Component -->
-    <CameraComponent v-if="showCamera" />
+    <CameraComponent v-if="showCamera" @isbn-scanned="handleISBN" />
 
     <!-- ISBN and Book Details -->
     <div v-if="scannedISBN" class="mt-4 space-y-4 text-center">
