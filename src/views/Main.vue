@@ -113,7 +113,7 @@ const resetScanning = () => {
           Author: {{ bookDetails.author }}
         </p>
         <p class="text-gray-600 dark:text-gray-300">
-          Publisher: {{ bookDetails.publisher }}
+          CoverURL: {{ bookDetails.coverImage }}
         </p>
         <p class="text-gray-600 dark:text-gray-300">
           Published Date: {{ bookDetails.publishedDate }}
