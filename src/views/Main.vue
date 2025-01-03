@@ -3,18 +3,20 @@ import { useRouter } from "vue-router";
 import { getAuth, signOut } from "firebase/auth";
 import CameraComponent from "@/components/Camera.vue";
 import { ref } from "vue";
+import { fetchBookDetails } from "@/utils/bookAPI"; // Assume this utility fetches book details via ISBN
 
 const auth = getAuth();
 const router = useRouter();
 
-let showCamera = ref(false); // State to toggle camera visibility
+const showCamera = ref(false); // State to toggle camera visibility
+const scannedISBN = ref(""); // Store the scanned ISBN
+const bookDetails = ref(null); // Store fetched book details
 
 // Logout handler
 const logout = async () => {
   try {
     await signOut(auth);
     console.log("User logged out");
-    // Redirect to login or home page
     router.push("/");
   } catch (error: any) {
     console.error("Logout error:", error.message);
@@ -24,12 +26,35 @@ const logout = async () => {
 // Toggle camera visibility
 const toggleCamera = () => {
   showCamera.value = !showCamera.value;
+  if (!showCamera.value) {
+    resetScanning();
+  }
+};
+
+// Handle ISBN detected
+const handleISBN = async (isbn: string) => {
+  scannedISBN.value = isbn;
+  showCamera.value = false; // Hide camera after detection
+
+  // Fetch book details using the scanned ISBN
+  try {
+    bookDetails.value = await fetchBookDetails(isbn);
+  } catch (error) {
+    console.error("Error fetching book details:", error);
+    bookDetails.value = null;
+  }
+};
+
+// Reset scanning state
+const resetScanning = () => {
+  scannedISBN.value = "";
+  bookDetails.value = null;
 };
 </script>
 
 <template>
   <div
-    class="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900"
+    class="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 space-y-6"
   >
     <!-- Logout button -->
     <button
@@ -53,17 +78,42 @@ const toggleCamera = () => {
       <span class="mx-1">Logout</span>
     </button>
 
-    <!-- Scan button to toggle camera -->
+    <!-- Scan button -->
     <button
       @click="toggleCamera"
-      class="mt-4 px-4 py-2 text-sm font-semibold text-white bg-green-500 rounded-md shadow hover:bg-green-600"
+      class="px-4 py-2 text-sm font-semibold text-white bg-green-500 rounded-md shadow hover:bg-green-600"
     >
-      Scan
+      {{ showCamera ? "Cancel" : "Scan a Book" }}
     </button>
 
-    <!-- Show camera when `showCamera` is true -->
-    <div v-if="showCamera">
-      <CameraComponent />
+    <!-- Camera Component -->
+    <CameraComponent v-if="showCamera" @onISBN="handleISBN" />
+
+    <!-- ISBN and Book Details -->
+    <div v-if="scannedISBN" class="mt-4 space-y-4 text-center">
+      <p class="text-lg font-semibold text-gray-700 dark:text-gray-200">
+        Scanned ISBN: <span class="text-blue-500">{{ scannedISBN }}</span>
+      </p>
+      <div
+        v-if="bookDetails"
+        class="p-4 bg-white rounded-md shadow-md dark:bg-gray-800"
+      >
+        <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">
+          {{ bookDetails.title }}
+        </h2>
+        <p class="text-gray-600 dark:text-gray-300">
+          Author: {{ bookDetails.author }}
+        </p>
+        <p class="text-gray-600 dark:text-gray-300">
+          Publisher: {{ bookDetails.publisher }}
+        </p>
+        <p class="text-gray-600 dark:text-gray-300">
+          Published Date: {{ bookDetails.publishedDate }}
+        </p>
+      </div>
+      <div v-else>
+        <p class="text-sm text-red-500">Unable to fetch book details.</p>
+      </div>
     </div>
   </div>
 </template>

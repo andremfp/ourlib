@@ -1,110 +1,106 @@
+<script setup lang="ts">
+import { onMounted, onUnmounted, ref, nextTick } from "vue";
+import Quagga from "quagga";
+
+// Video container reference
+const videoRef = ref<HTMLDivElement | null>(null);
+const errorMessage = ref<string | null>(null); // To hold error message if camera is unavailable
+
+// Emit detected ISBN
+const emit = defineEmits(["onISBN"]);
+
+// Initialize Quagga
+const initializeScanner = () => {
+  nextTick(() => {
+    // Ensure DOM is updated before Quagga tries to access the video container
+    if (!videoRef.value) {
+      console.error("Video container not found.");
+      return;
+    }
+
+    console.log("Initializing Quagga scanner...");
+
+    // Attempt to access the camera
+    navigator.mediaDevices
+      .getUserMedia({ video: { facingMode: "environment" } })
+      .then((stream) => {
+        if (videoRef.value) {
+          videoRef.value.srcObject = stream;
+          videoRef.value.play();
+        }
+
+        // Initialize Quagga after stream is set up
+        Quagga.init(
+          {
+            inputStream: {
+              name: "Live",
+              type: "LiveStream",
+              target: videoRef.value, // Target is the container element
+              constraints: {
+                facingMode: "environment", // Try this for rear camera, front for desktop fallback
+              },
+            },
+            decoder: {
+              readers: ["ean_reader"], // Supports ISBN barcodes
+            },
+          },
+          (err) => {
+            if (err) {
+              console.error("Quagga initialization error:", err);
+              errorMessage.value =
+                "Failed to initialize barcode scanner. Please try again.";
+              return;
+            }
+            console.log("Quagga initialized successfully.");
+            Quagga.start();
+          }
+        );
+
+        // Barcode detection handler
+        Quagga.onDetected((result) => {
+          const code = result?.codeResult?.code;
+          if (code) {
+            console.log("Detected ISBN:", code);
+            Quagga.stop(); // Stop scanning after detection
+            emit("onISBN", code); // Emit the detected ISBN
+          }
+        });
+      })
+      .catch((err) => {
+        console.error("Camera access error:", err);
+        errorMessage.value =
+          "Could not access the camera. Please ensure permissions are granted.";
+      });
+  });
+};
+
+// Cleanup Quagga when component unmounts
+const cleanupScanner = () => {
+  Quagga.stop();
+  Quagga.offDetected();
+};
+
+onMounted(() => {
+  console.log("Component mounted. Attempting to initialize scanner...");
+  initializeScanner();
+});
+
+onUnmounted(() => {
+  cleanupScanner();
+});
+</script>
+
 <template>
-  <div
-    class="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900"
-  >
-    <div v-if="isMobile" class="w-full max-w-sm">
-      <video
-        ref="video"
-        autoplay
-        playsinline
-        class="w-full h-auto rounded-lg border border-gray-300 shadow-lg"
-      ></video>
-      <div class="flex justify-between mt-4">
-        <button
-          @click="stopCamera"
-          class="px-4 py-2 text-sm font-semibold text-white bg-red-500 rounded-md shadow hover:bg-red-600"
-        >
-          Stop Camera
-        </button>
-        <button
-          @click="capturePhoto"
-          class="px-4 py-2 text-sm font-semibold text-white bg-blue-500 rounded-md shadow hover:bg-blue-600"
-        >
-          Capture Photo
-        </button>
-      </div>
-      <div v-if="photo" class="mt-4">
-        <p class="text-sm text-gray-500 dark:text-gray-400">Captured Photo:</p>
-        <img :src="photo" alt="Captured" class="w-full rounded-lg shadow-md" />
-      </div>
-    </div>
-    <p v-else class="text-center text-gray-700 dark:text-gray-300">
-      Please use a mobile device to access the camera.
+  <div>
+    <!-- Video container for camera stream -->
+    <div
+      ref="video"
+      class="w-full max-w-sm h-auto rounded border border-gray-300 shadow"
+    ></div>
+
+    <!-- Display error message if camera is unavailable -->
+    <p v-if="errorMessage" class="text-red-500 text-center mt-4">
+      {{ errorMessage }}
     </p>
-    <div class="mt-4">
-      <p class="text-sm text-gray-500 dark:text-gray-400">Log Output:</p>
-      <pre class="bg-gray-800 text-white p-4 rounded-md">{{ logOutput }}</pre>
-    </div>
   </div>
 </template>
-
-<script>
-export default {
-  data() {
-    return {
-      isMobile: false,
-      stream: null,
-      photo: null,
-      logOutput: "", // To store log output
-    };
-  },
-  mounted() {
-    this.isMobile = /Mobi|Android/i.test(navigator.userAgent);
-    if (this.isMobile) {
-      this.$nextTick(() => {
-        this.startCamera(); // Ensure DOM is ready before accessing refs
-      });
-    }
-  },
-  methods: {
-    async startCamera() {
-      const videoElement = this.$refs.video;
-      if (!videoElement) {
-        this.logMessage("Video element not found.");
-        return;
-      }
-
-      try {
-        this.logMessage("Requesting camera access...");
-        this.stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { exact: "environment" } }, // Rear camera
-        });
-        videoElement.srcObject = this.stream;
-        this.logMessage("Camera access granted.");
-      } catch (error) {
-        console.error("Camera access error:", error);
-        this.logMessage(`Camera access error: ${error.message}`);
-        alert(
-          "Could not access the camera. Please ensure permissions are granted."
-        );
-      }
-    },
-    stopCamera() {
-      if (this.stream) {
-        const tracks = this.stream.getTracks();
-        tracks.forEach((track) => track.stop());
-        this.stream = null;
-        this.logMessage("Camera stopped.");
-      }
-    },
-    capturePhoto() {
-      const videoElement = this.$refs.video;
-      if (!videoElement) {
-        this.logMessage("Video element not found.");
-        return;
-      }
-
-      const canvas = document.createElement("canvas");
-      canvas.width = videoElement.videoWidth;
-      canvas.height = videoElement.videoHeight;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-      this.photo = canvas.toDataURL("image/png"); // Store the captured photo as Base64
-      this.logMessage("Photo captured.");
-    },
-    logMessage(message) {
-      this.logOutput += `${message}\n`;
-    },
-  },
-};
-</script>
