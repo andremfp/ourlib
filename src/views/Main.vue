@@ -8,8 +8,8 @@ import { fetchBookDetails } from "@/utils/bookAPI"; // Assume this utility fetch
 interface BookDetails {
   title: string;
   author: string;
-  publisher: string;
   publishedDate: string;
+  coverImage: string;
 }
 
 const auth = getAuth();
