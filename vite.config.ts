@@ -41,15 +41,25 @@ export default defineConfig({
   ],
   server: {
     proxy: {
-      "/proxy": {
+      "/google-proxy": {
         target: "https://www.googleapis.com", // The base URL of the external API
         changeOrigin: true, // Ensures the host header matches the target
-        rewrite: (path) => path.replace(/^\/proxy/, ""), // Removes "/proxy" from the path
+        rewrite: (path) => path.replace(/^\/google-proxy/, ""), // Removes "/proxy" from the path
       },
-      "/cover-proxy": {
+      "/google-cover-proxy": {
         target: "http://books.google.com", // The base URL of the external API
         changeOrigin: true, // Ensures the host header matches the target
-        rewrite: (path) => path.replace(/^\/cover-proxy/, ""), // Removes "/proxy" from the path
+        rewrite: (path) => path.replace(/^\/google-cover-proxy/, ""), // Removes "/proxy" from the path
+      },
+      "/hardcover-proxy": {
+        target: "https://api.hardcover.app", // The base URL of the external API
+        changeOrigin: true, // Ensures the host header matches the target
+        rewrite: (path) => path.replace(/^\/hardcover-proxy/, ""), // Removes "/proxy" from the path
+      },
+      "/hardcover-cover-proxy": {
+        target: "https://assets.hardcover.app", // The base URL of the external API
+        changeOrigin: true, // Ensures the host header matches the target
+        rewrite: (path) => path.replace(/^\/hardcover-cover-proxy/, ""), // Removes "/proxy" from the path
       },
     },
   },

@@ -1,12 +1,20 @@
 {
   "rewrites": [
     {
-      "source": "/proxy/:path*",
+      "source": "/google-proxy/:path*",
       "destination": "https://www.googleapis.com/:path*"
     },
     {
-      "source": "/cover-proxy/:path*",
+      "source": "/google-cover-proxy/:path*",
       "destination": "http://books.google.com/:path*"
+    },
+    {
+      "source": "/hardcover-proxy/:path*",
+      "destination": "https://api.hardcover.app/:path*"
+    },
+    {
+      "source": "/hardcover-cover-proxy/:path*",
+      "destination": "https://assets.hardcover.app/:path*"
     }
   ]
 }
