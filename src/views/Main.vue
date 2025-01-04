@@ -3,7 +3,8 @@ import { useRouter } from "vue-router";
 import { getAuth, signOut } from "firebase/auth";
 import CameraComponent from "@/components/Camera.vue";
 import { ref, computed } from "vue";
-import { BookDetails, fetchBookDetails } from "@/utils/fetchBook";
+import { fetchBookDetails } from "@/utils/fetchBook";
+import type { BookDetails } from "@/utils/fetchBook";
 import logger from "@/utils/logger";
 
 const auth = getAuth();
