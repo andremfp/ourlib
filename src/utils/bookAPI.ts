@@ -1,50 +1,78 @@
-export const fetchBookDetails = async (
-  isbn: string
-): Promise<{
+export interface BookDetails {
   title: string;
-  author: string;
+  authors: string;
+  publisher: string;
   publishedDate: string;
-  coverImage: string;
-}> => {
-  const apiUrl = `https://isbnsearch.org/isbn/${isbn}`;
+  language: string;
+  pageCount: number;
+  thumbnail?: Blob;
+}
+
+export const fetchBookDetails = async (isbn: string): Promise<BookDetails> => {
+  const proxyUrl = `/proxy/books/v1/volumes?q=isbn:${isbn}&key=${
+    import.meta.env.VITE_GOOGLE_BOOKS_API_KEY
+  }`;
+
   try {
-    const response = await fetch(apiUrl);
-    const html = await response.text();
+    const initialResponse = await fetch(proxyUrl);
+    if (!initialResponse.ok)
+      throw new Error(`HTTP error! status: ${initialResponse.status}`);
 
-    // Parse the HTML
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, "text/html");
+    const initialData = await initialResponse.json();
 
-    // Extract the required information
-    const title =
-      doc.querySelector("#book .bookinfo h1")?.textContent?.trim() ||
-      "Unknown Title";
-    const author =
-      doc
-        .querySelector("#book .bookinfo p strong:nth-of-type(2)")
-        ?.parentNode?.textContent?.replace("Author:", "")
-        .trim() || "Unknown Author";
-    const publishedDate =
-      doc
-        .querySelector("#book .bookinfo p strong:nth-of-type(4)")
-        ?.parentNode?.textContent?.replace("Published:", "")
-        .trim() || "Unknown Date";
-    const coverImage =
-      doc.querySelector("#book .image img")?.getAttribute("src") || "";
+    if (!initialData.items || initialData.items.length === 0) {
+      throw new Error("No book details found for the given ISBN.");
+    }
 
-    // Log for debugging
-    console.log("Book Details Extracted:", {
-      title,
-      author,
-      publishedDate,
-      coverImage,
-    });
+    const selfLink = initialData.items[0].selfLink;
+    if (!selfLink)
+      throw new Error("SelfLink not found in the initial response.");
+
+    const proxiedSelfLink = selfLink.replace(
+      "https://www.googleapis.com",
+      "/proxy"
+    );
+    const detailedResponse = await fetch(proxiedSelfLink);
+    if (!detailedResponse.ok)
+      throw new Error(`HTTP error! status: ${detailedResponse.status}`);
+
+    const detailedData = await detailedResponse.json();
+
+    const volumeInfo = detailedData.volumeInfo || {};
+    const thumbnailUrl = volumeInfo.imageLinks?.thumbnail || null;
+    let thumbnailBlob: Blob | undefined = undefined;
+
+    if (thumbnailUrl) {
+      const proxiedThumbnailUrl = thumbnailUrl.replace(
+        "http://books.google.com",
+        "/cover-proxy"
+      );
+
+      const thumbnailResponse = await fetch(proxiedThumbnailUrl);
+      console.log("Thumbnail response status:", thumbnailResponse.status);
+
+      if (thumbnailResponse.ok) {
+        thumbnailBlob = await thumbnailResponse.blob();
+      } else {
+        console.warn(
+          "Failed to fetch thumbnail image. Status:",
+          thumbnailResponse.status
+        );
+      }
+    }
 
     return {
-      title,
-      author,
-      publishedDate,
-      coverImage,
+      title: volumeInfo.title || "Unknown",
+      authors: volumeInfo.authors ? volumeInfo.authors.join(", ") : "Unknown",
+      publisher: volumeInfo.publisher || "Unknown",
+      publishedDate: volumeInfo.publishedDate
+        ? volumeInfo.publishedDate.split("-")[0]
+        : "Unknown",
+      pageCount: volumeInfo.pageCount ?? 0,
+      language: volumeInfo.language
+        ? volumeInfo.language.toUpperCase()
+        : "Unknown",
+      thumbnail: thumbnailBlob,
     };
   } catch (error) {
     console.error("Error fetching book details:", error);

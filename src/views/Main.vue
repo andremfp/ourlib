@@ -2,15 +2,8 @@
 import { useRouter } from "vue-router";
 import { getAuth, signOut } from "firebase/auth";
 import CameraComponent from "@/components/Camera.vue";
-import { ref } from "vue";
-import { fetchBookDetails } from "@/utils/bookAPI"; // Assume this utility fetches book details via ISBN
-
-interface BookDetails {
-  title: string;
-  author: string;
-  publishedDate: string;
-  coverImage: string;
-}
+import { ref, computed } from "vue";
+import { BookDetails, fetchBookDetails } from "@/utils/bookAPI"; // Assume this utility fetches book details via ISBN
 
 const auth = getAuth();
 const router = useRouter();
@@ -18,6 +11,7 @@ const router = useRouter();
 const showCamera = ref(false); // State to toggle camera visibility
 const scannedISBN = ref(""); // Store the scanned ISBN
 const bookDetails = ref<BookDetails | null>(null); // Store fetched book details
+const isLoadingBookDetails = ref(false); // State to track loading status for book details
 
 // Logout handler
 const logout = async () => {
@@ -44,12 +38,19 @@ const handleISBN = async (isbn: string) => {
   showCamera.value = false; // Hide camera after detection
 
   console.log("Scanned ISBN:", isbn);
+
+  // Set loading state before fetching
+  isLoadingBookDetails.value = true;
+
   // Fetch book details using the scanned ISBN
   try {
     bookDetails.value = await fetchBookDetails(isbn);
   } catch (error) {
     console.error("Error fetching book details:", error);
     bookDetails.value = null;
+  } finally {
+    // Reset loading state after fetch
+    isLoadingBookDetails.value = false;
   }
 };
 
@@ -58,6 +59,14 @@ const resetScanning = () => {
   scannedISBN.value = "";
   bookDetails.value = null;
 };
+
+// Computed property to generate the thumbnail URL
+const thumbnailUrl = computed(() => {
+  if (bookDetails.value?.thumbnail) {
+    return window.URL.createObjectURL(bookDetails.value.thumbnail);
+  }
+  return "";
+});
 </script>
 
 <template>
@@ -102,24 +111,51 @@ const resetScanning = () => {
       <p class="text-lg font-semibold text-gray-700 dark:text-gray-200">
         Scanned ISBN: <span class="text-blue-500">{{ scannedISBN }}</span>
       </p>
+
+      <!-- Loading Spinner for Book Details -->
+      <div
+        v-if="isLoadingBookDetails"
+        class="flex justify-center items-center my-4"
+      >
+        <div
+          class="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"
+        ></div>
+      </div>
+
       <div
         v-if="bookDetails"
         class="p-4 bg-white rounded-md shadow-md dark:bg-gray-800"
       >
+        <!-- Display thumbnail if it exists -->
+        <div v-if="bookDetails.thumbnail" class="mb-4">
+          <img
+            :src="thumbnailUrl"
+            alt="Book Thumbnail"
+            class="mx-auto rounded-lg shadow"
+            style="max-width: 200px; height: auto"
+          />
+        </div>
+
         <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">
           {{ bookDetails.title }}
         </h2>
         <p class="text-gray-600 dark:text-gray-300">
-          Author: {{ bookDetails.author }}
+          Authors: {{ bookDetails.authors }}
         </p>
         <p class="text-gray-600 dark:text-gray-300">
-          CoverURL: {{ bookDetails.coverImage }}
+          Language: {{ bookDetails.language }}
+        </p>
+        <p class="text-gray-600 dark:text-gray-300">
+          Pages: {{ bookDetails.pageCount }}
+        </p>
+        <p class="text-gray-600 dark:text-gray-300">
+          Publisher: {{ bookDetails.publisher }}
         </p>
         <p class="text-gray-600 dark:text-gray-300">
           Published Date: {{ bookDetails.publishedDate }}
         </p>
       </div>
-      <div v-else>
+      <div v-else-if="!isLoadingBookDetails">
         <p class="text-sm text-red-500">Unable to fetch book details.</p>
       </div>
     </div>

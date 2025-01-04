@@ -39,6 +39,20 @@ export default defineConfig({
       deleteOriginFile: false,
     }),
   ],
+  server: {
+    proxy: {
+      "/proxy": {
+        target: "https://www.googleapis.com", // The base URL of the external API
+        changeOrigin: true, // Ensures the host header matches the target
+        rewrite: (path) => path.replace(/^\/proxy/, ""), // Removes "/proxy" from the path
+      },
+      "/cover-proxy": {
+        target: "http://books.google.com", // The base URL of the external API
+        changeOrigin: true, // Ensures the host header matches the target
+        rewrite: (path) => path.replace(/^\/cover-proxy/, ""), // Removes "/proxy" from the path
+      },
+    },
+  },
   resolve: {
     alias: {
       "@": resolve(__dirname, "./src"), // Define `@` as an alias for `src`
