@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@zxing/library": "^0.21.3",
     "firebase": "^11.1.0",
     "vite-plugin-compression": "^0.5.1",
     "vite-plugin-pwa": "^0.21.1",
