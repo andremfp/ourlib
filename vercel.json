@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/proxy/:path*",
+      "destination": "https://www.googleapis.com/:path*"
+    },
+    {
+      "source": "/cover-proxy/:path*",
+      "destination": "http://books.google.com/:path*"
+    }
+  ]
+}

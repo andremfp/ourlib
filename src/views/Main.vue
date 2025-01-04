@@ -2,69 +2,75 @@
 import { useRouter } from "vue-router";
 import { getAuth, signOut } from "firebase/auth";
 import CameraComponent from "@/components/Camera.vue";
-import { ref } from "vue";
-import { fetchBookDetails } from "@/utils/bookAPI"; // Assume this utility fetches book details via ISBN
-
-interface BookDetails {
-  title: string;
-  author: string;
-  publishedDate: string;
-  coverImage: string;
-}
+import { ref, computed } from "vue";
+import { fetchBookDetails } from "@/utils/fetchBook";
+import type { BookDetails } from "@/utils/fetchBook";
+import logger from "@/utils/logger";
 
 const auth = getAuth();
 const router = useRouter();
 
-const showCamera = ref(false); // State to toggle camera visibility
-const scannedISBN = ref(""); // Store the scanned ISBN
-const bookDetails = ref<BookDetails | null>(null); // Store fetched book details
+const showCamera = ref(false);
+const scannedISBN = ref("");
+const bookDetails = ref<BookDetails | null>(null);
+const isLoadingBookDetails = ref(false);
 
-// Logout handler
 const logout = async () => {
   try {
     await signOut(auth);
-    console.log("User logged out");
+    logger.info("User logged out");
     router.push("/");
   } catch (error: any) {
-    console.error("Logout error:", error.message);
+    logger.error("Logout error:", error.message);
   }
 };
 
-// Toggle camera visibility
 const toggleCamera = () => {
   showCamera.value = !showCamera.value;
   if (!showCamera.value) {
     resetScanning();
   }
+  logger.debug(`Camera visibility toggled: ${showCamera.value}`);
 };
 
-// Handle ISBN detected from child component
 const handleISBN = async (isbn: string) => {
   scannedISBN.value = isbn;
-  showCamera.value = false; // Hide camera after detection
+  showCamera.value = false;
 
-  console.log("Scanned ISBN:", isbn);
-  // Fetch book details using the scanned ISBN
+  logger.info("Scanned ISBN:", isbn);
+
+  isLoadingBookDetails.value = true;
+
   try {
     bookDetails.value = await fetchBookDetails(isbn);
+    logger.info("Book details fetched successfully:", bookDetails.value);
   } catch (error) {
-    console.error("Error fetching book details:", error);
+    logger.error("Error fetching book details:", error);
     bookDetails.value = null;
+  } finally {
+    isLoadingBookDetails.value = false;
+    logger.debug("Loading state reset");
   }
 };
 
-// Reset scanning state
 const resetScanning = () => {
   scannedISBN.value = "";
   bookDetails.value = null;
+  logger.debug("Scanning state reset");
 };
+
+const thumbnailUrl = computed(() => {
+  if (bookDetails.value?.thumbnail) {
+    return window.URL.createObjectURL(bookDetails.value.thumbnail);
+  }
+  return "";
+});
 </script>
 
 <template>
   <div
     class="flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-900 space-y-6"
   >
-    <!-- Logout button -->
     <button
       @click="logout"
       class="flex items-center px-4 py-2 font-medium tracking-wide text-white capitalize transition-colors duration-300 transform bg-blue-600 rounded-lg hover:bg-blue-500 focus:outline-none focus:ring focus:ring-blue-300 focus:ring-opacity-80"
@@ -86,7 +92,6 @@ const resetScanning = () => {
       <span class="mx-1">Logout</span>
     </button>
 
-    <!-- Scan button -->
     <button
       @click="toggleCamera"
       class="px-4 py-2 text-sm font-semibold text-white bg-green-500 rounded-md shadow hover:bg-green-600"
@@ -94,32 +99,55 @@ const resetScanning = () => {
       {{ showCamera ? "Cancel" : "Scan a Book" }}
     </button>
 
-    <!-- Camera Component -->
     <CameraComponent v-if="showCamera" @isbn-scanned="handleISBN" />
 
-    <!-- ISBN and Book Details -->
     <div v-if="scannedISBN" class="mt-4 space-y-4 text-center">
       <p class="text-lg font-semibold text-gray-700 dark:text-gray-200">
         Scanned ISBN: <span class="text-blue-500">{{ scannedISBN }}</span>
       </p>
+
+      <div
+        v-if="isLoadingBookDetails"
+        class="flex justify-center items-center my-4"
+      >
+        <div
+          class="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"
+        ></div>
+      </div>
+
       <div
         v-if="bookDetails"
         class="p-4 bg-white rounded-md shadow-md dark:bg-gray-800"
       >
+        <div v-if="bookDetails.thumbnail" class="mb-4">
+          <img
+            :src="thumbnailUrl"
+            alt="Book Thumbnail"
+            class="mx-auto rounded-lg shadow"
+            style="max-width: 200px; height: auto"
+          />
+        </div>
+
         <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">
           {{ bookDetails.title }}
         </h2>
         <p class="text-gray-600 dark:text-gray-300">
-          Author: {{ bookDetails.author }}
+          Authors: {{ bookDetails.authors }}
         </p>
         <p class="text-gray-600 dark:text-gray-300">
-          CoverURL: {{ bookDetails.coverImage }}
+          Language: {{ bookDetails.language }}
+        </p>
+        <p class="text-gray-600 dark:text-gray-300">
+          Pages: {{ bookDetails.pageCount }}
+        </p>
+        <p class="text-gray-600 dark:text-gray-300">
+          Publisher: {{ bookDetails.publisher }}
         </p>
         <p class="text-gray-600 dark:text-gray-300">
           Published Date: {{ bookDetails.publishedDate }}
         </p>
       </div>
-      <div v-else>
+      <div v-else-if="!isLoadingBookDetails">
         <p class="text-sm text-red-500">Unable to fetch book details.</p>
       </div>
     </div>
