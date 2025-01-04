@@ -1,3 +1,5 @@
+import logger from "@/utils/logger";
+
 export interface BookDetails {
   title: string;
   authors: string;
@@ -49,12 +51,12 @@ export const fetchBookDetails = async (isbn: string): Promise<BookDetails> => {
       );
 
       const thumbnailResponse = await fetch(proxiedThumbnailUrl);
-      console.log("Thumbnail response status:", thumbnailResponse.status);
+      logger.debug("Thumbnail response status:", thumbnailResponse.status);
 
       if (thumbnailResponse.ok) {
         thumbnailBlob = await thumbnailResponse.blob();
       } else {
-        console.warn(
+        logger.warn(
           "Failed to fetch thumbnail image. Status:",
           thumbnailResponse.status
         );
@@ -75,7 +77,7 @@ export const fetchBookDetails = async (isbn: string): Promise<BookDetails> => {
       thumbnail: thumbnailBlob,
     };
   } catch (error) {
-    console.error("Error fetching book details:", error);
+    logger.error("Error fetching book details:", error);
     throw error;
   }
 };

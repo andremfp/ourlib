@@ -1,6 +1,7 @@
 <script lang="ts">
 import { defineComponent, ref, onMounted, onBeforeUnmount } from "vue";
 import { BrowserMultiFormatReader } from "@zxing/library";
+import logger from "@/utils/logger";
 
 interface CameraStatus {
   loading: boolean;
@@ -61,7 +62,7 @@ export default defineComponent({
       }
 
       status.value.message = errorMessage;
-      console.error(`[Camera Debug] Error: ${error.name} - ${error.message}`);
+      logger.error(`Error: ${error.name} - ${error.message}`);
     };
 
     const isValidISBN = (code: string): boolean => {
@@ -70,7 +71,7 @@ export default defineComponent({
     };
 
     const startScanning = async () => {
-      console.log("[ZXing Debug] Scanning for barcodes...");
+      logger.info("Scanning for barcodes...");
       if (!videoElement.value || !barcodeReader.value || !scanning) return;
 
       try {
@@ -86,7 +87,7 @@ export default defineComponent({
             isValidISBN(text) &&
             (text !== lastScannedCode || currentTime - lastScannedTime > 3000)
           ) {
-            console.log("[ZXing Debug] Valid ISBN detected:", text);
+            logger.info("Valid ISBN detected:", text);
             lastScannedCode = text;
             lastScannedTime = currentTime;
             emit("isbn-scanned", text);
@@ -98,7 +99,7 @@ export default defineComponent({
           error instanceof Error &&
           !error.message.includes("No MultiFormat Readers were able to detect")
         ) {
-          console.warn("[ZXing Debug] Scanning error:", error);
+          logger.warn("Scanning error:", error);
         }
       }
 
@@ -118,16 +119,16 @@ export default defineComponent({
 
         // Start the scanning loop
         startScanning();
-        console.log("[ZXing Debug] Barcode scanner initialized");
+        logger.debug("Barcode scanner initialized");
       } catch (error) {
-        console.error("[ZXing Debug] Failed to initialize scanner:", error);
+        logger.error("Failed to initialize scanner:", error);
         handleError(error as Error);
       }
     };
 
     const initializeCamera = async (): Promise<void> => {
       try {
-        console.log("[Camera Debug] Requesting camera permissions...");
+        logger.debug("Requesting camera permissions...");
 
         const constraints: MediaConstraints = {
           video: {
@@ -138,7 +139,7 @@ export default defineComponent({
         };
 
         stream.value = await navigator.mediaDevices.getUserMedia(constraints);
-        console.log("[Camera Debug] Camera stream obtained successfully");
+        logger.debug("Camera stream obtained successfully");
 
         if (videoElement.value) {
           videoElement.value.srcObject = stream.value;
@@ -149,9 +150,7 @@ export default defineComponent({
           videoElement.value.onloadedmetadata = () => {
             status.value.loading = false;
             status.value.message = "Camera active - Ready to scan";
-            console.log(
-              "[Camera Debug] Video element ready, initializing scanner"
-            );
+            logger.debug("Video element ready, initializing scanner");
             initializeBarcodeScanner();
           };
         } else {
@@ -163,7 +162,6 @@ export default defineComponent({
     };
 
     onMounted(() => {
-      console.log("[Camera Debug] Component mounted");
       initializeCamera();
     });
 
@@ -171,14 +169,14 @@ export default defineComponent({
       scanning = false;
 
       if (stream.value) {
-        console.log("[Camera Debug] Stopping all camera tracks");
+        logger.debug("Stopping all camera tracks");
         stream.value.getTracks().forEach((track: MediaStreamTrack) => {
           track.stop();
         });
       }
 
       if (barcodeReader.value) {
-        console.log("[ZXing Debug] Resetting barcode reader");
+        logger.debug("Resetting barcode reader");
         barcodeReader.value.reset();
         barcodeReader.value = null;
       }

@@ -5,6 +5,7 @@ import RegisterView from "@/views/Register.vue";
 import LoginView from "@/views/Login.vue";
 import MainView from "@/views/Main.vue";
 import NotFound from "@/views/NotFound.vue";
+import logger from "@/utils/logger";
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -55,10 +56,10 @@ router.beforeEach(async (to, _, next) => {
   const user = await getCurrentUser();
 
   if (to.meta.requiresAuth && !user) {
-    console.log("User is not authenticated, redirecting to login");
+    logger.info("User is not authenticated, redirecting to login");
     next("/"); // Redirect to login if not authenticated
   } else if (to.path === "/" && user) {
-    console.log("User is authenticated, skipping login");
+    logger.info("User is authenticated, skipping login");
     next("/main"); // Redirect logged-in users from login to the main page
   } else {
     next(); // Allow navigation

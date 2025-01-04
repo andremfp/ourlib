@@ -4,6 +4,7 @@ import { useRouter } from "vue-router";
 import { auth, firestore } from "../firebase";
 import { createUserWithEmailAndPassword, signOut } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
+import logger from "@/utils/logger";
 
 const username = ref("");
 const password = ref("");
@@ -22,7 +23,7 @@ const register = async () => {
     );
     const user = userCredential.user;
 
-    console.log("User registered successfully");
+    logger.info("User registered successfully");
 
     // Store user information in Firestore
     const userRef = doc(firestore, "users", user.uid);
@@ -34,7 +35,7 @@ const register = async () => {
     await signOut(auth);
     router.push("/");
   } catch (error: any) {
-    console.error("Registration error:", error.message);
+    logger.error("Registration error:", error.message);
 
     // Set user-friendly error message
     switch (error.code) {
