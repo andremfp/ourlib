@@ -9,13 +9,18 @@ export default async function middleware(context: RequestContext) {
   const url = new URL(request.url);
   const pathname = url.pathname;
 
+  console.log("Request URL:", url.href);
+
   // Only handle Goodreads proxy requests
   if (pathname.startsWith("/goodreads-proxy/")) {
     const targetPath = pathname.replace("/goodreads-proxy", "");
     const goodreadsUrl = `https://www.goodreads.com${targetPath}`;
 
+    console.log("Goodreads URL:", goodreadsUrl);
+
     try {
       // Make the initial request to Goodreads
+      console.log("Making initial request to Goodreads...");
       const response = await fetch(goodreadsUrl, {
         headers: {
           Accept:
@@ -28,14 +33,22 @@ export default async function middleware(context: RequestContext) {
 
       // If it's a redirect, follow it while maintaining our proxy prefix
       if (response.status === 301 || response.status === 302) {
+        console.log(
+          `Redirecting to ${response.headers.get("location")} (status: ${
+            response.status
+          })`
+        );
+
         const location = response.headers.get("location");
         if (location) {
+          console.log(`Redirecting to ${location}`);
           if (location.includes("goodreads.com")) {
             // Replace the Goodreads domain with our proxy path
             const newLocation = location.replace(
               "https://www.goodreads.com",
               "/goodreads-proxy"
             );
+            console.log(`Redirecting to new location ${newLocation}`);
             return Response.redirect(new URL(newLocation, request.url));
           }
           return Response.redirect(new URL(location, request.url));
