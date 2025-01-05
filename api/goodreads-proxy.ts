@@ -6,30 +6,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const goodreadsUrl = `https://www.goodreads.com/${targetPath}`;
 
   try {
-    // Construct headers
-    const headers = new Headers();
-    headers.set("host", "www.goodreads.com");
-    headers.set(
-      "user-agent",
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    );
-    headers.set(
-      "accept",
-      "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8"
-    );
-
-    // Include any headers from the incoming request that are safe to forward
-    if (req.headers["accept-language"]) {
-      headers.set("accept-language", req.headers["accept-language"] as string);
-    }
-
     const response = await fetch(goodreadsUrl, {
       method: req.method,
-      headers,
-      redirect: "manual", // Handle redirects manually
+      headers: {
+        "user-agent": "Mozilla/5.0",
+        accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      },
+      redirect: "manual",
     });
 
-    // Handle redirects from Goodreads
+    // Handle redirects
     if (response.status === 301 || response.status === 302) {
       const location = response.headers.get("location");
       if (location) {
@@ -41,12 +28,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    // Proxy other responses
+    // Proxy response back to client
     const body = await response.text();
     response.headers.forEach((value, key) => {
       res.setHeader(key, value);
     });
-    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Origin", "*"); // Allow CORS
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     res.status(response.status).send(body);
   } catch (error) {
     res
