@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@types/jsdom": "^21.1.7",
     "@zxing/library": "^0.21.3",
     "firebase": "^11.1.0",
     "vite-plugin-compression": "^0.5.1",
