@@ -68,7 +68,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader("Access-Control-Allow-Headers", "*");
 
     return res.status(200).send(data);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Proxy error:", error);
     return res
       .status(500)
