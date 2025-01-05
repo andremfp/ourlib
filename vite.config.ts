@@ -46,8 +46,8 @@ export default defineConfig({
         target: "https://www.goodreads.com", // The base URL of the external API
         changeOrigin: true, // Ensures the host header matches the target
         rewrite: (path) => path.replace(/^\/goodreads-proxy/, ""), // Removes "/proxy" from the path
-        configure: (proxy, options) => {
-          proxy.on("proxyReq", (proxyReq, req, res) => {
+        configure: (proxy, _) => {
+          proxy.on("proxyReq", (proxyReq) => {
             // Modify headers to look more like a regular browser request
             proxyReq.setHeader(
               "Accept",
@@ -60,7 +60,7 @@ export default defineConfig({
           });
 
           // Handle redirects internally within the proxy
-          proxy.on("proxyRes", (proxyRes, req, res) => {
+          proxy.on("proxyRes", (proxyRes) => {
             if (proxyRes.headers.location) {
               // If it's a redirect to a Goodreads URL, rewrite it to use our proxy
               if (proxyRes.headers.location.includes("goodreads.com")) {
