@@ -1,9 +1,11 @@
 {
-  "rewrites": [
+  "routes": [
     {
-      "source": "/goodreads-proxy/:path*",
-      "destination": "https://www.goodreads.com/:path*"
-    },
+      "src": "/goodreads-proxy/(.*)",
+      "dest": "/api/goodreads-proxy/$1"
+    }
+  ],
+  "rewrites": [
     {
       "source": "/goodreads-cover-proxy/:path*",
       "destination": "https://images-na.ssl-images-amazon.com/:path*"

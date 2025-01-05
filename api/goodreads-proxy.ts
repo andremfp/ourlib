@@ -1,47 +1,77 @@
+// api/goodreads-proxy/[...path].ts
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const { path } = req.query;
-  const targetPath = Array.isArray(path) ? path.join("/") : path || "";
-  const goodreadsUrl = `https://www.goodreads.com/${targetPath}`;
+async function handler(req: VercelRequest, res: VercelResponse) {
+  // Extract the full path from the request
+  const fullPath = (req.query.path as string[]).join("/");
+  const targetUrl = `https://www.goodreads.com/${fullPath}`;
 
   try {
-    const response = await fetch(goodreadsUrl, {
-      method: req.method,
+    // Make the initial request with custom headers
+    const response = await fetch(targetUrl, {
       headers: {
-        "user-agent": "Mozilla/5.0",
-        accept:
-          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
       },
-      redirect: "manual",
+      redirect: "manual", // Handle redirects manually
     });
 
-    // Handle redirects
-    if (response.status === 301 || response.status === 302) {
-      const location = response.headers.get("location");
-      if (location) {
-        const newLocation = location.replace(
-          "https://www.goodreads.com",
-          "/api/goodreads-proxy"
-        );
-        return res.redirect(response.status, newLocation);
+    // If there's a redirect
+    if (
+      response.status === 301 ||
+      response.status === 302 ||
+      response.status === 307 ||
+      response.status === 308
+    ) {
+      const redirectUrl = response.headers.get("location");
+
+      if (!redirectUrl) {
+        throw new Error("Redirect location not found");
       }
+
+      // Make the request to the redirect URL
+      const finalResponse = await fetch(redirectUrl, {
+        headers: {
+          Accept:
+            "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        },
+      });
+
+      // Get the response data
+      const data = await finalResponse.text();
+
+      // Set CORS headers
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+      res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+      // Set content type
+      res.setHeader("Content-Type", "text/html");
+
+      // Send the final response
+      return res.status(200).send(data);
     }
 
-    // Proxy response back to client
-    const body = await response.text();
-    response.headers.forEach((value, key) => {
-      res.setHeader(key, value);
-    });
-    res.setHeader("Access-Control-Allow-Origin", "*"); // Allow CORS
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    res.status(response.status).send(body);
+    // If there's no redirect, just forward the original response
+    const data = await response.text();
+
+    // Set CORS headers
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+    // Set content type
+    res.setHeader("Content-Type", "text/html");
+
+    return res.status(200).send(data);
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        error: "Error proxying request",
-        details: (error as Error).message,
-      });
+    console.error("Proxy error:", error);
+    return res.status(500).json({ error: "Failed to fetch data" });
   }
 }
+
+export default handler;

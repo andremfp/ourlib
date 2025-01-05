@@ -43,9 +43,35 @@ export default defineConfig({
   server: {
     proxy: {
       "/goodreads-proxy": {
-        target: "http://localhost:3000/api/goodreads-proxy", // Point to local dev server
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/goodreads-proxy/, ""), // Remove the proxy prefix
+        target: "https://www.goodreads.com", // The base URL of the external API
+        changeOrigin: true, // Ensures the host header matches the target
+        rewrite: (path) => path.replace(/^\/goodreads-proxy/, ""), // Removes "/proxy" from the path
+        configure: (proxy, _) => {
+          proxy.on("proxyReq", (proxyReq) => {
+            // Modify headers to look more like a regular browser request
+            proxyReq.setHeader(
+              "Accept",
+              "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8"
+            );
+            proxyReq.setHeader(
+              "User-Agent",
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            );
+          });
+
+          // Handle redirects internally within the proxy
+          proxy.on("proxyRes", (proxyRes) => {
+            if (proxyRes.headers.location) {
+              // If it's a redirect to a Goodreads URL, rewrite it to use our proxy
+              if (proxyRes.headers.location.includes("goodreads.com")) {
+                proxyRes.headers.location = proxyRes.headers.location.replace(
+                  "https://www.goodreads.com",
+                  "/goodreads-proxy"
+                );
+              }
+            }
+          });
+        },
       },
       "/goodreads-cover-proxy": {
         target: "https://images-na.ssl-images-amazon.com", // The base URL of the external API
