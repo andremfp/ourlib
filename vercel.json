@@ -1,16 +1,16 @@
 {
-  "routes": [
-    {
-      "src": "/goodreads-proxy/(.*)",
-      "dest": "/api/goodreads-proxy/$1",
-      "headers": {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, OPTIONS",
-        "Access-Control-Allow-Headers": "*"
-      }
-    }
-  ],
   "rewrites": [
+    {
+      "source": "/goodreads-proxy/:path*",
+      "destination": "/api/goodreads-proxy/:path*",
+      "has": [
+        {
+          "type": "header",
+          "key": "Access-Control-Request-Method",
+          "value": "(?:GET|OPTIONS)"
+        }
+      ]
+    },
     {
       "source": "/goodreads-cover-proxy/:path*",
       "destination": "https://images-na.ssl-images-amazon.com/:path*"
@@ -30,6 +30,25 @@
     {
       "source": "/hardcover-cover-proxy/:path*",
       "destination": "https://assets.hardcover.app/:path*"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/goodreads-proxy/:path*",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "*"
+        }
+      ]
     }
   ]
 }
