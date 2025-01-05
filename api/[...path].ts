@@ -1,20 +1,28 @@
+// api/goodreads-proxy/[...path].ts
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Debug logging
-  console.log("Request path:", req.url);
-  console.log("Query path:", req.query.path);
+  // Add explicit console logs at the start
+  console.log("=== API HANDLER STARTED ===");
+  console.log("Method:", req.method);
+  console.log("URL:", req.url);
+  console.log("Query:", JSON.stringify(req.query));
 
-  // Extract the full path from the request
-  const fullPath = Array.isArray(req.query.path)
-    ? req.query.path.join("/")
-    : req.query.path || "";
-
-  const targetUrl = `https://www.goodreads.com/${fullPath}`;
-  console.log("Target URL:", targetUrl);
-
+  // Add error boundary
   try {
+    // Extract the full path from the request
+    const pathSegments = req.query.path;
+    console.log("Path segments:", JSON.stringify(pathSegments));
+
+    const fullPath = Array.isArray(pathSegments)
+      ? pathSegments.join("/")
+      : pathSegments || "";
+
+    const targetUrl = `https://www.goodreads.com/${fullPath}`;
+    console.log("Target URL:", targetUrl);
+
     // Make the initial request
+    console.log("Making initial request to Goodreads...");
     const response = await fetch(targetUrl, {
       headers: {
         Accept:
@@ -24,6 +32,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
       redirect: "manual",
     });
+
+    console.log("Initial response status:", response.status);
+    console.log(
+      "Initial response headers:",
+      JSON.stringify(Object.fromEntries(response.headers))
+    );
 
     // Handle redirects
     if (
@@ -39,7 +53,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         throw new Error("Redirect location not found");
       }
 
-      // Follow the redirect
+      console.log("Following redirect...");
       const finalResponse = await fetch(redirectUrl, {
         headers: {
           Accept:
@@ -49,29 +63,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         },
       });
 
+      console.log("Final response status:", finalResponse.status);
       const data = await finalResponse.text();
+      console.log("Received final response data length:", data.length);
 
       // Set CORS headers
       res.setHeader("Access-Control-Allow-Origin", "*");
       res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
       res.setHeader("Access-Control-Allow-Headers", "*");
 
+      console.log("Sending final response...");
       return res.status(200).send(data);
     }
 
     // If no redirect, return the original response
     const data = await response.text();
+    console.log("Received direct response data length:", data.length);
 
     // Set CORS headers
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "*");
 
+    console.log("Sending direct response...");
     return res.status(200).send(data);
   } catch (error: any) {
-    console.error("Proxy error:", error);
-    return res
-      .status(500)
-      .json({ error: "Failed to fetch data", details: error.message });
+    console.error("=== ERROR IN API HANDLER ===");
+    console.error("Error details:", error);
+    return res.status(500).json({
+      error: "Failed to fetch data",
+      details: error.message,
+      stack: error.stack,
+    });
   }
 }
