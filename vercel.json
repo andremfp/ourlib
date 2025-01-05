@@ -2,24 +2,6 @@
   "rewrites": [
     {
       "source": "/goodreads-proxy/:path*",
-      "has": [
-        {
-          "type": "header",
-          "key": "x-middleware-skip",
-          "value": "(?!true)"
-        }
-      ],
-      "middleware": true
-    },
-    {
-      "source": "/goodreads-proxy/:path*",
-      "has": [
-        {
-          "type": "header",
-          "key": "x-middleware-skip",
-          "value": "true"
-        }
-      ],
       "destination": "https://www.goodreads.com/:path*"
     },
     {
