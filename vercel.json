@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/goodreads-proxy/:path*",
-      "destination": "/api/goodreads-proxy/:path*"
+      "destination": "/api/:path*"
     },
     {
       "source": "/goodreads-cover-proxy/:path*",
