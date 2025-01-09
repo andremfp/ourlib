@@ -1,15 +1,32 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export const config = {
+  runtime: "edge",
+};
+
+const handler = async (req: VercelRequest, res: VercelResponse) => {
   console.log("=== API HANDLER STARTED ===");
   console.log("Method:", req.method);
   console.log("URL:", req.url);
-  console.log("Query:", JSON.stringify(req.query));
 
-  // Send a test response
+  // The path segments will be in req.query.path as an array
+  const pathSegments = Array.isArray(req.query.path)
+    ? req.query.path
+    : [req.query.path];
+
+  console.log("Path segments:", pathSegments);
+
+  // Reconstruct the full path
+  const fullPath = pathSegments.join("/");
+  console.log("Full path:", fullPath);
+
   return res.status(200).json({
     message: "API is working",
-    path: req.query.path,
+    pathSegments: pathSegments,
+    fullPath: fullPath,
     url: req.url,
+    query: req.query,
   });
-}
+};
+
+export default handler;
