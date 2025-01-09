@@ -62,23 +62,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       console.log("Following redirect...");
-      const finalResponse = await fetch(redirectUrl, {
-        headers: {
-          Accept:
-            "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        },
-      });
+      const finalResponse = await fetch(redirectUrl);
 
       console.log("Final response status:", finalResponse.status);
       const data = await finalResponse.text();
       console.log("Received final response data length:", data.length);
-
-      // Set CORS headers
-      res.setHeader("Access-Control-Allow-Origin", "*");
-      res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-      res.setHeader("Access-Control-Allow-Headers", "*");
 
       console.log("Sending final response...");
       return res.status(200).send(data);
@@ -87,11 +75,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // If no redirect, return the original response
     const data = await response.text();
     console.log("Received direct response data length:", data.length);
-
-    // Set CORS headers
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "*");
 
     console.log("Sending direct response...");
     return res.status(200).send(data);
