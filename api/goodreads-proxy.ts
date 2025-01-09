@@ -1,11 +1,8 @@
-// api/goodreads-proxy/[...path].ts
-import type { VercelRequest, VercelResponse } from "@vercel/node";
-
 export const config = {
   runtime: "edge",
 };
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: Request) {
   // Add explicit console logs at the start
   console.log("=== API HANDLER STARTED ===");
   console.log("Method:", req.method);
@@ -28,7 +25,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let originalPath = "";
     if (match) {
       originalPath = match[0];
-      console.log(originalPath); // Output: goodreads-proxy/book/isbn/9783161484100
+      console.log(originalPath);
     } else {
       console.error("No match found");
     }
@@ -69,7 +66,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.log("Received final response data length:", data.length);
 
       console.log("Sending final response...");
-      return res.send(data);
+      return new Response(data, {
+        status: 200,
+        headers: {
+          "Content-Type": "text/html;charset=UTF-8",
+        },
+      });
     }
 
     // If no redirect, return the original response
@@ -77,16 +79,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log("Received direct response data length:", data.length);
 
     console.log("Sending direct response...");
-    return res.send(data);
+    return new Response(data, {
+      status: 200,
+      headers: {
+        "Content-Type": "text/html;charset=UTF-8",
+      },
+    });
   } catch (error: any) {
     console.error("=== ERROR IN API HANDLER ===");
     console.error("Error details:", error);
-    return res.send({
-      error: {
-        message: error.message,
-      },
-      status: 500,
-      statusText: "Internal Server Error",
-    });
+    return new Response(
+      JSON.stringify({
+        error: {
+          message: error.message,
+        },
+      }),
+      {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
   }
 }
