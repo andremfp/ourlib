@@ -69,7 +69,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.log("Received final response data length:", data.length);
 
       console.log("Sending final response...");
-      return res.status(200).send(data);
+      return res.send(data);
     }
 
     // If no redirect, return the original response
@@ -77,14 +77,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log("Received direct response data length:", data.length);
 
     console.log("Sending direct response...");
-    return res.status(200).send(data);
+    return res.send(data);
   } catch (error: any) {
     console.error("=== ERROR IN API HANDLER ===");
     console.error("Error details:", error);
-    return res.status(500).json({
-      error: "Failed to fetch data",
-      details: error.message,
-      stack: error.stack,
+    return res.send({
+      error: {
+        message: error.message,
+      },
+      status: 500,
+      statusText: "Internal Server Error",
     });
   }
 }
