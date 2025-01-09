@@ -41,6 +41,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const response = await fetch(targetUrl, { redirect: "manual" });
 
     console.log("Initial response status:", response.status);
+    console.log("Initial response headers:", response.body);
     console.log(
       "Initial response headers:",
       JSON.stringify(Object.fromEntries(response.headers))
