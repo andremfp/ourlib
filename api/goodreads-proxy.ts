@@ -23,7 +23,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       throw new Error("No stripped URL found");
     }
 
-    const match = stripped.match(\/book\/isbn\/\d+/);
+    const match = stripped.match(/book\/isbn\/\d+/);
 
     let originalPath = "";
     if (match) {
