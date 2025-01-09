@@ -6,6 +6,7 @@ export const config = {
 
 const handler = async (req: VercelRequest, res: VercelResponse) => {
   console.log("=== API HANDLER STARTED ===");
+  console.log("Request:", req);
   console.log("Method:", req.method);
   console.log("URL:", req.url);
 
