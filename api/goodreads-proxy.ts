@@ -38,15 +38,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Make the initial request
     console.log("Making initial request to Goodreads...");
-    const response = await fetch(targetUrl, {
-      headers: {
-        Accept:
-          "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-      },
-      redirect: "manual",
-    });
+    const response = await fetch(targetUrl, { redirect: "manual" });
 
     console.log("Initial response status:", response.status);
     console.log(
