@@ -10,19 +10,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   console.log("=== API HANDLER STARTED ===");
   console.log("Method:", req.method);
   console.log("URL:", req.url);
-  console.log("Query:", req.query);
+
+  console.log("Request headers:", req.headers);
 
   // Add error boundary
   try {
     // Extract the full path from the request
-    const pathSegments = req.query.path;
-    console.log("Path segments:", JSON.stringify(pathSegments));
+    console.log("Stripped query params ", req.url?.split("?")[0]);
+    const stripped = req.url?.split("?")[0];
 
-    const fullPath = Array.isArray(pathSegments)
-      ? pathSegments.join("/")
-      : pathSegments || "";
+    if (!stripped) {
+      throw new Error("No stripped URL found");
+    }
 
-    const targetUrl = `https://www.goodreads.com/${fullPath}`;
+    const match = stripped.match(/goodreads-proxy\/book\/isbn\/\d+/);
+
+    let originalPath = "";
+    if (match) {
+      originalPath = match[0];
+      console.log(originalPath); // Output: goodreads-proxy/book/isbn/9783161484100
+    } else {
+      console.error("No match found");
+    }
+
+    const targetUrl = `https://www.goodreads.com/${originalPath}`;
     console.log("Target URL:", targetUrl);
 
     // Make the initial request
