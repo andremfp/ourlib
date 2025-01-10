@@ -1,6 +1,14 @@
 {
   "rewrites": [
     {
+      "source": "/goodreads-proxy/:path*",
+      "destination": "/api/goodreads-proxy"
+    },
+    {
+      "source": "/goodreads-cover-proxy/:path*",
+      "destination": "https://images-na.ssl-images-amazon.com/:path*"
+    },
+    {
       "source": "/google-proxy/:path*",
       "destination": "https://www.googleapis.com/:path*"
     },

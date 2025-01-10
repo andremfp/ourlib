@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@types/jsdom": "^21.1.7",
     "@zxing/library": "^0.21.3",
     "firebase": "^11.1.0",
     "vite-plugin-compression": "^0.5.1",
@@ -19,6 +20,7 @@
   "devDependencies": {
     "@types/node": "^22.10.2",
     "@types/vue": "^2.0.0",
+    "@vercel/node": "^5.0.2",
     "@vitejs/plugin-vue": "^5.2.1",
     "@vue/tsconfig": "^0.7.0",
     "autoprefixer": "^10.4.20",
