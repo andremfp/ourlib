@@ -9,7 +9,7 @@
       :class="[
         'flex-1 flex flex-col items-center justify-center h-16 px-3',
         activeTab === tab.name
-          ? 'text-black dark:text-gray-200 border-b-2 border-black'
+          ? 'text-black dark:text-gray-200 border-b-2 border-black dark:border-gray-200'
           : 'text-gray-400 dark:text-gray-400 border-transparent',
       ]"
     >
@@ -20,7 +20,7 @@
           'w-6 h-6',
           tab.name === 'Search'
             ? activeTab === tab.name
-              ? 'fill-current text-black dark:text-gray-200'
+              ? 'fill-current stroke-current text-black dark:text-gray-200'
               : 'fill-current text-gray-400 dark:text-gray-400'
             : tab.name === 'Add Book'
             ? activeTab === tab.name
@@ -99,17 +99,21 @@ export default {
           label: "Add Book",
           outlineSvg: {},
           outlineIcon: [{ d: "M12 4.5v15m7.5-7.5h-15" }],
-          filledSvg: {},
+          filledSvg: { "stroke-width": "2" },
           filledIcon: [{ d: "M12 4.5v15m7.5-7.5h-15" }],
         },
         {
           name: "Search",
           label: "Search",
+          outlineSvg: {},
           outlineIcon: [
             {
               d: "M10.5 3.75a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5ZM2.25 10.5a8.25 8.25 0 1 1 14.59 5.28l4.69 4.69a.75.75 0 1 1-1.06 1.06l-4.69-4.69A8.25 8.25 0 0 1 2.25 10.5Z",
             },
           ],
+          filledSvg: {
+            "stroke-width": "0.5",
+          },
           filledIcon: [
             {
               d: "M10.5 3.75a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5ZM2.25 10.5a8.25 8.25 0 1 1 14.59 5.28l4.69 4.69a.75.75 0 1 1-1.06 1.06l-4.69-4.69A8.25 8.25 0 0 1 2.25 10.5Z",
