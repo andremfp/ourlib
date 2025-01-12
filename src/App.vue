@@ -8,7 +8,7 @@ import TabsComponent from "@/components/Tabs.vue";
       <!-- The router-view renders the matched route's component -->
       <router-view />
     </main>
-    <footer class="flex padding-bottom: env(safe-area-inset-bottom)">
+    <footer class="flex pb-footer-padding">
       <div
         v-if="$route.name === 'login' || $route.name === 'register'"
         class="container flex flex-col items-center justify-between p-6 mx-auto space-y-4 sm:space-y-0 sm:flex-row"
