@@ -3,12 +3,12 @@ import TabsComponent from "@/components/Tabs.vue";
 </script>
 
 <template>
-  <div id="app" class="flex flex-col h-screen">
+  <div id="app" class="flex flex-col min-h-screen">
     <main class="flex-1 flex justify-center items-center">
       <!-- The router-view renders the matched route's component -->
       <router-view />
     </main>
-    <footer class="flex pb-footer-padding">
+    <footer class="flex flex-col pb-footer-padding h-footer-height">
       <div
         v-if="$route.name === 'login' || $route.name === 'register'"
         class="container flex flex-col items-center justify-between p-6 mx-auto space-y-4 sm:space-y-0 sm:flex-row"
@@ -32,10 +32,7 @@ import TabsComponent from "@/components/Tabs.vue";
           </a>
         </div>
       </div>
-      <TabsComponent
-        v-else
-        class="flex mx-auto w-full overflow-hidden bg-white dark:bg-zinc-900 box-content"
-      />
+      <TabsComponent v-else class="w-full h-full bg-white dark:bg-zinc-900" />
     </footer>
   </div>
 </template>

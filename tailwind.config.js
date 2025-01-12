@@ -5,6 +5,7 @@ export default {
     extend: {
       spacing: {
         "footer-padding": "env(safe-area-inset-bottom)",
+        "footer-height": "86px",
       },
     },
   },
