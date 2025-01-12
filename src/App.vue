@@ -34,7 +34,7 @@ import TabsComponent from "@/components/Tabs.vue";
       </div>
       <TabsComponent
         v-else
-        class="flex mx-auto w-full overflow-hidden bg-white dark:bg-zinc-900"
+        class="flex mx-auto w-full overflow-hidden bg-white dark:bg-zinc-900 box-content"
       />
     </footer>
   </div>
