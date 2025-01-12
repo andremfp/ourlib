@@ -50,17 +50,17 @@ const login = async () => {
 
 <template>
   <div
-    class="w-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center"
+    class="w-screen bg-gray-100 dark:bg-zinc-800 flex items-center justify-center"
   >
     <!-- Login Form Section -->
     <div class="w-full max-w-md px-6 py-10">
       <div class="text-center">
         <img class="w-auto h-28 m:h-24 mx-auto" src="/favicon.svg" alt="Logo" />
-        <h1 class="text-2xl font-bold mt-4 text-gray-800 dark:text-gray-200">
-          Sign In
+        <h1 class="text-2xl font-bold mt-4 text-gray-800 dark:text-gray-100">
+          Sign in
         </h1>
-        <p class="mt-2 text-gray-600 dark:text-gray-400">
-          Log in to your account and get started.
+        <p class="mt-2 text-gray-600 dark:text-gray-200">
+          to access your libraries
         </p>
       </div>
 
@@ -68,7 +68,7 @@ const login = async () => {
         <div>
           <label
             for="username"
-            class="block text-sm text-gray-700 dark:text-gray-300"
+            class="block font-bold text-black dark:text-gray-100"
           >
             Username
           </label>
@@ -76,8 +76,9 @@ const login = async () => {
             v-model="username"
             id="username"
             type="text"
-            class="block w-full px-4 py-2 mt-2 bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-800 dark:text-gray-200"
+            class="block w-full px-4 py-2 mt-2 bg-white dark:bg-zinc-700 dark:placeholder:text-zinc-300 border border-gray-200 dark:border-zinc-600 rounded-lg focus:outline-none focus:ring-gray-500 dark:focus:ring-zinc-500 focus:ring-2 text-gray-800 dark:text-gray-100"
             placeholder="Enter your username"
+            autocomplete="username"
             required
           />
         </div>
@@ -85,7 +86,7 @@ const login = async () => {
         <div>
           <label
             for="password"
-            class="block text-sm text-gray-700 dark:text-gray-300"
+            class="block font-bold text-gray-700 dark:text-gray-100"
           >
             Password
           </label>
@@ -93,8 +94,9 @@ const login = async () => {
             v-model="password"
             id="password"
             type="password"
-            class="block w-full px-4 py-2 mt-2 bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-800 dark:text-gray-200"
+            class="block w-full px-4 py-2 mt-2 bg-white dark:bg-zinc-700 dark:placeholder:text-zinc-300 border border-gray-200 dark:border-zinc-600 rounded-lg focus:outline-none focus:ring-gray-500 dark:focus:ring-zinc-500 focus:ring-2 text-gray-800 dark:text-gray-100"
             placeholder="Enter your password"
+            autocomplete="current-password"
             required
           />
         </div>
@@ -105,13 +107,13 @@ const login = async () => {
 
         <button
           type="submit"
-          class="w-full py-2 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition duration-200"
+          class="w-full py-2 px-4 bg-blue-500 text-white rounded-lg"
         >
           Sign In
         </button>
       </form>
 
-      <p class="mt-4 text-center text-gray-600 dark:text-gray-400 text-sm">
+      <p class="mt-4 text-center text-gray-600 dark:text-zinc-300 text-sm">
         Don't have an account?
         <router-link to="/register" class="text-blue-500 hover:underline">
           Sign up

@@ -1,17 +1,22 @@
+<script setup lang="ts">
+import TabsComponent from "@/components/Tabs.vue";
+</script>
+
 <template>
   <div id="app" class="flex flex-col h-screen">
     <main class="flex-1 flex justify-center items-center">
       <!-- The router-view renders the matched route's component -->
       <router-view />
     </main>
-    <footer class="flex bg-gray-100 dark:bg-gray-900">
+    <footer class="flex">
       <div
+        v-if="$route.name === 'login' || $route.name === 'register'"
         class="container flex flex-col items-center justify-between p-6 mx-auto space-y-4 sm:space-y-0 sm:flex-row"
       >
         <div class="flex mx-auto">
           <a
-            href="https://github.com/andremfp/vue-firebase-pwa-template"
-            class="mx-2 text-gray-600 transition-colors duration-300 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400"
+            href="https://github.com/andremfp/ourlib"
+            class="text-black dark:text-gray-200"
             aria-label="Github"
           >
             <svg
@@ -27,6 +32,10 @@
           </a>
         </div>
       </div>
+      <TabsComponent
+        v-else
+        class="flex mx-auto w-full overflow-hidden bg-white dark:bg-zinc-900"
+      />
     </footer>
   </div>
 </template>
