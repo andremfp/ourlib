@@ -7,7 +7,7 @@
       :key="tab.name"
       @click="setActiveTab(tab.name)"
       :class="[
-        'flex-1 flex flex-col items-center justify-center pt-1 sm:pt-2',
+        'flex-1 flex flex-col items-center justify-center pt-1 sm:py-2',
         activeTab === tab.name
           ? 'text-black dark:text-gray-200 border-t-2 border-black dark:border-gray-200'
           : 'text-gray-400 dark:text-gray-400 border-transparent',
