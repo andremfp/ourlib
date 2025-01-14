@@ -33,7 +33,14 @@ import TabsComponent from "@/components/Tabs.vue";
         </div>
       </div>
       <TabsComponent v-else class="w-full flex-1 bg-white dark:bg-red-300" />
-      <div class="w-full bg-white dark:bg-green-600 pb-footer-padding"></div>
+      <div
+        :class="[
+          'w-full pb-footer-padding',
+          $route.name != 'login' && $route.name != 'register'
+            ? 'bg-white dark:bg-zinc-900'
+            : '',
+        ]"
+      ></div>
     </footer>
   </div>
 </template>
