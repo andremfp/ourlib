@@ -32,7 +32,7 @@ import TabsComponent from "@/components/Tabs.vue";
           </a>
         </div>
       </div>
-      <TabsComponent v-else class="w-full flex-1 bg-white dark:bg-red-300" />
+      <TabsComponent v-else class="w-full flex-1 bg-white dark:bg-zinc-900" />
       <div
         :class="[
           'w-full pb-footer-padding',
