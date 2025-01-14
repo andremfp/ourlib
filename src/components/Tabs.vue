@@ -7,7 +7,7 @@
       :key="tab.name"
       @click="setActiveTab(tab.name)"
       :class="[
-        'flex-1 flex flex-col items-center justify-center h-16 ',
+        'flex-1 flex flex-col items-center justify-center py-2',
         activeTab === tab.name
           ? 'text-black dark:text-gray-200 border-t-2 border-black dark:border-gray-200'
           : 'text-gray-400 dark:text-gray-400 border-transparent',
@@ -40,7 +40,7 @@
           v-bind="path"
         />
       </svg>
-      <span class="mt-1 text-xs">{{ tab.label }}</span>
+      <span class="mt-1 sm:text-xs text-xxs">{{ tab.label }}</span>
     </button>
   </div>
 </template>

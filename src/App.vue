@@ -37,7 +37,7 @@ import TabsComponent from "@/components/Tabs.vue";
         :class="[
           'w-full pb-footer-padding',
           $route.name != 'login' && $route.name != 'register'
-            ? 'bg-white dark:bg-red-700'
+            ? 'bg-white dark:bg-green-700'
             : '',
         ]"
       ></div>
