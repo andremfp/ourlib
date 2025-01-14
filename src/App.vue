@@ -8,7 +8,7 @@ import TabsComponent from "@/components/Tabs.vue";
       <!-- The router-view renders the matched route's component -->
       <router-view />
     </main>
-    <footer class="flex flex-col h-footer-height">
+    <footer class="flex flex-col">
       <div
         v-if="$route.name === 'login' || $route.name === 'register'"
         class="container flex flex-col items-center justify-between p-6 mx-auto space-y-4 sm:space-y-0 sm:flex-row"
@@ -32,12 +32,12 @@ import TabsComponent from "@/components/Tabs.vue";
           </a>
         </div>
       </div>
-      <TabsComponent v-else class="w-full flex-1 bg-white dark:bg-zinc-900" />
+      <TabsComponent v-else class="w-full bg-white dark:bg-zinc-900" />
       <div
         :class="[
           'w-full pb-footer-padding',
           $route.name != 'login' && $route.name != 'register'
-            ? 'bg-white dark:bg-zinc-900'
+            ? 'bg-white dark:bg-red-700'
             : '',
         ]"
       ></div>
