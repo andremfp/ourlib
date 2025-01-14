@@ -1,22 +1,5 @@
 <script setup lang="ts">
 import TabsComponent from "@/components/Tabs.vue";
-import { ref, onMounted } from "vue";
-
-const hasSafeArea = ref(false);
-
-onMounted(() => {
-  // Check if running as PWA (standalone mode)
-  const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
-
-  // Check if there's a safe area at the bottom
-  const bottomInset = parseInt(
-    getComputedStyle(document.documentElement).getPropertyValue(
-      "--safe-area-inset-bottom"
-    ) || "0"
-  );
-
-  hasSafeArea.value = isStandalone && bottomInset > 0;
-});
 </script>
 
 <template>
@@ -25,7 +8,7 @@ onMounted(() => {
       <!-- The router-view renders the matched route's component -->
       <router-view />
     </main>
-    <footer :class="['flex flex-col', hasSafeArea ? 'h-footer-height' : '']">
+    <footer class="flex flex-col h-footer-height">
       <div
         v-if="$route.name === 'login' || $route.name === 'register'"
         class="container flex flex-col items-center justify-between p-6 mx-auto space-y-4 sm:space-y-0 sm:flex-row"
