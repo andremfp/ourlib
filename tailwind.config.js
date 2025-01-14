@@ -4,11 +4,10 @@ export default {
   theme: {
     extend: {
       fontSize: {
-        xxs: "0.6rem",
+        xxs: "0.65rem",
       },
       spacing: {
         "footer-padding": "env(safe-area-inset-bottom)",
-        "footer-height": "85px",
       },
     },
   },
