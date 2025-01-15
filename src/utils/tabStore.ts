@@ -1,13 +1,9 @@
 import { ref, readonly } from "vue";
 
-type TabName = "Home" | "My Library" | "Add Book" | "Search" | "User";
-
-const state = ref<TabName>(
-  (sessionStorage.getItem("tab") as TabName) || "Home"
-);
+const state = ref<string>(sessionStorage.getItem("tab") || "Home");
 
 export const useTabStore = () => {
-  const setActiveTab = (tab: TabName) => {
+  const setActiveTab = (tab: string) => {
     state.value = tab;
     sessionStorage.setItem("tab", tab);
   };

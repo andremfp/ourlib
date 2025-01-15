@@ -30,7 +30,7 @@
             ? 'fill-current text-black dark:text-gray-200'
             : 'stroke-current text-gray-400 dark:text-gray-400',
         ]"
-        :viewBox="['0 0 24 24']"
+        :viewBox="'0 0 24 24'"
       >
         <path
           v-for="(path, index) in activeTab === tab.name

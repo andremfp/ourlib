@@ -1,5 +1,5 @@
 <script lang="ts">
-import { computed, defineComponent, watch } from "vue";
+import { computed } from "vue";
 import { useTabStore } from "@/utils/tabStore";
 import AddBook from "@/components/AddBook.vue";
 import User from "@/components/User.vue";
