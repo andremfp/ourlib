@@ -28,10 +28,10 @@ export default {
       v-if="
         $route.name === 'main' && activeTab != 'Add Book' && activeTab != 'User'
       "
-      class="flex flex-col bg-gray-100 dark:bg-zinc-900"
+      class="flex flex-col bg-gray-100 dark:bg-zinc-800"
     >
       <div class="w-full pb-nav-padding bg-green-400"></div>
-      <div class="w-full px-4 pb-2 pt-6 sm:pb-4 sm:pt-4">
+      <div class="w-full px-4 pb-2 pt-8 sm:pb-4 sm:pt-4">
         <div class="relative">
           <span class="absolute inset-y-0 left-0 flex items-center pl-2">
             <svg class="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none">
@@ -47,7 +47,7 @@ export default {
 
           <input
             type="text"
-            class="w-full py-1 pl-8 bg-white dark:bg-zinc-700 dark:placeholder:text-zinc-400 border border-gray-200 dark:border-zinc-600 rounded-lg focus:outline-none focus:ring-gray-500 dark:focus:ring-zinc-500 focus:ring-2 text-gray-800 dark:text-gray-100"
+            class="w-full py-1 pl-8 bg-white dark:bg-zinc-700 dark:placeholder:text-zinc-400 rounded-xl text-gray-800 dark:text-gray-100 outline-none"
             placeholder="Search book"
           />
         </div>
