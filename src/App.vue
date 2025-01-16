@@ -1,14 +1,67 @@
-<script setup lang="ts">
+<script lang="ts">
 import TabsComponent from "@/components/Tabs.vue";
+import { useTabStore } from "@/stores/tabStore";
+
+export default {
+  components: {
+    TabsComponent,
+  },
+  setup() {
+    let activeTab;
+    try {
+      const tabStore = useTabStore();
+      activeTab = tabStore.activeTab;
+    } catch {
+      activeTab = "Home";
+    }
+
+    return {
+      activeTab,
+    };
+  },
+};
 </script>
 
 <template>
-  <div id="app" class="flex flex-col h-screen">
+  <div id="app" class="flex flex-col min-h-screen">
+    <nav
+      v-if="$route.name === 'main'"
+      class="flex flex-col bg-gray-100 dark:bg-zinc-800"
+    >
+      <div class="w-full pb-nav-padding bg-zinc-800"></div>
+      <div class="w-full px-4 pb-3 pt-8 sm:pb-4 sm:pt-4">
+        <div
+          v-if="activeTab != 'Add Book' && activeTab != 'User'"
+          class="relative"
+        >
+          <span class="absolute inset-y-0 left-0 flex items-center pl-2">
+            <svg class="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              ></path>
+            </svg>
+          </span>
+
+          <input
+            type="text"
+            class="w-full py-1 pl-8 bg-white dark:bg-zinc-700 dark:placeholder:text-zinc-400 rounded-xl text-gray-800 dark:text-gray-100 outline-none"
+            placeholder="Search book"
+          />
+        </div>
+        <div v-else class="relative py-1">
+          <p class="text-gray-400">{{ activeTab }}</p>
+        </div>
+      </div>
+    </nav>
     <main class="flex-1 flex justify-center items-center">
       <!-- The router-view renders the matched route's component -->
       <router-view />
     </main>
-    <footer class="flex">
+    <footer class="flex flex-col">
       <div
         v-if="$route.name === 'login' || $route.name === 'register'"
         class="container flex flex-col items-center justify-between p-6 mx-auto space-y-4 sm:space-y-0 sm:flex-row"
@@ -32,10 +85,15 @@ import TabsComponent from "@/components/Tabs.vue";
           </a>
         </div>
       </div>
-      <TabsComponent
-        v-else
-        class="flex mx-auto w-full overflow-hidden bg-white dark:bg-zinc-900"
-      />
+      <TabsComponent v-else class="w-full bg-white dark:bg-zinc-900" />
+      <div
+        :class="[
+          'w-full pb-footer-padding',
+          $route.name != 'login' && $route.name != 'register'
+            ? 'bg-white dark:bg-zinc-900'
+            : '',
+        ]"
+      ></div>
     </footer>
   </div>
 </template>
