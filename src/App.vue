@@ -31,7 +31,7 @@ export default {
       class="flex flex-col bg-gray-100 dark:bg-zinc-900"
     >
       <div class="w-full pb-nav-padding bg-green-400"></div>
-      <div class="w-full px-4 py-2 sm:py-4">
+      <div class="w-full px-4 pb-2 pt-6 sm:pb-4 sm:pt-4">
         <div class="relative">
           <span class="absolute inset-y-0 left-0 flex items-center pl-2">
             <svg class="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none">
