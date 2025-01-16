@@ -25,14 +25,15 @@ export default {
 <template>
   <div id="app" class="flex flex-col min-h-screen">
     <nav
-      v-if="
-        $route.name === 'main' && activeTab != 'Add Book' && activeTab != 'User'
-      "
+      v-if="$route.name === 'main'"
       class="flex flex-col bg-gray-100 dark:bg-zinc-800"
     >
       <div class="w-full pb-nav-padding bg-green-800"></div>
       <div class="w-full px-4 pb-3 pt-8 sm:pb-4 sm:pt-4">
-        <div class="relative">
+        <div
+          v-if="activeTab != 'Add Book' && activeTab != 'User'"
+          class="relative"
+        >
           <span class="absolute inset-y-0 left-0 flex items-center pl-2">
             <svg class="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none">
               <path
@@ -50,6 +51,9 @@ export default {
             class="w-full py-1 pl-8 bg-white dark:bg-zinc-700 dark:placeholder:text-zinc-400 rounded-xl text-gray-800 dark:text-gray-100 outline-none"
             placeholder="Search book"
           />
+        </div>
+        <div v-else class="relative py-1">
+          <p class="text-gray-400">{{ activeTab }}</p>
         </div>
       </div>
     </nav>
