@@ -28,7 +28,7 @@ export default {
       v-if="$route.name === 'main'"
       class="flex flex-col bg-gray-100 dark:bg-zinc-800"
     >
-      <div class="w-full pb-nav-padding bg-green-800"></div>
+      <div class="w-full pb-nav-padding bg-zinc-800"></div>
       <div class="w-full px-4 pb-3 pt-8 sm:pb-4 sm:pt-4">
         <div
           v-if="activeTab != 'Add Book' && activeTab != 'User'"
