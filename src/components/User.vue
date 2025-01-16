@@ -2,6 +2,7 @@
 import { useRouter } from "vue-router";
 import { getAuth, signOut } from "firebase/auth";
 import logger from "@/utils/logger";
+import { useTabStore } from "@/stores/tabStore";
 
 const auth = getAuth();
 const router = useRouter();
@@ -10,7 +11,7 @@ const logout = async () => {
   try {
     await signOut(auth);
     logger.info("User logged out");
-    sessionStorage.clear();
+    useTabStore().resetActiveTab();
     router.push("/");
   } catch (error: any) {
     logger.error("Logout error:", error.message);

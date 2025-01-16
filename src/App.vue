@@ -1,9 +1,58 @@
-<script setup lang="ts">
+<script lang="ts">
 import TabsComponent from "@/components/Tabs.vue";
+import { useTabStore } from "@/stores/tabStore";
+
+export default {
+  components: {
+    TabsComponent,
+  },
+  setup() {
+    let activeTab;
+    try {
+      const tabStore = useTabStore();
+      activeTab = tabStore.activeTab;
+    } catch {
+      activeTab = "Home";
+    }
+
+    return {
+      activeTab,
+    };
+  },
+};
 </script>
 
 <template>
   <div id="app" class="flex flex-col min-h-screen">
+    <nav
+      v-if="
+        $route.name === 'main' && activeTab != 'Add Book' && activeTab != 'User'
+      "
+      class="flex flex-col bg-gray-100 dark:bg-zinc-900"
+    >
+      <div class="w-full pb-nav-padding bg-green-400"></div>
+      <div class="container px-6 py-3 mx-auto md:flex">
+        <div class="relative mt-4 md:mt-0">
+          <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+            <svg class="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              ></path>
+            </svg>
+          </span>
+
+          <input
+            type="text"
+            class="w-full py-2 pl-10 pr-4 bg-white dark:bg-zinc-700 dark:placeholder:text-zinc-400 border border-gray-200 dark:border-zinc-600 rounded-lg focus:outline-none focus:ring-gray-500 dark:focus:ring-zinc-500 focus:ring-2 text-gray-800 dark:text-gray-100"
+            placeholder="Search book"
+          />
+        </div>
+      </div>
+    </nav>
     <main class="flex-1 flex justify-center items-center">
       <!-- The router-view renders the matched route's component -->
       <router-view />

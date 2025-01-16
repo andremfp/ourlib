@@ -8,6 +8,7 @@ export default {
       },
       spacing: {
         "footer-padding": "env(safe-area-inset-bottom)",
+        "nav-padding": "env(safe-area-inset-bottom)",
       },
     },
   },

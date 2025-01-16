@@ -8,8 +8,14 @@ export const useTabStore = () => {
     sessionStorage.setItem("tab", tab);
   };
 
+  const resetActiveTab = () => {
+    state.value = "Home";
+    sessionStorage.removeItem("tab");
+  };
+
   return {
     activeTab: readonly(state),
     setActiveTab,
+    resetActiveTab,
   };
 };
