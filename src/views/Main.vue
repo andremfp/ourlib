@@ -1,6 +1,6 @@
 <script lang="ts">
 import { computed } from "vue";
-import { useTabStore } from "@/utils/tabStore";
+import { useTabStore } from "@/stores/tabStore";
 import AddBook from "@/components/AddBook.vue";
 import User from "@/components/User.vue";
 

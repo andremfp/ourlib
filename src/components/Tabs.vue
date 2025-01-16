@@ -46,7 +46,7 @@
 </template>
 
 <script lang="ts">
-import { useTabStore } from "@/utils/tabStore";
+import { useTabStore } from "@/stores/tabStore";
 
 export default {
   setup() {
