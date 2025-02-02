@@ -1,5 +1,12 @@
 import { firestore } from "../firebase";
-import { collection, doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  setDoc,
+  getDoc,
+  updateDoc,
+  deleteDoc,
+} from "firebase/firestore";
 import type { Book } from "./types";
 
 const booksCollection = "Books";
@@ -26,4 +33,8 @@ export const markAsReturned = async (bookId: string) => {
     lentTo: null,
     lentAt: null,
   });
+};
+
+export const deleteBook = async (bookId: string) => {
+  await deleteDoc(doc(firestore, booksCollection, bookId));
 };

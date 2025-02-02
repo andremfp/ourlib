@@ -1,4 +1,4 @@
-name: PR Build Check
+name: PR Build Check and Firebase Deployment
 
 on:
   pull_request:
@@ -22,11 +22,44 @@ jobs:
         run: yarn install
 
       - name: Build the project
-        env:
-          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
-          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
-          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
-          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
         run: yarn build
+
+      - name: Set up Java for Firebase Emulators
+        uses: actions/setup-java@v2
+        with:
+          distribution: "adopt"
+          java-version: "11"
+
+      - name: Set up Firebase CLI
+        run: |
+          curl -sL https://firebase.tools | bash
+
+      - name: Cache Firebase Emulators
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/firebase/emulators
+          key: ${{ runner.os }}-firebase-emulators-${{ hashFiles('~/.cache/firebase/emulators/**') }}
+
+      - name: Run Tests
+        run: yarn test
+        env:
+          FIREBASE_DEBUG_MODE: true
+          FUNCTIONS_EMULATOR: true
+
+      - name: Login to Firebase
+        run: firebase login:ci --token ${{ secrets.FIREBASE_TOKEN }}
+
+      - name: Deploy Firebase Rules
+        run: firebase deploy --only firestore:rules
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+
+      - name: Deploy Firebase Indexes
+        run: firebase deploy --only firestore:indexes
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+
+      - name: Deploy Firebase Functions
+        run: firebase deploy --only functions
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}

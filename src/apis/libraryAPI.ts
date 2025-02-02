@@ -6,6 +6,7 @@ import {
   getDoc,
   updateDoc,
   arrayUnion,
+  deleteDoc,
 } from "firebase/firestore";
 import type { Library } from "./types";
 
@@ -27,4 +28,8 @@ export const subscribeToLibrary = async (libraryId: string, userId: string) => {
   await updateDoc(doc(firestore, librariesCollection, libraryId), {
     subscribers: arrayUnion(userId),
   });
+};
+
+export const deleteLibrary = async (libraryId: string) => {
+  await deleteDoc(doc(firestore, librariesCollection, libraryId));
 };

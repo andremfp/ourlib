@@ -11,6 +11,8 @@ node_modules
 dist
 dist-ssr
 *.local
+*.tsbuildinfo
+
 
 # Local environment variables
 .env
@@ -35,3 +37,15 @@ vite-error.log
 .yarn/unplugged
 .yarn/build-state.yml
 .yarn/install-state.gz
+
+coverage/
+
+# Functions
+functions/lib/
+
+# Firebase emulators
+firebase-debug.log
+.firebase/
+
+# Vercel
+.vercel/

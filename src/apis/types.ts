@@ -35,7 +35,7 @@ export type Update = {
   id: string;
   libraryId: string; // ID of the library associated with the update
   userId: string; // ID of the friend triggering the update
-  action: "added_book" | "lent_book" | "returned_book";
+  action: "added_book" | "removed_book" | "lent_book" | "returned_book";
   bookId: string; // ID of the book involved
   relatedUserId?: string; // ID of the related user (borrower/returner) if applicable
   visibleTo: string[]; // Array of user IDs who can view the update

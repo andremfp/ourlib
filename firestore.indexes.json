@@ -1,0 +1,17 @@
+{
+  "indexes": [
+    {
+      "collectionId": "Updates",
+      "fields": [
+        {
+          "fieldPath": "visibleTo",
+          "mode": "ARRAY_CONTAINS"
+        },
+        {
+          "fieldPath": "timestamp",
+          "mode": "ASCENDING"
+        }
+      ]
+    }
+  ]
+}
