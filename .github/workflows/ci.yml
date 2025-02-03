@@ -50,22 +50,19 @@ jobs:
           FUNCTIONS_EMULATOR: true
 
       - name: Set up Firebase authentication
-        run: |
-          echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}" > /tmp/firebase-service-account.json
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: /tmp/firebase-service-account.json
+        run: echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}" > gcloud.json
 
       - name: Deploy Firebase Rules
         run: firebase deploy --only firestore:rules
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: /tmp/firebase-service-account.json
+          GOOGLE_APPLICATION_CREDENTIALS: gcloud.json
 
       - name: Deploy Firebase Indexes
         run: firebase deploy --only firestore:indexes
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: /tmp/firebase-service-account.json
+          GOOGLE_APPLICATION_CREDENTIALS: gcloud.json
 
       - name: Deploy Firebase Functions
         run: firebase deploy --only functions
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: /tmp/firebase-service-account.json
+          GOOGLE_APPLICATION_CREDENTIALS: gcloud.json
