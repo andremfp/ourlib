@@ -51,9 +51,9 @@ jobs:
 
       - name: Set up Firebase authentication
         run: |
-          echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}" > $HOME/firebase-key.json
-          export GOOGLE_APPLICATION_CREDENTIALS="$HOME/firebase-key.json"
-          firebase login:ci
+          echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}" > /tmp/firebase-service-account.json
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/firebase-service-account.json
 
       - name: Deploy Firebase Rules
         run: firebase deploy --only firestore:rules
