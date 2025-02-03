@@ -56,16 +56,16 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS: /tmp/firebase-service-account.json
 
       - name: Deploy Firebase Rules
-        run: |
-          firebase deploy --only firestore:rules \
-          --service-account /tmp/firebase-service-account.json
+        run: firebase deploy --only firestore:rules
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/firebase-service-account.json
 
       - name: Deploy Firebase Indexes
-        run: |
-          firebase deploy --only firestore:indexes \
-          --service-account /tmp/firebase-service-account.json
+        run: firebase deploy --only firestore:indexes
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/firebase-service-account.json
 
       - name: Deploy Firebase Functions
-        run: |
-          firebase deploy --only functions \
-          --service-account /tmp/firebase-service-account.json
+        run: firebase deploy --only functions
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/firebase-service-account.json
