@@ -53,6 +53,7 @@ jobs:
         run: |
           echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}" > $HOME/firebase-key.json
           export GOOGLE_APPLICATION_CREDENTIALS="$HOME/firebase-key.json"
+          firebase login:ci
 
       - name: Deploy Firebase Rules
         run: firebase deploy --only firestore:rules
