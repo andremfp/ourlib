@@ -52,6 +52,7 @@ jobs:
       - name: Set up Firebase authentication
         run: |
           echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}" > /tmp/firebase-service-account.json
+          firebase use ourlib-76289
         env:
           GOOGLE_APPLICATION_CREDENTIALS: /tmp/firebase-service-account.json
 
