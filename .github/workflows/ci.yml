@@ -33,10 +33,6 @@ jobs:
           distribution: "adopt"
           java-version: "11"
 
-      - name: Set up Firebase CLI
-        run: |
-          curl -sL https://firebase.tools | bash
-
       - name: Cache Firebase Emulators
         uses: actions/cache@v2
         with:
@@ -53,16 +49,16 @@ jobs:
         run: echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}" > gcloud.json
 
       - name: Deploy Firebase Rules
-        run: firebase deploy --only firestore:rules
+        run: npx firebase-tools deploy --only firestore:rules --project ${{ secrets.FIREBASE_PROJECT_ID }}
         env:
           GOOGLE_APPLICATION_CREDENTIALS: gcloud.json
 
       - name: Deploy Firebase Indexes
-        run: firebase deploy --only firestore:indexes
+        run: npx firebase-tools deploy --only firestore:indexes --project ${{ secrets.FIREBASE_PROJECT_ID }}
         env:
           GOOGLE_APPLICATION_CREDENTIALS: gcloud.json
 
       - name: Deploy Firebase Functions
-        run: firebase deploy --only functions
+        run: npx firebase-tools deploy --only functions --project ${{ secrets.FIREBASE_PROJECT_ID }}
         env:
           GOOGLE_APPLICATION_CREDENTIALS: gcloud.json
