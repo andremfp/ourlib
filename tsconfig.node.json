@@ -1,8 +1,15 @@
 {
   "compilerOptions": {
     "target": "ESNext",
-    "module": "CommonJS", // Use CommonJS for Node.js compatibility
+    "module": "ESNext",
     "moduleResolution": "node",
+    "paths": {
+      "@/*": ["./src/*"] // Add this
+    },
+    "lib": ["dom", "esnext", "webworker"],
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
     "esModuleInterop": true,
     "skipLibCheck": true,
     "noEmit": true,
@@ -15,8 +22,8 @@
   },
   "include": [
     "vite.config.ts",
-    "scripts/**/*.ts",
     "src/**/*.ts",
+    "src/**/*.vue",
     "src/__tests__/**/*.ts"
   ]
 }
