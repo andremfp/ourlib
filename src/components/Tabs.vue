@@ -23,12 +23,12 @@
               ? 'fill-current stroke-current text-black dark:text-gray-200'
               : 'fill-current text-gray-400 dark:text-gray-400'
             : tab.name === 'Add Book'
-            ? activeTab === tab.name
-              ? 'stroke-current text-black dark:text-gray-200'
-              : 'stroke-current text-gray-400 dark:text-gray-400'
-            : activeTab === tab.name
-            ? 'fill-current text-black dark:text-gray-200'
-            : 'stroke-current text-gray-400 dark:text-gray-400',
+              ? activeTab === tab.name
+                ? 'stroke-current text-black dark:text-gray-200'
+                : 'stroke-current text-gray-400 dark:text-gray-400'
+              : activeTab === tab.name
+                ? 'fill-current text-black dark:text-gray-200'
+                : 'stroke-current text-gray-400 dark:text-gray-400',
         ]"
         :viewBox="'0 0 24 24'"
       >

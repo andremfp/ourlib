@@ -1,5 +1,3 @@
-// src/__tests__/firebase.test.ts
-
 import {
   initializeTestEnvironment,
   assertFails,
@@ -341,7 +339,7 @@ describe("Firebase Tests", () => {
         await assertFails(deleteDoc(doc(unauthedFirestore, "books", "book1")));
       });
 
-      it("should deny authenticated users from creating, reading, updating or deleting a book in a library they don\’t own", async () => {
+      it("should deny authenticated users from creating, reading, updating or deleting a book in a library they don’t own", async () => {
         const libraryRef = doc(authedUser1Firestore, "libraries", "lib1");
         await setDoc(libraryRef, {
           owner: "user1",

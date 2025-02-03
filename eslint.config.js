@@ -1,16 +1,19 @@
-const globals = require("globals");
-const pluginJs = require("@eslint/js");
-const tseslint = require("@typescript-eslint/eslint-plugin");
-const tsParser = require("@typescript-eslint/parser");
-const pluginVue = require("eslint-plugin-vue");
-const prettier = require("eslint-plugin-prettier");
+import globals from "globals";
+import js from "@eslint/js";
+import tseslint from "@typescript-eslint/eslint-plugin";
+import tsParser from "@typescript-eslint/parser";
+import pluginVue from "eslint-plugin-vue";
+import prettier from "eslint-plugin-prettier";
+import vueParser from "vue-eslint-parser";
 
 /** @type {import('eslint').Linter.FlatConfig[]} */
-module.exports = [
+// @ts-expect-error: FlatConfig is still supported despite deprecation
+export default [
+  js.configs.recommended, // ESLint's built-in recommended rules
   {
     files: ["**/*.{js,mjs,cjs}"],
     languageOptions: {
-      globals: globals.browser,
+      globals: globals.browser, // ✅ Fixes `window`, `fetch`, `setTimeout`, etc.
     },
     plugins: {
       prettier,
@@ -24,18 +27,31 @@ module.exports = [
     files: ["**/*.ts"],
     languageOptions: {
       parser: tsParser,
+      ecmaVersion: "latest",
+      sourceType: "module",
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
     },
     plugins: {
       "@typescript-eslint": tseslint,
     },
     rules: {
-      ...tseslint.configs.recommended.rules, // Use rules from the recommended config
+      ...tseslint.configs.recommended.rules,
     },
   },
   {
     files: ["**/*.vue"],
     languageOptions: {
-      parser: tsParser,
+      parser: vueParser,
+      parserOptions: {
+        parser: tsParser, // Use TypeScript parser inside Vue files
+        ecmaVersion: "latest",
+        sourceType: "module",
+        extraFileExtensions: [".vue"],
+      },
+      globals: globals.browser,
     },
     plugins: {
       prettier,
