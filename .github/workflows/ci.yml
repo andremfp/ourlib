@@ -47,9 +47,9 @@ jobs:
 
       - name: Set up Firebase authentication
         run: |
-          echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}" > ./gcloud.json \
+          echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}" > ~/gcloud.json \
           echo $HOME \
-          export GOOGLE_APPLICATION_CREDENTIALS="./gcloud.json"
+          echo $GITHUB_WORKSPACE
 
       - name: Deploy Firebase Rules
         run: npx firebase-tools deploy --only firestore:rules --project ${{ secrets.FIREBASE_PROJECT_ID }}
