@@ -45,10 +45,6 @@ jobs:
       #     FIREBASE_DEBUG_MODE: true
       #     FUNCTIONS_EMULATOR: true
 
-      - name: Set up Firebase authentication
-        run: |
-          echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}" > gcloud.json
-
       - name: Authenticate to Google Cloud
         uses: "google-github-actions/auth@v2"
         with:
