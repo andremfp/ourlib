@@ -52,16 +52,16 @@ jobs:
       - name: Deploy Firebase Rules
         run: |
           echo $GOOGLE_APPLICATION_CREDENTIALS
-          npx firebase-tools deploy --only firestore:rules --project ${{ secrets.FIREBASE_PROJECT_ID }}
+          npx firebase-tools deploy --only firestore:rules
         env:
           GOOGLE_APPLICATION_CREDENTIALS: "${{ github.workspace }}/gcloud.json"
 
       - name: Deploy Firebase Indexes
-        run: npx firebase-tools deploy --only firestore:indexes --project ${{ secrets.FIREBASE_PROJECT_ID }}
+        run: npx firebase-tools deploy --only firestore:indexes
         env:
           GOOGLE_APPLICATION_CREDENTIALS: "${{ github.workspace }}/gcloud.json"
 
       - name: Deploy Firebase Functions
-        run: npx firebase-tools deploy --only functions --project ${{ secrets.FIREBASE_PROJECT_ID }}
+        run: npx firebase-tools deploy --only functions
         env:
           GOOGLE_APPLICATION_CREDENTIALS: "${{ github.workspace }}/gcloud.json"
