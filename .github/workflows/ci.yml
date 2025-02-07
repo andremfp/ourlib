@@ -48,22 +48,20 @@ jobs:
       - name: Set up Firebase authentication
         run: |
           echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}" > gcloud.json
-          chmod 600 $GITHUB_WORKSPACE/gcloud.json
-          head $GITHUB_WORKSPACE/gcloud.json
 
       - name: Deploy Firebase Rules
         run: |
           echo $GOOGLE_APPLICATION_CREDENTIALS
           npx firebase-tools deploy --only firestore:rules --project ${{ secrets.FIREBASE_PROJECT_ID }}
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: $GITHUB_WORKSPACE/gcloud.json
+          GOOGLE_APPLICATION_CREDENTIALS: "${{ github.workspace }}/gcloud.json"
 
       - name: Deploy Firebase Indexes
         run: npx firebase-tools deploy --only firestore:indexes --project ${{ secrets.FIREBASE_PROJECT_ID }}
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: $GITHUB_WORKSPACE/gcloud.json
+          GOOGLE_APPLICATION_CREDENTIALS: "${{ github.workspace }}/gcloud.json"
 
       - name: Deploy Firebase Functions
         run: npx firebase-tools deploy --only functions --project ${{ secrets.FIREBASE_PROJECT_ID }}
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: $GITHUB_WORKSPACE/gcloud.json
+          GOOGLE_APPLICATION_CREDENTIALS: "${{ github.workspace }}/gcloud.json"
