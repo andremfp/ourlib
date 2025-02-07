@@ -38,8 +38,7 @@ jobs:
         with:
           path: ${{ github.workspace }}/.cache/firebase/emulators
           key: ${{ runner.os }}-firebase-emulators-${{ hashFiles('**/firebase.json') }}
-          restore-keys: |
-      ${{ runner.os }}-firebase-emulators-
+          restore-keys: ${{ runner.os }}-firebase-emulators-
 
       - name: Run Tests
         run: yarn test
