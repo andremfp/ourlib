@@ -8,6 +8,7 @@ export default defineConfig({
   plugins: [
     vue(),
     VitePWA({
+      manifest: false,
       registerType: "autoUpdate",
       workbox: {
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
@@ -51,11 +52,11 @@ export default defineConfig({
             // Modify headers to look more like a regular browser request
             proxyReq.setHeader(
               "Accept",
-              "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8"
+              "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
             );
             proxyReq.setHeader(
               "User-Agent",
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             );
           });
 
@@ -66,7 +67,7 @@ export default defineConfig({
               if (proxyRes.headers.location.includes("goodreads.com")) {
                 proxyRes.headers.location = proxyRes.headers.location.replace(
                   "https://www.goodreads.com",
-                  "/goodreads-proxy"
+                  "/goodreads-proxy",
                 );
               }
             }

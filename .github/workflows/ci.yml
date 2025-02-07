@@ -16,7 +16,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: "18"
+          node-version: "22"
 
       - name: Install dependencies
         run: yarn install
@@ -27,23 +27,23 @@ jobs:
       - name: Build the project
         run: yarn build
 
-      # - name: Set up Java for Firebase Emulators
-      #   uses: actions/setup-java@v2
-      #   with:
-      #     distribution: "adopt"
-      #     java-version: "11"
+      - name: Set up Java for Firebase Emulators
+        uses: actions/setup-java@v2
+        with:
+          distribution: "adopt"
+          java-version: "11"
 
-      # - name: Cache Firebase Emulators
-      #   uses: actions/cache@v2
-      #   with:
-      #     path: ~/.cache/firebase/emulators
-      #     key: ${{ runner.os }}-firebase-emulators-${{ hashFiles('~/.cache/firebase/emulators/**') }}
+      - name: Cache Firebase Emulators
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/firebase/emulators
+          key: ${{ runner.os }}-firebase-emulators-${{ hashFiles('~/.cache/firebase/emulators/**') }}
 
-      # - name: Run Tests
-      #   run: yarn test
-      #   env:
-      #     FIREBASE_DEBUG_MODE: true
-      #     FUNCTIONS_EMULATOR: true
+      - name: Run Tests
+        run: yarn test
+        env:
+          FIREBASE_DEBUG_MODE: true
+          FUNCTIONS_EMULATOR: true
 
       - name: Authenticate to Google Cloud
         uses: "google-github-actions/auth@v2"
