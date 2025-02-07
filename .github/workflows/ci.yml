@@ -50,7 +50,9 @@ jobs:
           echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}" > gcloud.json
           echo $HOME
           echo $GITHUB_WORKSPACE
-          cat gcloud.json
+          ls -a $HOME
+          ls -a $GITHUB_WORKSPACE
+          ls -a
 
       - name: Deploy Firebase Rules
         run: npx firebase-tools deploy --only firestore:rules --project ${{ secrets.FIREBASE_PROJECT_ID }}
