@@ -1,15 +1,16 @@
 {
   "indexes": [
     {
-      "collectionId": "Updates",
+      "collectionGroup": "updates",
+      "queryScope": "COLLECTION",
       "fields": [
         {
           "fieldPath": "visibleTo",
-          "mode": "ARRAY_CONTAINS"
+          "arrayConfig": "CONTAINS"
         },
         {
           "fieldPath": "timestamp",
-          "mode": "ASCENDING"
+          "order": "DESCENDING"
         }
       ]
     }
