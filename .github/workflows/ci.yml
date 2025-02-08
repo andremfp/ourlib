@@ -8,7 +8,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -27,6 +26,15 @@ jobs:
       - name: Build the project
         run: yarn build
 
+  test:
+    runs-on: ubuntu-latest
+    env:
+      FIREBASE_EMULATORS_PATH: ${{ github.workspace }}/emulator-cache
+    needs: build
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Set up Java for Firebase Emulators
         uses: actions/setup-java@v4
         with:
@@ -36,15 +44,22 @@ jobs:
       - name: Cache Firebase Emulators
         uses: actions/cache@v4
         with:
-          path: ${{ github.workspace }}/.cache/firebase/emulators
-          key: ${{ runner.os }}-firebase-emulators-${{ hashFiles('**/firebase.json') }}
-          restore-keys: ${{ runner.os }}-firebase-emulators-
+          path: ${{ env.FIREBASE_EMULATORS_PATH }}
+          key: ${{ runner.os }}-firebase-emulators-${{
+            hashFiles('emulator-cache/**') }}
 
       - name: Run Tests
         run: yarn test
         env:
           FIREBASE_DEBUG_MODE: true
           FUNCTIONS_EMULATOR: true
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Authenticate to Google Cloud
         uses: "google-github-actions/auth@v2"
