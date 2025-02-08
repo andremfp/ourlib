@@ -52,6 +52,13 @@ jobs:
           path: ${{ env.FIREBASE_EMULATORS_PATH }}
           key: ${{ runner.os }}-firebase-emulators-${{hashFiles('emulator-cache/**') }}
 
+      - name: Build Firebase Functions
+        run: |
+          cd functions
+          yarn install
+          yarn build
+          cd ..
+
       - name: Run Tests
         run: yarn test
         env:
