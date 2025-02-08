@@ -45,8 +45,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.FIREBASE_EMULATORS_PATH }}
-          key: ${{ runner.os }}-firebase-emulators-${{
-            hashFiles('emulator-cache/**') }}
+          key: ${{ runner.os }}-firebase-emulators-${{hashFiles('emulator-cache/**') }}
 
       - name: Run Tests
         run: yarn test
