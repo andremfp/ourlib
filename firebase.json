@@ -9,10 +9,6 @@
         "firebase-debug.log",
         "firebase-debug.*.log"
       ],
-      "predeploy": [
-        "yarn --cwd \"$RESOURCE_DIR\" lint",
-        "yarn --cwd \"$RESOURCE_DIR\" build"
-      ],
       "region": "europe-west1"
     }
   ],
