@@ -11,9 +11,47 @@ export interface BookDetails {
   thumbnail?: Blob;
 }
 
-export interface ContributorDetails {
+interface HardcoverContribution {
+  author?: { name: string };
+}
+
+interface HardcoverResponseData {
+  editions: {
+    title: string;
+    edition_format: string;
+    pages: number;
+    release_date: string;
+    isbn_10: string;
+    isbn_13: string;
+    publisher: {
+      name: string;
+    };
+    image: {
+      url: string;
+    };
+    contributions: HardcoverContribution[];
+    language: {
+      code2: string;
+    };
+  }[];
+}
+
+interface GoodreadsContributorDetails {
   id: string;
   name: string;
+}
+
+interface GoodreadsContibutorEdge {
+  node: {
+    __ref: string;
+  };
+  role: string;
+}
+
+interface GoodreadsApolloState {
+  [key: string]: unknown; // Fallback for keys we don't care about
+  [key: `Book:${string}`]: GoodreadsBookData;
+  [key: `Contributor:${string}`]: GoodreadsContributorDetails;
 }
 
 interface GoodreadsBookData {
@@ -26,8 +64,8 @@ interface GoodreadsBookData {
     language?: { name: string };
     numPages?: number;
   };
-  primaryContributorEdge: any;
-  secondaryContributorEdges: any[];
+  primaryContributorEdge: GoodreadsContibutorEdge;
+  secondaryContributorEdges: GoodreadsContibutorEdge[];
 }
 
 // API URLs
@@ -39,7 +77,7 @@ const HARDCOVER_API_TOKEN = import.meta.env.VITE_HARDCOVER_API_TOKEN;
 // Utility function to merge missing fields from Hardcover API into Google Books details
 const mergeBookDetails = (
   bookDetails: BookDetails | null,
-  newBookDetails: BookDetails
+  newBookDetails: BookDetails,
 ): BookDetails => {
   if (!bookDetails) {
     return newBookDetails;
@@ -75,7 +113,7 @@ const mergeBookDetails = (
 
 // Function to fetch book details from Goodreads
 const fetchFromGoodreads = async (
-  isbn13: string
+  isbn13: string,
 ): Promise<BookDetails | null> => {
   const url = `${GOODREADS_URL}/${isbn13}`;
   logger.info(`Fetching Goodreads details for ISBN: ${isbn13}`);
@@ -92,7 +130,7 @@ const fetchFromGoodreads = async (
 
     // Extract the JSON data using regex
     const nextDataMatch = html.match(
-      /<script id="__NEXT_DATA__" type="application\/json">(.*?)<\/script>/s
+      /<script id="__NEXT_DATA__" type="application\/json">(.*?)<\/script>/s,
     );
     const scriptContent = nextDataMatch?.[1];
 
@@ -102,7 +140,8 @@ const fetchFromGoodreads = async (
     }
 
     const jsonData = JSON.parse(scriptContent);
-    const apolloState = jsonData.props?.pageProps?.apolloState;
+    const apolloState: GoodreadsApolloState =
+      jsonData.props?.pageProps?.apolloState;
 
     if (!apolloState) {
       logger.warn("No apolloState found in __NEXT_DATA__.");
@@ -111,17 +150,21 @@ const fetchFromGoodreads = async (
 
     // Rest of your existing data processing logic...
     const contributorsById: { [id: string]: string } = {};
-    Object.entries(apolloState).forEach(([key, value]: [string, any]) => {
-      if (key.startsWith("Contributor:") && value?.name) {
-        contributorsById[value.id] = value.name;
+    Object.entries(apolloState).forEach(([key, value]) => {
+      if (key.startsWith("Contributor:")) {
+        const contributor = value as GoodreadsContributorDetails;
+        if (contributor?.name) {
+          contributorsById[contributor.id] = contributor.name;
+        }
       }
     });
 
     logger.debug("Contributors by ID:", contributorsById);
 
     const bookEntry = Object.entries(apolloState).find(
-      ([key, value]: [string, any]) =>
-        key.startsWith("Book:") && value.details?.isbn13 === isbn13
+      ([key, value]) =>
+        key.startsWith("Book:") &&
+        (value as GoodreadsBookData)?.details?.isbn13 === isbn13,
     );
 
     if (!bookEntry) {
@@ -135,11 +178,11 @@ const fetchFromGoodreads = async (
     logger.debug("Book details:", bookDetails);
 
     const authors: string[] = [];
-    const addAuthor = (contributorEdge: any) => {
+    const addAuthor = (contributorEdge: GoodreadsContibutorEdge) => {
       if (contributorEdge?.role === "Author") {
         const contributorId = contributorEdge?.node?.__ref?.replace(
           "Contributor:",
-          ""
+          "",
         );
         const authorName = contributorsById[contributorId];
         if (authorName) authors.push(authorName);
@@ -147,14 +190,14 @@ const fetchFromGoodreads = async (
     };
 
     addAuthor(bookDetails.primaryContributorEdge);
-    bookDetails.secondaryContributorEdges.forEach((edge: any) =>
-      addAuthor(edge)
+    bookDetails.secondaryContributorEdges.forEach(
+      (edge: GoodreadsContibutorEdge) => addAuthor(edge),
     );
 
     const thumbnailUrl = bookDetails.imageUrl
       ? bookDetails.imageUrl.replace(
           "https://images-na.ssl-images-amazon.com",
-          "/goodreads-cover-proxy"
+          "/goodreads-cover-proxy",
         )
       : null;
 
@@ -177,7 +220,7 @@ const fetchFromGoodreads = async (
 
 // Fetch book details from Google Books API
 const fetchFromGoogleBooks = async (
-  isbn: string
+  isbn: string,
 ): Promise<BookDetails | null> => {
   const url = `${GOOGLE_API_URL}?q=isbn:${isbn}&key=${
     import.meta.env.VITE_GOOGLE_BOOKS_API_KEY
@@ -202,13 +245,13 @@ const fetchFromGoogleBooks = async (
     const selfLink = baseBookItem?.selfLink;
     const detailsUrl = selfLink.replace(
       "https://www.googleapis.com",
-      "/google-proxy"
+      "/google-proxy",
     );
 
     const detailsResponse = await fetch(detailsUrl);
     if (!detailsResponse.ok) {
       logger.warn(
-        `Failed to fetch details from URL. Status: ${detailsResponse.status}`
+        `Failed to fetch details from URL. Status: ${detailsResponse.status}`,
       );
       return null;
     }
@@ -224,7 +267,7 @@ const fetchFromGoogleBooks = async (
     const thumbnailUrl = bookDetails.imageLinks?.thumbnail
       ? bookDetails.imageLinks.thumbnail.replace(
           "http://books.google.com",
-          "/google-cover-proxy"
+          "/google-cover-proxy",
         )
       : null;
 
@@ -246,8 +289,8 @@ const fetchFromGoogleBooks = async (
 // Fetch book details from Hardcover API
 const fetchFromHardcover = async (
   query: string,
-  variables: object
-): Promise<any> => {
+  variables: object,
+): Promise<HardcoverResponseData | null> => {
   logger.info("Querying Hardcover API", { query, variables });
 
   try {
@@ -293,7 +336,7 @@ const fetchThumbnail = async (url: string): Promise<Blob | undefined> => {
 // Fetch book details from Hardcover API by ISBN or title
 const fetchBookFromHardcover = async (
   isbn?: string,
-  title?: string
+  title?: string,
 ): Promise<BookDetails | null> => {
   const hardcoverQueryByISBN = `
     query GetBookInfoFromISBN($isbn: String!) {
@@ -354,8 +397,8 @@ const fetchBookFromHardcover = async (
   const query = isbn
     ? hardcoverQueryByISBN
     : title
-    ? hardcoverQueryByTitle
-    : null;
+      ? hardcoverQueryByTitle
+      : null;
   const variables = isbn ? { isbn } : { title };
 
   if (!query || !variables) {
@@ -372,7 +415,7 @@ const fetchBookFromHardcover = async (
   const edition = data.editions[0];
   const authors = edition.contributions
     ? edition.contributions
-        .map((c: any) => c.author?.name)
+        .map((c: HardcoverContribution) => c.author?.name)
         .filter(Boolean)
         .join(", ")
     : "Unknown";
@@ -380,7 +423,7 @@ const fetchBookFromHardcover = async (
   const thumbnailUrl = edition.image?.url
     ? edition.image.url.replace(
         "https://assets.hardcover.app",
-        "/hardcover-cover-proxy"
+        "/hardcover-cover-proxy",
       )
     : null;
 
@@ -412,7 +455,7 @@ export const fetchBookDetails = async (isbn: string): Promise<BookDetails> => {
     !bookDetails.thumbnail
   ) {
     logger.info(
-      "Goodreads data missing or incomplete. Falling back to Google Books API."
+      "Goodreads data missing or incomplete. Falling back to Google Books API.",
     );
     const googleDetails = await fetchFromGoogleBooks(isbn);
 
@@ -434,7 +477,7 @@ export const fetchBookDetails = async (isbn: string): Promise<BookDetails> => {
     !bookDetails.thumbnail
   ) {
     logger.info(
-      "Google Books data missing or incomplete. Falling back to Hardcover API."
+      "Google Books data missing or incomplete. Falling back to Hardcover API.",
     );
     const hardcoverDetailsByISBN = await fetchBookFromHardcover(isbn);
 

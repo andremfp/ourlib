@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import CameraComponent from "@/components/Camera.vue";
 import { ref, computed } from "vue";
-import { fetchBookDetails } from "@/utils/fetchBook";
-import type { BookDetails } from "@/utils/fetchBook";
+import { fetchBookDetails } from "@/apis/fetchBook";
+import type { BookDetails } from "@/apis/fetchBook";
 import logger from "@/utils/logger";
 
 const showCamera = ref(false);

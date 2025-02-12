@@ -1,26 +1,29 @@
 {
   "compilerOptions": {
-    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
     "target": "ESNext",
-    "lib": ["dom", "esnext", "webworker"],
     "module": "ESNext",
-    "skipLibCheck": true,
-
     "moduleResolution": "node",
+    "paths": {
+      "@/*": ["./src/*"] // Add this
+    },
+    "lib": ["dom", "esnext", "webworker"],
     "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "moduleDetection": "force",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
     "noEmit": true,
-
-    /* Linting */
+    "types": ["node", "jest", "@types/jest"], // Add Node.js types
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true,
-
-    /* Add Node.js types */
-    "types": ["node"] // Add this line to enable Node.js types
+    "noUncheckedSideEffectImports": true
   },
-  "include": ["vite.config.ts"]
+  "include": [
+    "vite.config.ts",
+    "src/**/*.ts",
+    "src/**/*.vue",
+    "src/__tests__/**/*.ts"
+  ]
 }

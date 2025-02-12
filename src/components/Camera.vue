@@ -90,7 +90,7 @@ export default defineComponent({
       try {
         logger.info("Scanning for barcode...");
         const result = await barcodeReader.value.decodeFromVideoElement(
-          videoElement.value
+          videoElement.value,
         );
 
         if (result) {
@@ -112,7 +112,7 @@ export default defineComponent({
         if (
           error instanceof Error &&
           !error.message.includes(
-            "No MultiFormat Readers were able to detect"
+            "No MultiFormat Readers were able to detect",
           ) &&
           scanning // Only log if we're still meant to be scanning
         ) {
