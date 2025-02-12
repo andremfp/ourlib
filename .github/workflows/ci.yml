@@ -20,6 +20,9 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
+      - name: Install functions dependencies
+        run: cd functions && yarn install && cd ..
+
       - name: Run linter
         run: yarn lint
 
