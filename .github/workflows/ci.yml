@@ -17,11 +17,27 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Cache Root Dependencies
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node_modules-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-node_modules-
+
       - name: Install root dependencies
         run: yarn install
 
+      - name: Cache Functions Dependencies
+        uses: actions/cache@v4
+        with:
+          path: functions/node_modules
+          key: ${{ runner.os }}-functions-node_modules-${{ hashFiles('functions/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-functions-node_modules-
+
       - name: Install functions dependencies
-        run: cd functions && yarn install && cd ..
+        run: cd functions && yarn install
 
       - name: Run linter
         run: yarn lint
@@ -29,11 +45,13 @@ jobs:
       - name: Build the project
         run: yarn build
 
-      - name: Cache workspace
+      - name: Cache Functions Build Output
         uses: actions/cache@v4
         with:
-          path: .
-          key: ${{ runner.os }}-workspace-${{ github.sha }}
+          path: functions/lib
+          key: ${{ runner.os }}-functions-lib-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-functions-lib-
 
   test:
     runs-on: ubuntu-latest
@@ -41,11 +59,26 @@ jobs:
       FIREBASE_EMULATORS_PATH: ${{ github.workspace }}/emulator-cache
     needs: build
     steps:
-      - name: Restore workspace
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Restore Root Dependencies
         uses: actions/cache@v4
         with:
-          path: .
-          key: ${{ runner.os }}-workspace-${{ github.sha }}
+          path: node_modules
+          key: ${{ runner.os }}-node_modules-${{ hashFiles('yarn.lock') }}
+
+      - name: Restore Functions Dependencies
+        uses: actions/cache@v4
+        with:
+          path: functions/node_modules
+          key: ${{ runner.os }}-functions-node_modules-${{ hashFiles('functions/yarn.lock') }}
+
+      - name: Restore Functions Build Output
+        uses: actions/cache@v4
+        with:
+          path: functions/lib
+          key: ${{ runner.os }}-functions-lib-${{ github.sha }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -74,19 +107,38 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
     steps:
-      - name: Restore workspace
-        uses: actions/cache@v4
-        with:
-          path: .
-          key: ${{ runner.os }}-workspace-${{ github.sha }}
-
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Restore Root Dependencies
+        uses: actions/cache@v4
         with:
-          node-version: "22"
+          path: node_modules
+          key: ${{ runner.os }}-node_modules-${{ hashFiles('yarn.lock') }}
+
+      - name: Restore Functions Dependencies
+        uses: actions/cache@v4
+        with:
+          path: functions/node_modules
+          key: ${{ runner.os }}-functions-node_modules-${{ hashFiles('functions/yarn.lock') }}
+
+      - name: Restore Functions Build Output
+        uses: actions/cache@v4
+        with:
+          path: functions/lib
+          key: ${{ runner.os }}-functions-lib-${{ github.sha }}
+
+      - name: Install Root Dependencies (if not cached)
+        run: yarn install
+
+      - name: Install Functions Dependencies (if not cached)
+        run: cd functions && yarn install
+
+      - name: Build Functions (only if necessary)
+        run: |
+          if [ ! -d "functions/lib" ]; then
+            cd functions && yarn build
+          fi
 
       - name: Authenticate to Google Cloud
         uses: "google-github-actions/auth@v2"
