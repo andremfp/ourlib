@@ -14,7 +14,7 @@ class Logger {
       import.meta.env.NODE_ENV === "prod" ? LogLevel.INFO : LogLevel.DEBUG;
   }
 
-  private logMessage(level: LogLevel, message: string, ...args: any[]) {
+  private logMessage(level: LogLevel, message: string, ...args: unknown[]) {
     // Log only if the current log level allows the message
     const logLevels: LogLevel[] = Object.values(LogLevel);
     const currentIndex = logLevels.indexOf(this.logLevel);
@@ -41,19 +41,19 @@ class Logger {
     }
   }
 
-  public debug(message: string, ...args: any[]) {
+  public debug(message: string, ...args: unknown[]) {
     this.logMessage(LogLevel.DEBUG, message, ...args);
   }
 
-  public info(message: string, ...args: any[]) {
+  public info(message: string, ...args: unknown[]) {
     this.logMessage(LogLevel.INFO, message, ...args);
   }
 
-  public warn(message: string, ...args: any[]) {
+  public warn(message: string, ...args: unknown[]) {
     this.logMessage(LogLevel.WARN, message, ...args);
   }
 
-  public error(message: string, ...args: any[]) {
+  public error(message: string, ...args: unknown[]) {
     this.logMessage(LogLevel.ERROR, message, ...args);
   }
 }

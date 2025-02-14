@@ -19,7 +19,7 @@ const register = async () => {
     const userCredential = await createUserWithEmailAndPassword(
       auth,
       dummyEmail,
-      password.value
+      password.value,
     );
     const user = userCredential.user;
 

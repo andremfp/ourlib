@@ -46,7 +46,7 @@ const getCurrentUser = (): Promise<unknown> => {
         unsubscribe(); // Stop listening after first resolution
         resolve(user);
       },
-      reject
+      reject,
     );
   });
 };
