@@ -41,6 +41,16 @@ export default defineConfig({
       deleteOriginFile: false,
     }),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ["vue", "vue-router"],
+          firebase: ["firebase", "firebase-admin", "firebase-functions"],
+        },
+      },
+    },
+  },
   server: {
     proxy: {
       "/goodreads-proxy": {
