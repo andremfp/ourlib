@@ -10,6 +10,12 @@ export default {
         "footer-padding": "env(safe-area-inset-bottom)",
         "nav-padding": "env(safe-area-inset-bottom)",
       },
+      colors: {
+        "light-nav": "#7ea6ff",
+        "light-bg": "#f2f4f8",
+        "dark-nav": "#27272A",
+        "dark-bg": "#18181B",
+      },
     },
   },
   plugins: [],

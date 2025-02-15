@@ -4,14 +4,14 @@
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=0, viewport-fit=cover"
+      content="width=device-width, initial-scale=1.0, maximum-scale=5, viewport-fit=cover"
     />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <meta
       name="description"
       content="A Vue 3 PWA powered by Vite and TypeScript."
     />
-    <meta name="theme-color" content="bg-gray-100 dark:bg-zinc-900" />
+    <meta name="theme-color" content="bg-light-bg dark:bg-zinc-900" />
 
     <title>OurLib</title>
 
@@ -54,8 +54,21 @@
     <link rel="shortcut icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.json" />
+
+    <link
+      rel="preload"
+      as="image"
+      href="/assets/ourlib-logo.webp"
+      type="image/webp"
+    />
+    <link
+      rel="preload"
+      as="image"
+      href="/assets/ourlib-logo-dark.webp"
+      type="image/webp"
+    />
   </head>
-  <body class="bg-gray-100 dark:bg-zinc-900 overscroll-none h-screen">
+  <body class="bg-light-bg dark:bg-dark-nav overscroll-none h-screen">
     <div id="app"></div>
 
     <!-- Main Script -->

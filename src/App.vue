@@ -23,12 +23,18 @@ export default {
 </script>
 
 <template>
-  <div id="app" class="flex flex-col min-h-screen">
+  <div
+    id="app"
+    :class="[
+      'flex flex-col min-h-screen bg-light-bg',
+      $route.name != 'main' ? 'dark:bg-dark-nav' : 'dark:bg-dark-bg',
+    ]"
+  >
     <nav
       v-if="$route.name === 'main'"
-      class="flex flex-col bg-gray-100 dark:bg-zinc-800"
+      class="flex flex-col bg-light-nav dark:bg-dark-nav"
     >
-      <div class="w-full pb-nav-padding bg-gray-100 dark:bg-zinc-800"></div>
+      <div class="w-full pb-nav-padding bg-light-nav dark:bg-dark-nav"></div>
       <div class="w-full px-4 pb-3 pt-8 sm:pb-4 sm:pt-4">
         <div
           v-if="activeTab != 'Add Book' && activeTab != 'User'"
@@ -85,12 +91,12 @@ export default {
           </a>
         </div>
       </div>
-      <TabsComponent v-else class="w-full bg-white dark:bg-zinc-900" />
+      <TabsComponent v-else class="w-full bg-white dark:bg-dark-bg" />
       <div
         :class="[
           'w-full pb-footer-padding',
           $route.name != 'login' && $route.name != 'register'
-            ? 'bg-white dark:bg-zinc-900'
+            ? 'bg-white dark:bg-dark-bg'
             : '',
         ]"
       ></div>

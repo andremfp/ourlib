@@ -1,6 +1,5 @@
 <script lang="ts">
 import { defineComponent, ref, onMounted, onBeforeUnmount } from "vue";
-import { BrowserMultiFormatReader } from "@zxing/library";
 import logger from "@/utils/logger";
 
 interface CameraStatus {
@@ -35,7 +34,7 @@ export default defineComponent({
       message: "Initializing camera...",
     });
 
-    const barcodeReader = ref<BrowserMultiFormatReader | null>(null);
+    const barcodeReader = ref<any | null>(null); // Temporarily set to `any`
     let scanning = false;
     let lastScannedCode: string | null = null;
     let lastScannedTime = 0;
@@ -126,10 +125,14 @@ export default defineComponent({
       }
     };
 
-    const initializeBarcodeScanner = () => {
+    const initializeBarcodeScanner = async () => {
       if (!videoElement.value) return;
 
       try {
+        // Dynamically import the BrowserMultiFormatReader
+        const { BrowserMultiFormatReader } = await import("@zxing/library");
+
+        // Assign the imported class to the barcodeReader ref
         barcodeReader.value = new BrowserMultiFormatReader();
         scanning = true;
         startScanning();
@@ -226,7 +229,7 @@ export default defineComponent({
 
 <template>
   <div
-    class="flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-900 space-y-6"
+    class="flex flex-col items-center justify-center bg-light-bg dark:bg-dark-bg space-y-6"
   >
     <div class="mb-4">
       <p :class="`text-lg ${status.error ? 'text-red-500' : 'text-green-500'}`">
