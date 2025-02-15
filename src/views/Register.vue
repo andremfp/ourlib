@@ -55,7 +55,7 @@ const register = async () => {
 
 <template>
   <div
-    class="w-screen bg-gray-100 dark:bg-zinc-800 flex items-center justify-center"
+    class="w-screen bg-light-bg dark:bg-dark-bg flex items-center justify-center"
   >
     <!-- Login Form Section -->
     <div class="w-full max-w-md px-6 py-10">

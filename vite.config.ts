@@ -15,7 +15,7 @@ export default defineConfig({
         runtimeCaching: [
           {
             urlPattern: ({ url }) => url.origin === self.location.origin,
-            handler: "CacheFirst",
+            handler: "NetworkFirst",
             options: {
               cacheName: "assets",
               expiration: {
@@ -42,6 +42,9 @@ export default defineConfig({
     }),
   ],
   build: {
+    target: "esnext",
+    modulePreload: true,
+    minify: "esbuild",
     rollupOptions: {
       output: {
         manualChunks: {

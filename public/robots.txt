@@ -1,0 +1,11 @@
+User-agent: *
+Disallow: /api/
+Disallow: /functions/
+Disallow: /coverage/
+Disallow: /dist/
+Disallow: /src/
+Disallow: /tests/
+Disallow: /node_modules/
+
+# Allow crawling of all other public content
+Allow: /

@@ -23,7 +23,7 @@ export default {
 
 <template>
   <div class="h-screen flex items-center justify-center">
-    <section class="bg-white dark:bg-gray-900">
+    <section class="bg-light-bg dark:bg-dark-bg">
       <div class="container flex items-center min-h-screen px-6 py-12 mx-auto">
         <div>
           <p class="text-sm font-medium text-blue-500 dark:text-blue-400">

@@ -50,12 +50,26 @@ const login = async () => {
 
 <template>
   <div
-    class="w-screen bg-gray-100 dark:bg-zinc-900 flex items-center justify-center"
+    class="w-screen bg-light-bg dark:bg-dark-nav flex items-center justify-center"
   >
     <!-- Login Form Section -->
     <div class="w-full max-w-md px-6 py-10">
       <div class="text-center">
-        <img class="w-auto h-28 m:h-24 mx-auto" src="/favicon.svg" alt="Logo" />
+        <img
+          class="mx-auto scale-90 dark:hidden"
+          src="@/assets/ourlib-logo.webp"
+          alt="Logo"
+          width="500"
+          height="150"
+        />
+        <img
+          class="mx-auto scale-90 height-150px width-500px hidden dark:block"
+          src="@/assets/ourlib-logo-dark.webp"
+          alt="Logo Dark"
+          width="500"
+          height="150"
+        />
+
         <h1 class="text-2xl font-bold mt-4 text-gray-800 dark:text-gray-100">
           Sign in
         </h1>
@@ -115,7 +129,11 @@ const login = async () => {
 
       <p class="mt-4 text-center text-gray-600 dark:text-zinc-300 text-sm">
         Don't have an account?
-        <router-link to="/register" class="text-blue-500 hover:underline">
+        <router-link
+          to="/register"
+          class="text-blue-500 underline"
+          aria-label="Go to registration page"
+        >
           Sign up
         </router-link>
       </p>
