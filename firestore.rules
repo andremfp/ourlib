@@ -6,7 +6,7 @@ service cloud.firestore {
     // Rules for the 'Users' collection
     match /users/{userId} {
       allow create: if true;
-      allow read, update: if request.auth != null && request.auth.uid == userId;
+      allow read, update, delete: if request.auth != null && request.auth.uid == userId;
     }
 
     // Rules for the 'Books' collection

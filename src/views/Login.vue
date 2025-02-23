@@ -50,7 +50,7 @@ const login = async () => {
 
 <template>
   <div
-    class="w-screen bg-light-bg dark:bg-dark-nav flex items-center justify-center"
+    class="flex items-center justify-center min-h-full bg-light-bg dark:bg-dark-nav"
   >
     <!-- Login Form Section -->
     <div class="w-full max-w-md px-6 py-10">

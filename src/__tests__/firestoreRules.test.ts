@@ -84,7 +84,7 @@ describe("Firebase Tests", () => {
     });
 
     describe("Users Collection", () => {
-      it("should allow anyone to create a user document", async () => {
+      it("should allow anyone to create a user document, but do nothing else", async () => {
         const userRef = doc(unauthedFirestore, "users", "user1");
         await assertSucceeds(
           setDoc(userRef, {
@@ -95,6 +95,10 @@ describe("Firebase Tests", () => {
             friends: [],
           }),
         );
+
+        await assertFails(getDoc(userRef));
+        await assertFails(updateDoc(userRef, { username: "newName" }));
+        await assertFails(deleteDoc(userRef));
       });
 
       it("should allow authenticated users to read/update their own document", async () => {
@@ -115,6 +119,24 @@ describe("Firebase Tests", () => {
         const userRef = doc(authedUser2Firestore, "users", "user1");
         await assertFails(getDoc(userRef));
         await assertFails(updateDoc(userRef, { username: "newName" }));
+      });
+
+      it("should allow authenticated user to delete their own user", async () => {
+        const userRef = doc(authedUser1Firestore, "users", "user1");
+        await setDoc(userRef, {
+          id: "user1",
+          username: "user1",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          friends: [],
+        });
+
+        await assertSucceeds(deleteDoc(userRef));
+      });
+
+      it("should deny users from deleting another user's document", async () => {
+        const userRef = doc(authedUser2Firestore, "users", "user1");
+        await assertFails(deleteDoc(userRef));
       });
     });
 

@@ -125,4 +125,9 @@ export default defineConfig({
       "@": resolve(__dirname, "./src"), // Define `@` as an alias for `src`
     },
   },
+  test: {
+    globals: true,
+    environment: "jsdom",
+    include: ["src/__tests__/components/**/*.test.ts"],
+  },
 });
