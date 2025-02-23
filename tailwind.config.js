@@ -12,8 +12,10 @@ export default {
       },
       colors: {
         "light-nav": "#7ea6ff",
+        "light-nav-text": "#1F2937",
         "light-bg": "#f2f4f8",
         "dark-nav": "#27272A",
+        "dark-nav-text": "#9CA3AF",
         "dark-bg": "#18181B",
       },
     },

@@ -65,7 +65,11 @@ export default {
           />
         </div>
         <div v-else class="relative">
-          <p class="text-gray-400 text-md text-center">{{ activeTab }}</p>
+          <p
+            class="text-light-nav-text dark:text-dark-nav-text font-semibold text-center"
+          >
+            {{ activeTab }}
+          </p>
         </div>
       </div>
     </nav>
