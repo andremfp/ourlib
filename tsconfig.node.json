@@ -13,7 +13,7 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "types": ["node", "jest", "@types/jest"], // Add Node.js types
+    "types": ["node", "jest", "@types/jest", "vitest/globals"], // Add Node.js types
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,

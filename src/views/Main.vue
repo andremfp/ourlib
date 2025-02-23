@@ -2,7 +2,7 @@
 import { computed } from "vue";
 import { useTabStore } from "@/stores/tabStore";
 import AddBook from "@/components/AddBook.vue";
-import User from "@/components/User.vue";
+import Profile from "@/components/Profile.vue";
 
 export default {
   setup() {
@@ -18,8 +18,8 @@ export default {
           return AddBook;
         // case "Search":
         //   return Search;
-        case "User":
-          return User;
+        case "Profile":
+          return Profile;
         default:
           return null;
       }

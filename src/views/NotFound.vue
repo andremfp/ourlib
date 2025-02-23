@@ -22,7 +22,7 @@ export default {
 </script>
 
 <template>
-  <div class="h-screen flex items-center justify-center">
+  <div class="flex items-center justify-center min-h-full">
     <section class="bg-light-bg dark:bg-dark-bg">
       <div class="container flex items-center min-h-screen px-6 py-12 mx-auto">
         <div>

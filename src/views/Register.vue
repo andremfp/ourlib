@@ -8,11 +8,18 @@ import logger from "@/utils/logger";
 
 const username = ref("");
 const password = ref("");
+const confirmPassword = ref("");
 const errorMessage = ref("");
 const router = useRouter();
 
 const register = async () => {
   errorMessage.value = "";
+
+  // Check if passwords match
+  if (password.value !== confirmPassword.value) {
+    errorMessage.value = "Passwords do not match.";
+    return;
+  }
 
   try {
     const dummyEmail = username.value + "@dummy.com";
@@ -55,7 +62,7 @@ const register = async () => {
 
 <template>
   <div
-    class="w-screen bg-light-bg dark:bg-dark-bg flex items-center justify-center"
+    class="flex items-center justify-center min-h-full bg-light-bg dark:bg-dark-nav"
   >
     <!-- Login Form Section -->
     <div class="w-full max-w-md px-6 py-10">
@@ -105,17 +112,45 @@ const register = async () => {
           />
         </div>
 
+        <div>
+          <label
+            for="confirmPassword"
+            class="block font-bold text-gray-700 dark:text-gray-100"
+          >
+            Repeat Password
+          </label>
+          <input
+            v-model="confirmPassword"
+            id="confirmPassword"
+            type="password"
+            class="block w-full px-4 py-2 mt-2 bg-white dark:bg-zinc-700 dark:placeholder:text-zinc-300 border border-gray-200 dark:border-zinc-600 rounded-lg focus:outline-none focus:ring-gray-500 dark:focus:ring-zinc-500 focus:ring-2 text-gray-800 dark:text-gray-100"
+            placeholder="Repeat your password"
+            autocomplete="new-password"
+            required
+          />
+        </div>
+
         <div v-if="errorMessage" class="text-red-500 text-sm mt-2">
           {{ errorMessage }}
         </div>
 
         <button
           type="submit"
-          class="w-full py-2 px-4 bg-blue-500 text-white rounded-lg"
+          class="w-full py-2 px-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
         >
           Create Account
         </button>
       </form>
+      <p class="mt-4 text-center text-gray-600 dark:text-zinc-300 text-sm">
+        Already have an account?
+        <router-link
+          to="/"
+          class="text-blue-500 underline"
+          aria-label="Go to login page"
+        >
+          Sign in
+        </router-link>
+      </p>
     </div>
   </div>
 </template>

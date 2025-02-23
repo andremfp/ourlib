@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex border-t border-gray-200 dark:border-zinc-700 whitespace-nowrap"
+    class="flex border-t border-gray-200 dark:border-zinc-700 bg-white dark:bg-dark-bg whitespace-nowrap"
   >
     <button
       v-for="tab in tabs"
@@ -123,8 +123,8 @@ export default {
         ],
       },
       {
-        name: "User",
-        label: "User",
+        name: "Profile",
+        label: "Profile",
         outlineSvg: {
           fill: "none",
           "stroke-width": "1",
