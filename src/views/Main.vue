@@ -1,37 +1,29 @@
-<script lang="ts">
+<script setup lang="ts">
 import { computed } from "vue";
 import { useTabStore } from "@/stores/tabStore";
 import AddBook from "@/components/AddBook.vue";
 import Profile from "@/components/Profile.vue";
 import MyLibraries from "@/components/MyLibraries.vue";
 
-export default {
-  setup() {
-    const { activeTab } = useTabStore();
+const tabStore = useTabStore();
+const activeTab = computed(() => tabStore.activeTab);
 
-    const renderComponent = computed(() => {
-      switch (activeTab.value) {
-        // case "Home":
-        //   return Home;
-        case "My Libraries":
-          return MyLibraries;
-        case "Add Book":
-          return AddBook;
-        // case "Search":
-        //   return Search;
-        case "Profile":
-          return Profile;
-        default:
-          return null;
-      }
-    });
-
-    return {
-      renderComponent,
-      activeTab,
-    };
-  },
-};
+const renderComponent = computed(() => {
+  switch (activeTab.value) {
+    // case "Home":
+    //   return Home;
+    case "My Libraries":
+      return MyLibraries;
+    case "Add Book":
+      return AddBook;
+    // case "Search":
+    //   return Search;
+    case "Profile":
+      return Profile;
+    default:
+      return null;
+  }
+});
 </script>
 
 <template>

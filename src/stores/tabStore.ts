@@ -1,21 +1,22 @@
-import { ref, readonly } from "vue";
+import { defineStore } from "pinia";
+import { ref } from "vue";
 
-const state = ref<string>(sessionStorage.getItem("tab") || "Home");
+export const useTabStore = defineStore("tab", () => {
+  const activeTab = ref(sessionStorage.getItem("tab") || "Home");
 
-export const useTabStore = () => {
-  const setActiveTab = (tab: string) => {
-    state.value = tab;
+  function setActiveTab(tab: string) {
+    activeTab.value = tab;
     sessionStorage.setItem("tab", tab);
-  };
+  }
 
-  const resetActiveTab = () => {
-    state.value = "Home";
+  function resetActiveTab() {
+    activeTab.value = "Home";
     sessionStorage.removeItem("tab");
-  };
+  }
 
   return {
-    activeTab: readonly(state),
+    activeTab,
     setActiveTab,
     resetActiveTab,
   };
-};
+});

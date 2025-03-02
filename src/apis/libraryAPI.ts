@@ -28,10 +28,11 @@ export const getLibrary = async (
 };
 
 export const getUserLibraries = async (owner: string): Promise<Library[]> => {
+  console.log("Getting libraries for owner:", owner);
   const querySnapshot = await getDocs(
     query(
       collection(firestore, librariesCollection),
-      where("owner", "==", owner),
+      where("ownerId", "==", owner),
     ),
   );
   return querySnapshot.docs.map(

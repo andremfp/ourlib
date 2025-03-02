@@ -1,47 +1,11 @@
 <script lang="ts">
 import TabsComponent from "@/components/Tabs.vue";
 import NavbarComponent from "@/components/Navbar.vue";
-import AddLibraryComponent from "@/components/AddLibrary.vue";
-import { useTabStore } from "@/stores/tabStore";
-import { ref } from "vue";
 
 export default {
   components: {
     TabsComponent,
     NavbarComponent,
-    AddLibraryComponent,
-  },
-  setup() {
-    let activeTab;
-    try {
-      const tabStore = useTabStore();
-      activeTab = tabStore.activeTab;
-    } catch {
-      activeTab = "Home";
-    }
-
-    const isAddLibraryModalOpen = ref(false);
-
-    const openAddLibraryModal = () => {
-      isAddLibraryModalOpen.value = true;
-    };
-
-    const closeAddLibraryModal = () => {
-      isAddLibraryModalOpen.value = false;
-    };
-
-    const handleLibraryCreated = () => {
-      // You can add additional logic here if needed
-      // For example, refreshing the libraries list
-    };
-
-    return {
-      activeTab,
-      isAddLibraryModalOpen,
-      openAddLibraryModal,
-      closeAddLibraryModal,
-      handleLibraryCreated,
-    };
   },
 };
 </script>
@@ -52,7 +16,7 @@ export default {
     class="grid grid-rows-[auto_1fr_auto] min-h-screen bg-light-bg dark:bg-dark-bg"
   >
     <!-- Navbar Component -->
-    <NavbarComponent @openAddLibraryModal="openAddLibraryModal" />
+    <NavbarComponent />
 
     <!-- Main Content (Scrollable) -->
     <main class="overflow-auto">
@@ -103,12 +67,5 @@ export default {
         ]"
       ></div>
     </footer>
-
-    <!-- Add Library Modal -->
-    <AddLibraryComponent
-      :isOpen="isAddLibraryModalOpen"
-      @close="closeAddLibraryModal"
-      @libraryCreated="handleLibraryCreated"
-    />
   </div>
 </template>

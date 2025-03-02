@@ -1,13 +1,20 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { useTabStore } from "@/stores/tabStore";
+import { useSearchStore } from "@/stores/searchStore";
 import { useRoute } from "vue-router";
 
 const route = useRoute();
 const tabStore = useTabStore();
+const searchStore = useSearchStore();
 const activeTab = computed(() => tabStore.activeTab);
 
 const searchQuery = ref("");
+
+// Watch for changes in the search query and update the store
+watch(searchQuery, (newQuery) => {
+  searchStore.setSearchQuery(newQuery);
+});
 
 // Computed property to determine if the navbar should be hidden
 const isNavbarHidden = computed(() => {
@@ -28,12 +35,8 @@ const searchPlaceholder = computed(() => {
 
 // Function to open the Add Library modal
 const openAddLibraryModal = () => {
-  // This will be implemented to open the modal
-  // You can emit an event that will be handled by the parent component
-  emit("openAddLibraryModal");
+  window.dispatchEvent(new Event("openAddLibraryModal"));
 };
-
-const emit = defineEmits(["openAddLibraryModal"]);
 </script>
 
 <template>
@@ -75,18 +78,11 @@ const emit = defineEmits(["openAddLibraryModal"]);
       </div>
 
       <!-- My Libraries specific view -->
-      <div v-else-if="activeTab === 'My Libraries'" class="space-y-3">
-        <div class="flex justify-between items-center">
-          <div class="w-8"></div>
-          <!-- Empty space for balance -->
-          <p
-            class="text-light-nav-text dark:text-dark-nav-text font-semibold text-center"
-          >
-            {{ activeTab }}
-          </p>
+      <div v-else-if="activeTab === 'My Libraries'" class="space-y-2">
+        <div class="relative flex justify-center items-center h-8">
           <button
             @click="openAddLibraryModal"
-            class="w-8 h-8 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded-full"
+            class="absolute left-0 w-8 h-8 flex items-center justify-center text-light-nav-text dark:text-dark-nav-text hover:bg-gray-100 dark:hover:bg-zinc-700 rounded-full"
             aria-label="Add Library"
           >
             <svg
@@ -104,6 +100,9 @@ const emit = defineEmits(["openAddLibraryModal"]);
               />
             </svg>
           </button>
+          <p class="text-nav text-light-nav-text dark:text-dark-nav-text">
+            {{ activeTab }}
+          </p>
         </div>
 
         <!-- Search bar for My Libraries -->
@@ -131,7 +130,7 @@ const emit = defineEmits(["openAddLibraryModal"]);
       <!-- Simple title for Add Book and Profile tabs -->
       <div v-else class="relative">
         <p
-          class="text-light-nav-text dark:text-dark-nav-text font-semibold text-center"
+          class="text-nav text-light-nav-text dark:text-dark-nav-text text-center"
         >
           {{ activeTab }}
         </p>

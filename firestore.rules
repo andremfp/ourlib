@@ -39,24 +39,24 @@ service cloud.firestore {
 
       // Allow reading the library if the user is authenticated and either the owner, a subscriber, or a friend of the owner
       allow read: if request.auth != null && (
-        resource.data.owner == request.auth.uid || 
+        resource.data.ownerId == request.auth.uid || 
         resource.data.subscribers.hasAny([request.auth.uid]) || 
-        exists(/databases/$(database)/documents/users/$(resource.data.owner)) && 
-        get(/databases/$(database)/documents/users/$(resource.data.owner)).data.friends.hasAny([request.auth.uid])
+        exists(/databases/$(database)/documents/users/$(resource.data.ownerId)) && 
+        get(/databases/$(database)/documents/users/$(resource.data.ownerId)).data.friends.hasAny([request.auth.uid])
       );
 
       // Allow updating the library only if the user is the owner of the library
-      allow update: if request.auth != null && resource.data.owner == request.auth.uid;
+      allow update: if request.auth != null && resource.data.ownerId == request.auth.uid;
 
       // Allow subscribers or friends of the owner to update the 'subscribers' field only
       allow update: if request.auth != null && (
           resource.data.subscribers.hasAny([request.auth.uid]) || 
-          exists(/databases/$(database)/documents/users/$(resource.data.owner)) && 
-          get(/databases/$(database)/documents/users/$(resource.data.owner)).data.friends.hasAny([request.auth.uid])
+          exists(/databases/$(database)/documents/users/$(resource.data.ownerId)) && 
+          get(/databases/$(database)/documents/users/$(resource.data.ownerId)).data.friends.hasAny([request.auth.uid])
       ) &&  request.resource.data.diff(resource.data).changedKeys().hasOnly(['subscribers']);
 
       // Allow deleting a library only if the user is the owner of the library
-      allow delete: if request.auth != null && resource.data.owner == request.auth.uid;
+      allow delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
     }
 
     // Rules for the 'Updates' collection

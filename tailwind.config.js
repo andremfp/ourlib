@@ -5,6 +5,7 @@ export default {
     extend: {
       fontSize: {
         xxs: "0.65rem",
+        nav: "1.1rem",
       },
       spacing: {
         "footer-padding": "env(safe-area-inset-bottom)",
@@ -17,6 +18,10 @@ export default {
         "dark-nav": "#27272A",
         "dark-nav-text": "#9CA3AF",
         "dark-bg": "#18181B",
+        "light-primary-text": "#1F2937",
+        "light-secondary-text": "#6B7280",
+        "dark-primary-text": "#E5E7EB",
+        "dark-secondary-text": "#9CA3AF",
       },
     },
   },
