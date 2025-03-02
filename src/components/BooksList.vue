@@ -3,7 +3,6 @@ import { ref, onMounted } from "vue";
 import { getLibraryBooks } from "@/apis/bookAPI";
 import { getLibrary } from "@/apis/libraryAPI";
 import type { Book } from "@/apis/types";
-import { getAuth } from "firebase/auth";
 
 const props = defineProps<{
   libraryId: string;

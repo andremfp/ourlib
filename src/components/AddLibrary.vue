@@ -2,7 +2,7 @@
 import { ref, computed } from "vue";
 import { getAuth } from "firebase/auth";
 import { createLibrary } from "@/apis/libraryAPI";
-
+import type { Library } from "@/apis/types";
 const props = defineProps<{
   isOpen: boolean;
 }>();
@@ -39,7 +39,7 @@ const handleSubmit = async () => {
       name: libraryName.value.trim(),
       ownerId: userId,
       booksCount: 0,
-    });
+    } as Library);
 
     // Reset form and emit success event
     libraryName.value = "";
