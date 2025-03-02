@@ -10,6 +10,7 @@ export type Library = {
   id: string;
   name: string;
   owner: string; // User ID
+  booksCount: number;
   createdAt: string;
   updatedAt: string;
   subscribers: string[]; // User IDs

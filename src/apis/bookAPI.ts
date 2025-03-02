@@ -6,10 +6,13 @@ import {
   getDoc,
   updateDoc,
   deleteDoc,
+  getDocs,
+  query,
+  where,
 } from "firebase/firestore";
 import type { Book } from "./types";
 
-const booksCollection = "Books";
+const booksCollection = "books";
 
 export const createBook = async (book: Book) => {
   const bookDoc = doc(collection(firestore, booksCollection));
@@ -19,6 +22,18 @@ export const createBook = async (book: Book) => {
 export const getBook = async (bookId: string): Promise<Book | null> => {
   const docSnap = await getDoc(doc(firestore, booksCollection, bookId));
   return docSnap.exists() ? (docSnap.data() as Book) : null;
+};
+
+export const getLibraryBooks = async (libraryId: string): Promise<Book[]> => {
+  const querySnapshot = await getDocs(
+    query(
+      collection(firestore, booksCollection),
+      where("library", "==", libraryId),
+    ),
+  );
+  return querySnapshot.docs.map(
+    (doc) => ({ id: doc.id, ...doc.data() }) as Book,
+  );
 };
 
 export const lendBook = async (bookId: string, userId: string) => {

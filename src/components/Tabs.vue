@@ -78,8 +78,8 @@ export default {
         ],
       },
       {
-        name: "My Library",
-        label: "My Library",
+        name: "My Libraries",
+        label: "My Libraries",
         outlineSvg: {
           fill: "none",
           "stroke-width": "1",

@@ -3,6 +3,7 @@ import { computed } from "vue";
 import { useTabStore } from "@/stores/tabStore";
 import AddBook from "@/components/AddBook.vue";
 import Profile from "@/components/Profile.vue";
+import MyLibraries from "@/components/MyLibraries.vue";
 
 export default {
   setup() {
@@ -12,8 +13,8 @@ export default {
       switch (activeTab.value) {
         // case "Home":
         //   return Home;
-        // case "My Library":
-        //   return MyLibrary;
+        case "My Libraries":
+          return MyLibraries;
         case "Add Book":
           return AddBook;
         // case "Search":
