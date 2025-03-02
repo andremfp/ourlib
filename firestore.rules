@@ -14,21 +14,21 @@ service cloud.firestore {
       // Only allow creating a book if the user is authenticated and the library is owned by the user
       allow create: if request.auth != null &&
               exists(/databases/$(database)/documents/libraries/$(request.resource.data.library)) &&
-              get(/databases/$(database)/documents/libraries/$(request.resource.data.library)).data.owner == request.auth.uid;
+              get(/databases/$(database)/documents/libraries/$(request.resource.data.library)).data.ownerId == request.auth.uid;
 
       // Only allow reading a book if the user is authenticated and the library is owned by them or they are a subscriber
       allow read: if request.auth != null &&
-                  (get(/databases/$(database)/documents/libraries/$(resource.data.library)).data.owner == request.auth.uid ||
+                  (get(/databases/$(database)/documents/libraries/$(resource.data.library)).data.ownerId == request.auth.uid ||
                    get(/databases/$(database)/documents/libraries/$(resource.data.library)).data.subscribers.hasAny([request.auth.uid]));
 
       // Allow updating the book if the user is authenticated and either the owner of the library or the book is lent to them (borrower need to be subscriber of library)
       allow update: if request.auth != null &&
-                    (get(/databases/$(database)/documents/libraries/$(resource.data.library)).data.owner == request.auth.uid ||
+                    (get(/databases/$(database)/documents/libraries/$(resource.data.library)).data.ownerId == request.auth.uid ||
                      (resource.data.lentTo == request.auth.uid && request.resource.data.diff(resource.data).changedKeys().hasOnly(['lentTo', 'lentAt']) && get(/databases/$(database)/documents/libraries/$(resource.data.library)).data.subscribers.hasAny([request.auth.uid])));
 
       // Allow deleting the book if the user is authenticated, the book is not lent out, and they are the library owner
       allow delete: if request.auth != null &&
-                    get(/databases/$(database)/documents/libraries/$(resource.data.library)).data.owner == request.auth.uid &&
+                    get(/databases/$(database)/documents/libraries/$(resource.data.library)).data.ownerId == request.auth.uid &&
                     resource.data.lentTo == null;
     }
 
