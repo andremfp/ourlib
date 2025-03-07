@@ -2,11 +2,31 @@
 import { computed } from "vue";
 import { useTabStore } from "@/stores/tabStore";
 
+type SVGRect = {
+  "stroke-linejoin": "round" | "miter" | "bevel" | "inherit";
+  width: string;
+  height: string;
+  x: string;
+  y: string;
+  rx: string;
+  ry: string;
+};
+
+type Tab = {
+  name: string;
+  label: string;
+  outlineSvg: Record<string, string>;
+  outlineRects?: SVGRect[];
+  outlinePaths: Record<string, string>[];
+  filledSvg: Record<string, string>;
+  filledPaths: Record<string, string>[];
+};
+
 const tabStore = useTabStore();
 const activeTab = computed(() => tabStore.activeTab);
 const setActiveTab = tabStore.setActiveTab;
 
-const tabs = [
+const tabs: Tab[] = [
   {
     name: "Home",
     label: "Home",
@@ -14,7 +34,7 @@ const tabs = [
       fill: "none",
       "stroke-width": "1",
     },
-    outlineIcon: [
+    outlinePaths: [
       {
         "stroke-linecap": "round",
         "stroke-linejoin": "round",
@@ -22,7 +42,7 @@ const tabs = [
       },
     ],
     filledSvg: {},
-    filledIcon: [
+    filledPaths: [
       {
         d: "M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z",
       },
@@ -38,15 +58,50 @@ const tabs = [
       fill: "none",
       "stroke-width": "1",
     },
-    outlineIcon: [
+    outlineRects: [
       {
-        d: "M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25",
+        "stroke-linejoin": "round",
+        width: "3",
+        height: "17",
+        x: "1.5",
+        y: "4.5",
+        rx: "1",
+        ry: "1",
+      },
+      {
+        "stroke-linejoin": "round",
+        width: "6",
+        height: "14",
+        x: "5.2",
+        y: "7.5",
+        rx: "1",
+        ry: "1",
+      },
+      {
+        "stroke-linejoin": "round",
+        width: "4.5",
+        height: "19.5",
+        x: "12",
+        y: "2.2",
+        rx: "1",
+        ry: "1",
+      },
+    ],
+    outlinePaths: [
+      {
+        "stroke-linecap": "round",
+        "stroke-linejoin": "round",
+        d: "M5.2 10.5h6M5.2 18.7h6",
+      },
+      {
+        "stroke-linejoin": "round",
+        d: "M19.8 4.5l-1.9 0.2c-0.5 0.05-0.9 0.54-0.84 1.08l1.63 15c0.06 0.54 0.53 0.94 1.05 0.88l1.9-0.2c0.52-0.05 0.9-0.54 0.84-1.08l-1.63-15c-0.06-0.54-0.53-0.94-1.05-0.88z",
       },
     ],
     filledSvg: {},
-    filledIcon: [
+    filledPaths: [
       {
-        d: "M11.25 4.533A9.707 9.707 0 0 0 6 3a9.735 9.735 0 0 0-3.25.555.75.75 0 0 0-.5.707v14.25a.75.75 0 0 0 1 .707A8.237 8.237 0 0 1 6 18.75c1.995 0 3.823.707 5.25 1.886V4.533ZM12.75 20.636A8.214 8.214 0 0 1 18 18.75c.966 0 1.89.166 2.75.47a.75.75 0 0 0 1-.708V4.262a.75.75 0 0 0-.5-.707A9.735 9.735 0 0 0 18 3a9.707 9.707 0 0 0-5.25 1.533v16.103Z",
+        d: "M4 22.5H1.5c-.3 0-.5-.2-.5-.5V4.5c0-.3.2-.5.5-.5H4c.3 0 .5.2.5.5v17.5c0 .3-.2.5-.5.5M11.5 9.5V7c0-.3-.2-.5-.5-.5H6c-.3 0-.5.2-.5.5v2.5ZM5.5 19.5V22c0 .3.2.5.5.5h5c.3 0 .5-.2.5-.5v-2.5Zm0-8h6v6.5h-6zm10.5 11h-3.5c-.3 0-.5-.2-.5-.5V2.5c0-.3.2-.5.5-.5H16c.3 0 .5.2.5.5v19.5c0 .3-.2.5-.5.5m1.5-17.5l1.5 17c0 .3.3.5.6.5l3.4-.5c.3 0 .5-.3.5-.6l-1.5-17c0-.3-.3-.5-.6-.5l-3.4.4c-.2 0-.5.3-.5.7",
       },
     ],
   },
@@ -54,15 +109,15 @@ const tabs = [
     name: "Add Book",
     label: "Add Book",
     outlineSvg: {},
-    outlineIcon: [{ d: "M12 4.5v15m7.5-7.5h-15" }],
+    outlinePaths: [{ d: "M12 4.5v15m7.5-7.5h-15" }],
     filledSvg: { "stroke-width": "2" },
-    filledIcon: [{ d: "M12 4.5v15m7.5-7.5h-15" }],
+    filledPaths: [{ d: "M12 4.5v15m7.5-7.5h-15" }],
   },
   {
     name: "Search",
     label: "Search",
     outlineSvg: {},
-    outlineIcon: [
+    outlinePaths: [
       {
         d: "M10.5 3.75a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5ZM2.25 10.5a8.25 8.25 0 1 1 14.59 5.28l4.69 4.69a.75.75 0 1 1-1.06 1.06l-4.69-4.69A8.25 8.25 0 0 1 2.25 10.5Z",
       },
@@ -70,7 +125,7 @@ const tabs = [
     filledSvg: {
       "stroke-width": "0.5",
     },
-    filledIcon: [
+    filledPaths: [
       {
         d: "M10.5 3.75a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5ZM2.25 10.5a8.25 8.25 0 1 1 14.59 5.28l4.69 4.69a.75.75 0 1 1-1.06 1.06l-4.69-4.69A8.25 8.25 0 0 1 2.25 10.5Z",
       },
@@ -83,13 +138,13 @@ const tabs = [
       fill: "none",
       "stroke-width": "1",
     },
-    outlineIcon: [
+    outlinePaths: [
       {
         d: "M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z",
       },
     ],
     filledSvg: {},
-    filledIcon: [
+    filledPaths: [
       {
         d: "M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z",
       },
@@ -132,11 +187,20 @@ const tabs = [
         ]"
         :viewBox="'0 0 24 24'"
       >
+        <!-- Render rect elements if they exist -->
+        <rect
+          v-for="(rect, index) in activeTab !== tab.name
+            ? tab.outlineRects
+            : []"
+          :key="`rect-${index}`"
+          v-bind="rect"
+        />
+        <!-- Render path elements -->
         <path
           v-for="(path, index) in activeTab === tab.name
-            ? tab.filledIcon
-            : tab.outlineIcon"
-          :key="index"
+            ? tab.filledPaths
+            : tab.outlinePaths"
+          :key="`path-${index}`"
           v-bind="path"
         />
       </svg>

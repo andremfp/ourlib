@@ -58,10 +58,15 @@ const handleLibraryCreated = async () => {
   }
 };
 
-// Register a custom event to listen for the openAddLibraryModal event from Navbar
+// Register custom events
 const customEventBus = () => {
+  // Open Add Library Modal
   window.addEventListener("openAddLibraryModal", () => {
     openAddLibraryModal();
+  });
+  // Back to Libraries
+  window.addEventListener("backToLibraries", () => {
+    selectedLibrary.value = null;
   });
 };
 
@@ -100,11 +105,17 @@ watch(
 // Select a library to view its books
 const selectLibrary = (library: Library) => {
   selectedLibrary.value = library;
+  // Dispatch event to update navbar with library name
+  window.dispatchEvent(
+    new CustomEvent("libraryNameUpdate", {
+      detail: library.name,
+    }),
+  );
 };
 </script>
 
 <template>
-  <div class="mx-auto p-6 bg-light-bg dark:bg-dark-bg">
+  <div class="py-4 bg-light-bg dark:bg-dark-bg w-full">
     <!-- Loading State -->
     <div v-if="isLoading" class="flex justify-center items-center py-12">
       <svg
@@ -145,63 +156,109 @@ const selectLibrary = (library: Library) => {
       </button>
     </div>
 
-    <!-- List of Libraries -->
-    <ul v-else-if="libraries.length > 0" class="space-y-4">
-      <li
-        v-for="library in libraries"
-        :key="library.id"
-        class="p-4 border rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-zinc-700"
-        @click="selectLibrary(library)"
+    <!-- Content Container -->
+    <div v-else class="divide-y">
+      <!-- List of Libraries -->
+      <ul
+        v-if="libraries.length > 0 && !selectedLibrary"
+        class="divide-y divide-light-border/40 dark:divide-dark-border/40"
       >
-        <div class="flex justify-between items-center">
-          <span
-            class="font-semibold text-light-primary-text dark:text-dark-primary-text"
-          >
-            {{ library.name }}
-          </span>
-          <span
-            class="text-sm text-light-secondary-text dark:text-dark-secondary-text"
-          >
-            {{ library.booksCount || 0 }} books
-          </span>
-        </div>
-      </li>
-    </ul>
+        <li
+          v-for="library in libraries"
+          :key="library.id"
+          class="group bg-light-card dark:bg-dark-card"
+          @click="selectLibrary(library)"
+        >
+          <div class="flex items-center p-4">
+            <!-- Book Covers Placeholder -->
+            <div class="relative w-24 h-24 mr-4">
+              <!-- Placeholder Design -->
+              <div class="absolute inset-0 flex items-center">
+                <div class="flex -space-x-3">
+                  <!-- Multiple book spine placeholders -->
+                  <div
+                    v-for="index in 3"
+                    :key="index"
+                    class="w-9 h-16 transform"
+                    :class="[
+                      index === 1 ? 'ml-2 bg-light-nav/70' : '',
+                      index === 2 ? 'bg-light-nav/50 scale-90' : '',
+                      index === 3 ? 'bg-light-nav/30 scale-75' : '',
+                    ]"
+                  ></div>
+                </div>
+              </div>
+            </div>
 
-    <!-- No Libraries Message -->
-    <div v-else class="flex flex-col items-center justify-center py-12 px-4">
-      <svg
-        class="w-16 h-16 mb-4 text-light-secondary-text dark:text-dark-secondary-text"
-        viewBox="0 0 24 24"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"
-          stroke="currentColor"
-          stroke-width="1.5"
-          stroke-linecap="round"
-          stroke-linejoin="round"
+            <!-- Library Info -->
+            <div class="flex-1 min-w-0">
+              <h3
+                class="text-xl font-semibold text-light-primary-text dark:text-dark-primary-text truncate"
+              >
+                {{ library.name }}
+              </h3>
+              <p
+                class="text-light-secondary-text dark:text-dark-secondary-text mt-1"
+              >
+                {{ library.booksCount || 0 }}
+                {{ library.booksCount === 1 ? "book" : "books" }}
+              </p>
+            </div>
+
+            <!-- Right Arrow Icon -->
+            <svg
+              class="w-6 h-6 text-light-secondary-text dark:text-dark-secondary-text shrink-0 ml-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </div>
+        </li>
+      </ul>
+
+      <!-- Books List View -->
+      <div v-else-if="selectedLibrary" class="w-full">
+        <BooksList
+          :libraryId="selectedLibrary.id"
+          @close="selectedLibrary = null"
         />
-      </svg>
-      <p
-        class="text-light-primary-text dark:text-dark-primary-text text-lg font-medium mb-2"
-      >
-        No libraries yet
-      </p>
-      <p
-        class="text-light-secondary-text dark:text-dark-secondary-text text-sm text-center"
-      >
-        Click the + button above to create your first library
-      </p>
-    </div>
+      </div>
 
-    <!-- Books List Component -->
-    <BooksList
-      v-if="selectedLibrary"
-      :libraryId="selectedLibrary.id"
-      @close="selectedLibrary = null"
-    />
+      <!-- No Libraries Message -->
+      <div v-else class="flex flex-col items-center justify-center py-12 px-4">
+        <svg
+          class="w-16 h-16 mb-4 text-light-secondary-text dark:text-dark-secondary-text"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        <p
+          class="text-light-primary-text dark:text-dark-primary-text text-lg font-medium mb-2"
+        >
+          No libraries yet
+        </p>
+        <p
+          class="text-light-secondary-text dark:text-dark-secondary-text text-sm text-center"
+        >
+          Click the + button above to create your first library
+        </p>
+      </div>
+    </div>
 
     <!-- Add Library Modal -->
     <AddLibraryComponent
