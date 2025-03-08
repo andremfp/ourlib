@@ -1,31 +1,34 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted } from "vue";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { getUserLibraries } from "@/apis/libraryAPI";
 import BooksList from "@/components/BooksList.vue";
 import AddLibraryComponent from "@/components/AddLibrary.vue";
 import { useTabStore } from "@/stores/tabStore";
-import { useSearchStore } from "@/stores/searchStore";
 import type { Library } from "@/apis/types";
 
+// ==================== Constants ====================
+const TRANSITION_DURATION = 300; // milliseconds
+const PARALLAX_OFFSET = 20; // percentage to shift libraries list
+
+// ==================== State Management ====================
 const auth = getAuth();
+const tabStore = useTabStore();
+
+// Component state
 const libraries = ref<Library[]>([]);
 const allLibraries = ref<Library[]>([]);
 const selectedLibrary = ref<Library | null>(null);
-const searchStore = useSearchStore();
 const isAddLibraryModalOpen = ref(false);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
-const isInitialLoad = ref(true);
-const swipeProgress = ref(0);
+const drawerProgress = ref(0);
 
-// Set the active tab when this component is mounted
-const tabStore = useTabStore();
-onMounted(() => {
-  tabStore.setActiveTab("My Libraries");
-});
-
-// Function to fetch libraries
+// ==================== Data Fetching ====================
+/**
+ * Fetches user's libraries from the backend
+ * Handles loading state and error conditions
+ */
 const fetchLibraries = async (userId: string) => {
   try {
     isLoading.value = true;
@@ -33,7 +36,6 @@ const fetchLibraries = async (userId: string) => {
     const fetchedLibraries = await getUserLibraries(userId);
     allLibraries.value = fetchedLibraries;
     libraries.value = fetchedLibraries;
-    console.log("Libraries fetched:", libraries.value);
   } catch (err) {
     console.error("Error fetching libraries:", err);
     error.value = "Failed to load libraries. Please try again.";
@@ -42,17 +44,41 @@ const fetchLibraries = async (userId: string) => {
   }
 };
 
-// Function to open the Add Library modal
+// ==================== Event Handlers ====================
+/**
+ * Library selection handler
+ * Updates state and triggers animations
+ */
+const selectLibrary = (library: Library) => {
+  selectedLibrary.value = library;
+  drawerProgress.value = 0;
+  window.dispatchEvent(
+    new CustomEvent("libraryNameUpdate", { detail: library.name }),
+  );
+};
+
+/**
+ * Drawer interaction handlers
+ */
+const handleDrawerClose = () => {
+  selectedLibrary.value = null;
+  drawerProgress.value = 0;
+  window.dispatchEvent(new CustomEvent("libraryNameUpdate", { detail: "" }));
+};
+
+const handleDrawerProgress = (progress: number) => {
+  drawerProgress.value = progress;
+};
+
+// ==================== Modal Management ====================
 const openAddLibraryModal = () => {
   isAddLibraryModalOpen.value = true;
 };
 
-// Function to close the Add Library modal
 const closeAddLibraryModal = () => {
   isAddLibraryModalOpen.value = false;
 };
 
-// Handle library creation
 const handleLibraryCreated = async () => {
   const userId = auth.currentUser?.uid;
   if (userId) {
@@ -60,259 +86,225 @@ const handleLibraryCreated = async () => {
   }
 };
 
-// Register custom events
-const customEventBus = () => {
-  // Open Add Library Modal
-  window.addEventListener("openAddLibraryModal", () => {
-    openAddLibraryModal();
-  });
-  // Back to Libraries
+/**
+ * Sets up event listeners for inter-component communication
+ * - Handles add library modal triggers
+ * - Manages back navigation with animations
+ */
+const setupEventListeners = () => {
+  // Add Library Modal trigger (from Navbar.vue)
+  window.addEventListener("openAddLibraryModal", openAddLibraryModal);
+
+  // Back navigation handler
   window.addEventListener("backToLibraries", () => {
-    selectedLibrary.value = null;
+    // Start transition animation
+    drawerProgress.value = 1;
+
+    // Reset state after animation completes
+    setTimeout(() => {
+      selectedLibrary.value = null;
+      drawerProgress.value = 0;
+    }, TRANSITION_DURATION);
   });
 };
 
+/**
+ * Lifecycle hooks and initialization
+ */
 onMounted(() => {
-  customEventBus();
+  // Set active tab
+  tabStore.setActiveTab("My Libraries");
 
-  // Set up auth state listener
+  // Setup event listeners
+  setupEventListeners();
+
+  // Initialize auth state listener
   const unsubscribe = onAuthStateChanged(auth, (user) => {
     if (user) {
       fetchLibraries(user.uid);
     } else {
+      // Reset state when user is not authenticated
       libraries.value = [];
       allLibraries.value = [];
       isLoading.value = false;
     }
   });
 
-  // Cleanup listener on component unmount
+  // Cleanup on unmount
   return () => unsubscribe();
 });
 
-// Watch for changes in the search query from the search store
-watch(
-  () => searchStore.searchQuery,
-  (newQuery) => {
-    if (newQuery.trim() === "") {
-      libraries.value = allLibraries.value;
-    } else {
-      libraries.value = allLibraries.value.filter((library) =>
-        library.name.toLowerCase().includes(newQuery.toLowerCase()),
-      );
-    }
-  },
-);
-
-// Select a library to view its books
-const selectLibrary = (library: Library) => {
-  isInitialLoad.value = false;
-  selectedLibrary.value = library;
-  // Start with swipeProgress at 1 to trigger the slide animation
-  swipeProgress.value = 1;
-  // Dispatch event to update navbar with library name
-  window.dispatchEvent(
-    new CustomEvent("libraryNameUpdate", {
-      detail: library.name,
-    }),
-  );
-  // Trigger the slide animation
-  requestAnimationFrame(() => {
-    swipeProgress.value = 0;
-  });
-};
-
-// Function to handle swipe back from BooksList
-const handleSwipeBack = () => {
-  selectedLibrary.value = null;
-  // Reset library name in navbar
-  window.dispatchEvent(
-    new CustomEvent("libraryNameUpdate", {
-      detail: "",
-    }),
-  );
-};
-
-const handleSwipeProgress = (progress: number) => {
-  swipeProgress.value = progress;
-};
+// Common style for parallax animation
+const getParallaxStyle = (hasLibrary: boolean) => ({
+  transform: hasLibrary
+    ? `translateX(${(1 - drawerProgress.value) * -PARALLAX_OFFSET}%)`
+    : "none",
+  transition: drawerProgress.value
+    ? "none"
+    : `transform ${TRANSITION_DURATION}ms ease-out`,
+});
 </script>
 
 <template>
   <div
-    class="h-[calc(100vh-theme(spacing.nav-padding)-theme(spacing.footer-padding))] bg-light-bg dark:bg-dark-bg w-full flex flex-col"
+    class="h-[calc(100vh-theme(spacing.nav-padding)-theme(spacing.footer-padding))] bg-light-bg dark:bg-dark-bg w-full overflow-hidden"
   >
-    <!-- Content Container -->
-    <div class="flex-1 relative overflow-hidden">
-      <!-- Loading State -->
+    <!-- Loading State -->
+    <div
+      v-if="isLoading"
+      class="h-full flex justify-center items-center"
+      :style="getParallaxStyle(!!selectedLibrary)"
+    >
+      <svg
+        class="animate-spin h-8 w-8 text-light-secondary-text dark:text-dark-secondary-text"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          class="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          stroke-width="4"
+        ></circle>
+        <path
+          class="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+        ></path>
+      </svg>
+    </div>
+
+    <!-- Error State -->
+    <div
+      v-else-if="error"
+      class="h-full flex flex-col items-center justify-center py-12 px-4"
+      :style="getParallaxStyle(!!selectedLibrary)"
+    >
+      <p class="text-red-600 dark:text-red-400 text-center mb-4">
+        {{ error }}
+      </p>
+      <button
+        @click="() => auth.currentUser && fetchLibraries(auth.currentUser.uid)"
+        class="px-4 py-2 bg-light-nav text-white rounded-lg"
+      >
+        Try Again
+      </button>
+    </div>
+
+    <template v-else>
+      <!-- Libraries List -->
       <div
-        v-if="isLoading"
-        class="absolute inset-0 flex justify-center items-center bg-light-bg dark:bg-dark-bg"
+        v-if="libraries.length > 0"
+        class="h-full"
+        :style="getParallaxStyle(!!selectedLibrary)"
+      >
+        <ul
+          class="h-full overflow-auto divide-y divide-light-border/40 dark:divide-dark-border/40"
+        >
+          <li
+            v-for="library in libraries"
+            :key="library.id"
+            class="group bg-light-card dark:bg-dark-card"
+            @click="selectLibrary(library)"
+          >
+            <div class="flex items-center p-4">
+              <!-- Book Covers Placeholder -->
+              <div class="relative w-24 h-24 mr-4">
+                <!-- Placeholder Design -->
+                <div class="absolute inset-0 flex items-center">
+                  <div class="flex -space-x-3">
+                    <!-- Multiple book spine placeholders -->
+                    <div
+                      v-for="index in 3"
+                      :key="index"
+                      class="w-9 h-16 transform"
+                      :class="[
+                        index === 1 ? 'ml-2 bg-light-nav/70' : '',
+                        index === 2 ? 'bg-light-nav/50 scale-90' : '',
+                        index === 3 ? 'bg-light-nav/30 scale-75' : '',
+                      ]"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Library Info -->
+              <div class="flex-1 min-w-0">
+                <h3
+                  class="text-xl font-semibold text-light-primary-text dark:text-dark-primary-text truncate"
+                >
+                  {{ library.name }}
+                </h3>
+                <p
+                  class="text-light-secondary-text dark:text-dark-secondary-text mt-1"
+                >
+                  {{ library.booksCount || 0 }}
+                  {{ library.booksCount === 1 ? "book" : "books" }}
+                </p>
+              </div>
+
+              <!-- Right Arrow Icon -->
+              <svg
+                class="w-6 h-6 text-light-secondary-text dark:text-dark-secondary-text shrink-0 ml-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Empty State -->
+      <div
+        v-else
+        class="h-full flex flex-col items-center justify-center py-12 px-4"
+        :style="getParallaxStyle(!!selectedLibrary)"
       >
         <svg
-          class="animate-spin h-8 w-8 text-light-secondary-text dark:text-dark-secondary-text"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
+          class="w-16 h-16 mb-4 text-light-secondary-text dark:text-dark-secondary-text"
           viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
         >
-          <circle
-            class="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            stroke-width="4"
-          ></circle>
           <path
-            class="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-          ></path>
+            d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
         </svg>
-      </div>
-
-      <!-- Error State -->
-      <div
-        v-else-if="error"
-        class="absolute inset-0 flex flex-col items-center justify-center py-12 px-4 bg-light-bg dark:bg-dark-bg"
-      >
-        <p class="text-red-600 dark:text-red-400 text-center mb-4">
-          {{ error }}
+        <p
+          class="text-light-primary-text dark:text-dark-primary-text text-lg font-medium mb-2"
+        >
+          No libraries yet
         </p>
-        <button
-          @click="
-            () => auth.currentUser && fetchLibraries(auth.currentUser.uid)
-          "
-          class="px-4 py-2 bg-light-nav text-white rounded-lg"
+        <p
+          class="text-light-secondary-text dark:text-dark-secondary-text text-sm text-center"
         >
-          Try Again
-        </button>
+          Click the + button above to create your first library
+        </p>
       </div>
+    </template>
 
-      <template v-else>
-        <!-- List of Libraries -->
-        <template v-if="libraries.length > 0">
-          <div class="relative h-full">
-            <!-- Libraries List -->
-            <ul
-              class="absolute inset-0 divide-y divide-light-border/40 dark:divide-dark-border/40 bg-light-bg dark:bg-dark-bg overflow-auto will-change-transform"
-              :style="{
-                transform: `translateX(${selectedLibrary ? -100 + swipeProgress * 100 : 0}%)`,
-                transition: swipeProgress ? 'none' : 'transform 0.3s ease-out',
-                opacity: selectedLibrary ? 0.95 : 1,
-              }"
-            >
-              <li
-                v-for="library in libraries"
-                :key="library.id"
-                class="group bg-light-card dark:bg-dark-card"
-                @click="selectLibrary(library)"
-              >
-                <div class="flex items-center p-4">
-                  <!-- Book Covers Placeholder -->
-                  <div class="relative w-24 h-24 mr-4">
-                    <!-- Placeholder Design -->
-                    <div class="absolute inset-0 flex items-center">
-                      <div class="flex -space-x-3">
-                        <!-- Multiple book spine placeholders -->
-                        <div
-                          v-for="index in 3"
-                          :key="index"
-                          class="w-9 h-16 transform"
-                          :class="[
-                            index === 1 ? 'ml-2 bg-light-nav/70' : '',
-                            index === 2 ? 'bg-light-nav/50 scale-90' : '',
-                            index === 3 ? 'bg-light-nav/30 scale-75' : '',
-                          ]"
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Library Info -->
-                  <div class="flex-1 min-w-0">
-                    <h3
-                      class="text-xl font-semibold text-light-primary-text dark:text-dark-primary-text truncate"
-                    >
-                      {{ library.name }}
-                    </h3>
-                    <p
-                      class="text-light-secondary-text dark:text-dark-secondary-text mt-1"
-                    >
-                      {{ library.booksCount || 0 }}
-                      {{ library.booksCount === 1 ? "book" : "books" }}
-                    </p>
-                  </div>
-
-                  <!-- Right Arrow Icon -->
-                  <svg
-                    class="w-6 h-6 text-light-secondary-text dark:text-dark-secondary-text shrink-0 ml-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
-                </div>
-              </li>
-            </ul>
-
-            <!-- Books List View -->
-            <div
-              v-show="selectedLibrary"
-              class="absolute inset-0 bg-light-bg dark:bg-dark-bg will-change-transform"
-              :style="{
-                transform: `translateX(${selectedLibrary ? 100 - (100 - swipeProgress * 100) : 100}%)`,
-                transition: swipeProgress ? 'none' : 'transform 0.3s ease-out',
-              }"
-            >
-              <BooksList
-                v-if="selectedLibrary"
-                :libraryId="selectedLibrary.id"
-                @close="handleSwipeBack"
-                @swipe-progress="handleSwipeProgress"
-              />
-            </div>
-          </div>
-        </template>
-
-        <!-- No Libraries Message -->
-        <div
-          v-else
-          class="absolute inset-0 flex flex-col items-center justify-center py-12 px-4 bg-light-bg dark:bg-dark-bg"
-        >
-          <svg
-            class="w-16 h-16 mb-4 text-light-secondary-text dark:text-dark-secondary-text"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-          <p
-            class="text-light-primary-text dark:text-dark-primary-text text-lg font-medium mb-2"
-          >
-            No libraries yet
-          </p>
-          <p
-            class="text-light-secondary-text dark:text-dark-secondary-text text-sm text-center"
-          >
-            Click the + button above to create your first library
-          </p>
-        </div>
-      </template>
-    </div>
+    <!-- Books Drawer -->
+    <BooksList
+      v-if="selectedLibrary"
+      :libraryId="selectedLibrary.id"
+      @close="handleDrawerClose"
+      @progress="handleDrawerProgress"
+    />
 
     <!-- Add Library Modal -->
     <AddLibraryComponent
@@ -322,23 +314,3 @@ const handleSwipeProgress = (progress: number) => {
     />
   </div>
 </template>
-
-<style scoped>
-.slide-enter-active,
-.slide-leave-active {
-  transition: transform 0.3s ease-out;
-}
-
-.slide-enter-from {
-  transform: translateX(100%);
-}
-
-.slide-leave-to {
-  transform: translateX(-100%);
-}
-
-.slide-enter-to,
-.slide-leave-from {
-  transform: translateX(0);
-}
-</style>
