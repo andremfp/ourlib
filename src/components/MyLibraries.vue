@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from "vue";
+import { ref, onMounted, watch } from "vue";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { getUserLibraries } from "@/apis/libraryAPI";
 import BooksList from "@/components/BooksList.vue";
@@ -17,63 +17,14 @@ const isAddLibraryModalOpen = ref(false);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
 const isInitialLoad = ref(true);
-const swipeX = ref(0);
-const isDragging = ref(false);
+const librariesList = ref(null);
+const booksListView = ref(null);
 
 // Set the active tab when this component is mounted
 const tabStore = useTabStore();
 onMounted(() => {
   tabStore.setActiveTab("My Libraries");
 });
-
-const librariesList = ref(null);
-const booksListView = ref(null);
-
-// Computed property for transform style
-const booksTransform = computed(() => {
-  if (!isDragging.value) return "";
-  return `translateX(${swipeX.value}px)`;
-});
-
-// Handle back gesture
-const handleDrag = (state: {
-  delta: [number, number];
-  distance: number;
-  velocity: [number, number];
-  first: boolean;
-  last: boolean;
-  event: TouchEvent | MouseEvent;
-}) => {
-  const [dx] = state.delta;
-  const [vx] = state.velocity;
-  const touchX =
-    state.event instanceof TouchEvent
-      ? state.event.touches[0].clientX
-      : (state.event as MouseEvent).clientX;
-
-  // Only handle edge swipes (within 20px of edge)
-  if (state.first && touchX > 20) return;
-
-  if (state.first) {
-    isDragging.value = true;
-  }
-
-  if (isDragging.value) {
-    // Limit the drag to leftward movement only
-    swipeX.value = Math.max(0, dx);
-
-    // If swipe is fast enough or distance is far enough, trigger back
-    if (state.last) {
-      isDragging.value = false;
-      if (vx > 0.3 || state.distance > 50) {
-        selectedLibrary.value = null;
-      } else {
-        // Reset position if not triggering back
-        swipeX.value = 0;
-      }
-    }
-  }
-};
 
 // Function to fetch libraries
 const fetchLibraries = async (userId: string) => {
@@ -286,17 +237,12 @@ const selectLibrary = (library: Library) => {
       <!-- Books List View -->
       <div
         v-else-if="selectedLibrary"
-        class="w-full touch-pan-y"
+        class="w-full"
         ref="booksListView"
         v-motion
         :initial="{ opacity: 0, x: 100 }"
         :enter="{ opacity: 1, x: 0, transition: { duration: 300 } }"
         :leave="{ opacity: 0, x: -100, transition: { duration: 300 } }"
-        :style="{
-          transform: booksTransform,
-          transition: isDragging ? 'none' : 'transform 0.3s',
-        }"
-        v-use-gesture="handleDrag"
       >
         <BooksList
           :libraryId="selectedLibrary.id"

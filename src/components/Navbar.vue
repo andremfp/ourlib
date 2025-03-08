@@ -104,7 +104,7 @@ onUnmounted(() => {
           <button
             v-if="!currentLibraryName"
             @click="openAddLibraryModal"
-            class="absolute left-0 w-8 h-8 flex items-center justify-center text-light-nav-text dark:text-dark-nav-text hover:bg-gray-100 dark:hover:bg-zinc-700 rounded-full"
+            class="absolute left-0 w-8 h-8 flex items-center justify-center text-light-nav-text dark:text-dark-nav-text rounded-full"
             aria-label="Add Library"
           >
             <svg
@@ -125,7 +125,7 @@ onUnmounted(() => {
           <button
             v-else
             @click="goBackToLibraries"
-            class="absolute left-0 w-8 h-8 flex items-center justify-center text-light-nav-text dark:text-dark-nav-text hover:bg-gray-100 dark:hover:bg-zinc-700 rounded-full"
+            class="absolute left-0 w-8 h-8 flex items-center justify-center text-light-nav-text dark:text-dark-nav-text rounded-full"
             aria-label="Back to Libraries"
           >
             <svg

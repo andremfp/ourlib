@@ -3,7 +3,9 @@ import { ref, onMounted } from "vue";
 import { getLibraryBooks } from "@/apis/bookAPI";
 import { getLibrary } from "@/apis/libraryAPI";
 import type { Book } from "@/apis/types";
+import { useRouter } from "vue-router";
 
+const router = useRouter();
 const props = defineProps<{
   libraryId: string;
 }>();
@@ -15,6 +17,35 @@ const props = defineProps<{
 const books = ref<Book[]>([]);
 const libraryName = ref("");
 
+const handleDrag = (state: {
+  delta: [number, number];
+  distance: number;
+  velocity: [number, number];
+  first: boolean;
+  last: boolean;
+  event: TouchEvent | MouseEvent;
+}) => {
+  const [dx] = state.delta;
+  const [vx] = state.velocity;
+  const { first, last, event } = state;
+
+  // Only trigger for edge swipes starting from the left edge
+  if (first) {
+    const clientX =
+      event instanceof TouchEvent ? event.touches[0].clientX : event.clientX;
+    if (clientX > 20) return; // Only trigger if starting within 20px of the left edge
+  }
+
+  if (last) {
+    // Trigger back navigation if:
+    // 1. Swipe was fast enough (velocity > 0.3)
+    // 2. Or distance was far enough (> 50px)
+    if (vx > 0.3 || dx > 50) {
+      router.back();
+    }
+  }
+};
+
 // Fetch books in the selected library
 onMounted(async () => {
   books.value = await getLibraryBooks(props.libraryId);
@@ -24,7 +55,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="w-full">
+  <div class="w-full touch-pan-y" v-use-gesture="handleDrag">
     <!-- List of Books -->
     <ul
       v-if="books.length > 0"
