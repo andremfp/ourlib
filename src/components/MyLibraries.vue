@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted, watch, computed } from "vue";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { getUserLibraries } from "@/apis/libraryAPI";
 import BooksList from "@/components/BooksList.vue";
@@ -16,12 +16,59 @@ const searchStore = useSearchStore();
 const isAddLibraryModalOpen = ref(false);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
+const isInitialLoad = ref(true);
+const swipeX = ref(0);
+const isDragging = ref(false);
 
 // Set the active tab when this component is mounted
 const tabStore = useTabStore();
 onMounted(() => {
   tabStore.setActiveTab("My Libraries");
 });
+
+const librariesList = ref(null);
+const booksListView = ref(null);
+
+// Computed property for transform style
+const booksTransform = computed(() => {
+  if (!isDragging.value) return "";
+  return `translateX(${swipeX.value}px)`;
+});
+
+// Handle back gesture
+const handleDrag = (state: {
+  delta: [number, number];
+  distance: number;
+  velocity: [number, number];
+  first: boolean;
+  last: boolean;
+}) => {
+  const [dx] = state.delta;
+  const [vx] = state.velocity;
+
+  // Only handle left edge swipes
+  if (state.first && dx < 0) return;
+
+  if (state.first) {
+    isDragging.value = true;
+  }
+
+  if (isDragging.value) {
+    // Limit the drag to leftward movement only
+    swipeX.value = Math.max(0, dx);
+
+    // If swipe is fast enough or distance is far enough, trigger back
+    if (state.last) {
+      isDragging.value = false;
+      if (vx > 0.3 || state.distance > 100) {
+        selectedLibrary.value = null;
+      } else {
+        // Reset position if not triggering back
+        swipeX.value = 0;
+      }
+    }
+  }
+};
 
 // Function to fetch libraries
 const fetchLibraries = async (userId: string) => {
@@ -104,6 +151,7 @@ watch(
 
 // Select a library to view its books
 const selectLibrary = (library: Library) => {
+  isInitialLoad.value = false;
   selectedLibrary.value = library;
   // Dispatch event to update navbar with library name
   window.dispatchEvent(
@@ -157,11 +205,18 @@ const selectLibrary = (library: Library) => {
     </div>
 
     <!-- Content Container -->
-    <div v-else class="divide-y">
+    <div v-else class="divide-y relative overflow-hidden">
       <!-- List of Libraries -->
       <ul
         v-if="libraries.length > 0 && !selectedLibrary"
         class="divide-y divide-light-border/40 dark:divide-dark-border/40"
+        ref="librariesList"
+        v-motion
+        :initial="
+          isInitialLoad ? { opacity: 1, x: 0 } : { opacity: 0, x: -100 }
+        "
+        :enter="{ opacity: 1, x: 0, transition: { duration: 300 } }"
+        :leave="{ opacity: 0, x: 100, transition: { duration: 300 } }"
       >
         <li
           v-for="library in libraries"
@@ -224,7 +279,20 @@ const selectLibrary = (library: Library) => {
       </ul>
 
       <!-- Books List View -->
-      <div v-else-if="selectedLibrary" class="w-full">
+      <div
+        v-else-if="selectedLibrary"
+        class="w-full"
+        ref="booksListView"
+        v-motion
+        :initial="{ opacity: 0, x: 100 }"
+        :enter="{ opacity: 1, x: 0, transition: { duration: 300 } }"
+        :leave="{ opacity: 0, x: -100, transition: { duration: 300 } }"
+        :style="{
+          transform: booksTransform,
+          transition: isDragging ? 'none' : 'transform 0.3s',
+        }"
+        v-use-gesture="handleDrag"
+      >
         <BooksList
           :libraryId="selectedLibrary.id"
           @close="selectedLibrary = null"
@@ -232,7 +300,13 @@ const selectLibrary = (library: Library) => {
       </div>
 
       <!-- No Libraries Message -->
-      <div v-else class="flex flex-col items-center justify-center py-12 px-4">
+      <div
+        v-else
+        class="flex flex-col items-center justify-center py-12 px-4"
+        v-motion
+        :initial="{ opacity: 0, y: 20 }"
+        :enter="{ opacity: 1, y: 0 }"
+      >
         <svg
           class="w-16 h-16 mb-4 text-light-secondary-text dark:text-dark-secondary-text"
           viewBox="0 0 24 24"

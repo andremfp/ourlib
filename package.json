@@ -25,6 +25,8 @@
   },
   "dependencies": {
     "@types/jsdom": "^21.1.7",
+    "@vueuse/gesture": "^2.0.0",
+    "@vueuse/motion": "^2.2.6",
     "@zxing/library": "^0.21.3",
     "dotenv": "^16.4.7",
     "firebase": "^11.2.0",
