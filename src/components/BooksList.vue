@@ -1,65 +1,114 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { getLibraryBooks } from "@/apis/bookAPI";
 import { getLibrary } from "@/apis/libraryAPI";
 import type { Book } from "@/apis/types";
-import { useRouter } from "vue-router";
+import { useGesture } from "@vueuse/gesture";
 
-const router = useRouter();
 const props = defineProps<{
   libraryId: string;
 }>();
 
-// const emit = defineEmits<{
-//   (e: "close"): void;
-// }>();
-
+const emit = defineEmits(["close", "swipeProgress"]);
 const books = ref<Book[]>([]);
 const libraryName = ref("");
+const isLoading = ref(true);
+const swipeX = ref(100); // Start off-screen
 
-const handleDrag = (state: {
-  delta: [number, number];
-  distance: number;
-  velocity: [number, number];
-  first: boolean;
-  last: boolean;
-  event: TouchEvent | MouseEvent;
-}) => {
-  const [dx] = state.delta;
-  const [vx] = state.velocity;
-  const { first, last, event } = state;
+// Animate in on mount
+onMounted(() => {
+  requestAnimationFrame(() => {
+    swipeX.value = 0;
+  });
+});
 
-  // Only trigger for edge swipes starting from the left edge
-  if (first) {
-    const clientX =
-      event instanceof TouchEvent ? event.touches[0].clientX : event.clientX;
-    if (clientX > 20) return; // Only trigger if starting within 20px of the left edge
-  }
+const style = computed(() => ({
+  transform: `translateX(${swipeX.value}%)`,
+  transition: swipeX.value ? "none" : "transform 0.3s ease-out",
+}));
 
-  if (last) {
-    // Trigger back navigation if:
-    // 1. Swipe was fast enough (velocity > 0.3)
-    // 2. Or distance was far enough (> 50px)
-    if (vx > 0.3 || dx > 50) {
-      router.back();
-    }
-  }
-};
+// Setup swipe gesture
+useGesture(
+  {
+    onDrag: ({ delta: [dx], movement: [mx], first, last, active }) => {
+      if (first && dx < 0) return; // Only allow swipe right
+
+      if (active) {
+        const progress = Math.min(Math.max(mx / window.innerWidth, 0), 1);
+        swipeX.value = progress * 100;
+        emit("swipeProgress", progress);
+      }
+
+      if (last) {
+        if (swipeX.value > 30) {
+          emit("close");
+        } else {
+          swipeX.value = 0;
+          emit("swipeProgress", 0);
+        }
+      }
+    },
+  },
+  {
+    domTarget: computed(() => document.getElementById("books-list")),
+    drag: {
+      filterTaps: true,
+      rubberband: true,
+      bounds: { left: 0, right: window.innerWidth },
+    },
+  },
+);
 
 // Fetch books in the selected library
 onMounted(async () => {
-  books.value = await getLibraryBooks(props.libraryId);
-  const library = await getLibrary(props.libraryId);
-  libraryName.value = library?.name || "Library";
+  try {
+    isLoading.value = true;
+    books.value = await getLibraryBooks(props.libraryId);
+    const library = await getLibrary(props.libraryId);
+    libraryName.value = library?.name || "Library";
+  } finally {
+    isLoading.value = false;
+  }
 });
 </script>
 
 <template>
-  <div class="w-full touch-pan-y" v-use-gesture="handleDrag">
+  <div
+    id="books-list"
+    class="absolute inset-0 bg-light-bg dark:bg-dark-bg touch-pan-x"
+    :style="style"
+  >
+    <!-- Loading State -->
+    <div
+      v-if="isLoading"
+      class="absolute inset-0 flex justify-center items-center bg-light-bg dark:bg-dark-bg"
+    >
+      <svg
+        class="animate-spin h-8 w-8 text-light-secondary-text dark:text-dark-secondary-text"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          class="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          stroke-width="4"
+        ></circle>
+        <path
+          class="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+        ></path>
+      </svg>
+    </div>
+
     <!-- List of Books -->
     <ul
-      v-if="books.length > 0"
-      class="divide-y divide-light-border/40 dark:divide-dark-border/40"
+      v-else-if="books.length > 0"
+      class="h-full overflow-auto divide-y divide-light-border/40 dark:divide-dark-border/40"
     >
       <li
         v-for="book in books"
