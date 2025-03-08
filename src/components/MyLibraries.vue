@@ -52,9 +52,12 @@ const fetchLibraries = async (userId: string) => {
 const selectLibrary = (library: Library) => {
   selectedLibrary.value = library;
   drawerProgress.value = 0;
+  // Emit library name
   window.dispatchEvent(
     new CustomEvent("libraryNameUpdate", { detail: library.name }),
   );
+  // Emit initial drawer progress
+  window.dispatchEvent(new CustomEvent("drawerProgress", { detail: 0 }));
 };
 
 /**
@@ -68,6 +71,12 @@ const handleDrawerClose = () => {
 
 const handleDrawerProgress = (progress: number) => {
   drawerProgress.value = progress;
+  // Emit to navbar - make sure progress is between 0 and 1
+  window.dispatchEvent(
+    new CustomEvent("drawerProgress", {
+      detail: progress,
+    }),
+  );
 };
 
 // ==================== Modal Management ====================
@@ -146,9 +155,7 @@ const getParallaxStyle = (hasLibrary: boolean) => ({
 </script>
 
 <template>
-  <div
-    class="h-[calc(100vh-theme(spacing.nav-padding)-theme(spacing.footer-padding))] bg-light-bg dark:bg-dark-bg w-full overflow-hidden"
-  >
+  <div class="bg-light-bg dark:bg-dark-bg w-full">
     <!-- Loading State -->
     <div
       v-if="isLoading"
