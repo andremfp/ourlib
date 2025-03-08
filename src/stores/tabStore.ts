@@ -14,5 +14,11 @@ export const useTabStore = defineStore("tab", {
         );
       }
     },
+    resetActiveTab() {
+      this.activeTab = "Home";
+      window.dispatchEvent(
+        new CustomEvent("libraryNameUpdate", { detail: "" }),
+      );
+    },
   },
 });
