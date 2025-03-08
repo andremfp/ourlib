@@ -1,22 +1,18 @@
 import { defineStore } from "pinia";
-import { ref } from "vue";
 
-export const useTabStore = defineStore("tab", () => {
-  const activeTab = ref(sessionStorage.getItem("tab") || "Home");
-
-  function setActiveTab(tab: string) {
-    activeTab.value = tab;
-    sessionStorage.setItem("tab", tab);
-  }
-
-  function resetActiveTab() {
-    activeTab.value = "Home";
-    sessionStorage.removeItem("tab");
-  }
-
-  return {
-    activeTab,
-    setActiveTab,
-    resetActiveTab,
-  };
+export const useTabStore = defineStore("tab", {
+  state: () => ({
+    activeTab: "Home",
+  }),
+  actions: {
+    setActiveTab(tab: string) {
+      this.activeTab = tab;
+      // Reset library name in navbar when switching tabs
+      if (tab === "My Libraries") {
+        window.dispatchEvent(
+          new CustomEvent("libraryNameUpdate", { detail: "" }),
+        );
+      }
+    },
+  },
 });

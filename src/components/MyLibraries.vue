@@ -42,12 +42,17 @@ const handleDrag = (state: {
   velocity: [number, number];
   first: boolean;
   last: boolean;
+  event: TouchEvent | MouseEvent;
 }) => {
   const [dx] = state.delta;
   const [vx] = state.velocity;
+  const touchX =
+    state.event instanceof TouchEvent
+      ? state.event.touches[0].clientX
+      : (state.event as MouseEvent).clientX;
 
-  // Only handle left edge swipes
-  if (state.first && dx < 0) return;
+  // Only handle edge swipes (within 20px of edge)
+  if (state.first && touchX > 20) return;
 
   if (state.first) {
     isDragging.value = true;
@@ -60,7 +65,7 @@ const handleDrag = (state: {
     // If swipe is fast enough or distance is far enough, trigger back
     if (state.last) {
       isDragging.value = false;
-      if (vx > 0.3 || state.distance > 100) {
+      if (vx > 0.3 || state.distance > 50) {
         selectedLibrary.value = null;
       } else {
         // Reset position if not triggering back
@@ -281,7 +286,7 @@ const selectLibrary = (library: Library) => {
       <!-- Books List View -->
       <div
         v-else-if="selectedLibrary"
-        class="w-full"
+        class="w-full touch-pan-y"
         ref="booksListView"
         v-motion
         :initial="{ opacity: 0, x: 100 }"
