@@ -20,11 +20,7 @@ const drawerProgress = ref(1);
 // ============= Computed Properties =============
 // Determine if navbar should be hidden
 const isNavbarHidden = computed(() => {
-  return (
-    route.name === "login" ||
-    route.name === "register" ||
-    route.name === "not-found"
-  );
+  return ["login", "register", "not-found"].includes(route.name as string);
 });
 
 // Search placeholder text based on active tab
@@ -84,20 +80,15 @@ onUnmounted(() => {
 <template>
   <nav
     class="sticky top-0 z-50 bg-light-nav dark:bg-dark-nav"
-    :class="{
-      'h-0 opacity-0 overflow-hidden': isNavbarHidden,
-      'h-auto opacity-100': !isNavbarHidden,
-    }"
+    :class="
+      isNavbarHidden ? 'h-0 opacity-0 overflow-hidden' : 'h-auto opacity-100'
+    "
   >
     <div class="w-full pb-nav-padding"></div>
     <div class="w-full px-4 pb-2 pt-8 sm:pb-4 sm:pt-4">
       <!-- Standard view for most tabs -->
       <div
-        v-if="
-          activeTab !== 'Add Book' &&
-          activeTab !== 'Profile' &&
-          activeTab !== 'My Libraries'
-        "
+        v-if="!['Add Book', 'Profile', 'My Libraries'].includes(activeTab)"
         class="relative"
       >
         <span class="absolute inset-y-0 left-0 flex items-center pl-2">
@@ -120,120 +111,110 @@ onUnmounted(() => {
       </div>
 
       <!-- My Libraries specific view -->
-      <div v-else-if="activeTab === 'My Libraries'" class="space-y-2">
-        <div class="relative flex justify-center items-center h-8">
-          <!-- Back/Add Button Container -->
-          <div
-            class="absolute left-0 w-8 h-8 flex items-center justify-center z-50"
+      <div v-else-if="activeTab === 'My Libraries'" class="relative h-8">
+        <div class="absolute left-0 w-8 h-8 z-10">
+          <button
+            class="absolute inset-0 flex items-center justify-center text-light-nav-text dark:text-dark-nav-text"
+            :style="{
+              opacity: currentLibraryName ? Math.max(0, 1 - drawerProgress) : 0,
+              pointerEvents:
+                currentLibraryName && drawerProgress < 0.5 ? 'auto' : 'none',
+              transition:
+                drawerProgress === 0 || drawerProgress === 1
+                  ? `opacity ${TRANSITION_DURATION}ms ease-in-out`
+                  : 'none',
+              transform: `translateX(-8px)`,
+            }"
+            @click="goBackToLibraries"
           >
-            <!-- Back Button -->
-            <button
-              class="absolute inset-0 flex items-center justify-center text-light-nav-text dark:text-dark-nav-text rounded-full transition-all ease-out"
-              :style="{
-                transitionDuration: `${TRANSITION_DURATION}ms`,
-                opacity: currentLibraryName
-                  ? Math.max(0, 1 - drawerProgress)
-                  : 0,
-                transform: 'translateX(-8px)',
-                pointerEvents:
-                  currentLibraryName && drawerProgress < 0.5 ? 'auto' : 'none',
-              }"
-              @click="goBackToLibraries"
+            <svg
+              class="w-6 h-6"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
             >
-              <svg
-                class="w-6 h-6"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M15 19l-7-7 7-7"
-                  stroke="currentColor"
-                />
-              </svg>
-            </button>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 19l-7-7 7-7"
+                stroke="currentColor"
+              />
+            </svg>
+          </button>
 
-            <!-- Add Button -->
-            <button
-              class="absolute inset-0 flex items-center justify-center text-light-nav-text dark:text-dark-nav-text rounded-full transition-all ease-out"
-              :style="{
-                transitionDuration: `${TRANSITION_DURATION}ms`,
-                opacity: currentLibraryName ? Math.max(0, drawerProgress) : 1,
-                pointerEvents:
-                  !currentLibraryName || drawerProgress >= 0.5
-                    ? 'auto'
-                    : 'none',
-              }"
-              @click="openAddLibraryModal"
-            >
-              <svg
-                class="w-6 h-6"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12 4V20M4 12H20"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </button>
-          </div>
-
-          <!-- Title with fade transition and horizontal movement -->
-          <div
-            class="absolute inset-x-0 h-8 flex items-center justify-center overflow-hidden"
+          <button
+            class="absolute inset-0 flex items-center justify-center text-light-nav-text dark:text-dark-nav-text"
+            :style="{
+              opacity: currentLibraryName ? Math.max(0, drawerProgress) : 1,
+              pointerEvents:
+                !currentLibraryName || drawerProgress >= 0.5 ? 'auto' : 'none',
+              transition:
+                drawerProgress === 0 || drawerProgress === 1
+                  ? `opacity ${TRANSITION_DURATION}ms ease-in-out`
+                  : 'none',
+            }"
+            @click="openAddLibraryModal"
           >
-            <!-- Library Name -->
-            <p
-              class="absolute text-nav text-light-nav-text dark:text-dark-nav-text text-center whitespace-nowrap"
-              :style="{
-                opacity: currentLibraryName
-                  ? Math.max(0, 1 - drawerProgress * 3 + 0.5)
-                  : 0,
-                left: '50%',
-                transform: `translateX(calc(-50% + ${drawerProgress * 200}%))`,
-                transition:
-                  drawerProgress === 0 || drawerProgress === 1
-                    ? `opacity ${TRANSITION_DURATION}ms ease-in-out, transform ${TRANSITION_DURATION}ms ease-in-out`
-                    : 'none',
-              }"
+            <svg
+              class="w-6 h-6"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
             >
-              {{ currentLibraryName }}
-            </p>
+              <path
+                d="M12 4V20M4 12H20"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
 
-            <!-- Tab Name -->
-            <p
-              class="absolute text-nav text-light-nav-text dark:text-dark-nav-text text-center whitespace-nowrap"
-              :style="{
-                opacity: currentLibraryName
-                  ? Math.max(0, drawerProgress * 3 - 1.5)
-                  : 1,
-                left: '50%',
-                transform: `translateX(calc(-50% + ${(1 - drawerProgress) * -100}%))`,
-                transition:
-                  drawerProgress === 0 || drawerProgress === 1
-                    ? `opacity ${TRANSITION_DURATION}ms ease-in-out, transform ${TRANSITION_DURATION}ms ease-in-out`
-                    : 'none',
-              }"
-            >
-              {{ activeTab }}
-            </p>
-          </div>
+        <div
+          class="absolute inset-x-0 h-full flex items-center justify-center overflow-hidden"
+        >
+          <p
+            class="absolute text-nav text-light-nav-text dark:text-dark-nav-text text-center whitespace-nowrap"
+            :style="{
+              opacity: currentLibraryName
+                ? Math.max(0, 1 - drawerProgress * 3 + 0.5)
+                : 0,
+              left: '50%',
+              transform: `translateX(calc(-50% + ${drawerProgress * 250}%))`,
+              transition:
+                drawerProgress === 0 || drawerProgress === 1
+                  ? `all ${TRANSITION_DURATION}ms ease-in-out`
+                  : 'none',
+            }"
+          >
+            {{ currentLibraryName }}
+          </p>
+
+          <p
+            class="absolute text-nav text-light-nav-text dark:text-dark-nav-text text-center whitespace-nowrap"
+            :style="{
+              opacity: currentLibraryName
+                ? Math.max(0, drawerProgress * 3 - 1.5)
+                : 1,
+              left: '50%',
+              transform: `translateX(calc(-50% + ${(1 - drawerProgress) * -120}%))`,
+              transition:
+                drawerProgress === 0 || drawerProgress === 1
+                  ? `all ${TRANSITION_DURATION}ms ease-in-out`
+                  : 'none',
+            }"
+          >
+            {{ activeTab }}
+          </p>
         </div>
       </div>
 
       <!-- Simple title for Add Book and Profile tabs -->
-      <div v-else class="relative">
-        <p
-          class="text-nav text-light-nav-text dark:text-dark-nav-text text-center"
-        >
+      <div v-else class="text-center">
+        <p class="text-nav text-light-nav-text dark:text-dark-nav-text">
           {{ activeTab }}
         </p>
       </div>
