@@ -7,6 +7,12 @@ import AddLibraryComponent from "@/components/AddLibrary.vue";
 import { useTabStore } from "@/stores/tabStore";
 import type { Library } from "@/apis/types";
 
+// TODO:
+// - three dots in library to edit, delete with confirmation
+// - swipe down to update library view
+// - validate lib creation fields
+// - sort by with reverse
+
 // ==================== Constants ====================
 const TRANSITION_DURATION = 300; // milliseconds
 const PARALLAX_OFFSET = 20; // percentage to shift libraries list

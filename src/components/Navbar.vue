@@ -49,7 +49,11 @@ const openAddLibraryModal = () => {
 // Function to go back to libraries list
 const goBackToLibraries = () => {
   window.dispatchEvent(new Event("backToLibraries"));
-  currentLibraryName.value = "";
+
+  // Delay clearing the library name until animation completes
+  setTimeout(() => {
+    currentLibraryName.value = "";
+  }, TRANSITION_DURATION);
 };
 
 // ============= Event Listeners =============
@@ -137,7 +141,7 @@ onUnmounted(() => {
               @click="goBackToLibraries"
             >
               <svg
-                class="w-5 h-5"
+                class="w-6 h-6"
                 viewBox="0 0 24 24"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
@@ -154,8 +158,9 @@ onUnmounted(() => {
 
             <!-- Add Button -->
             <button
-              class="absolute inset-0 flex items-center justify-center text-light-nav-text dark:text-dark-nav-text rounded-full transition-all duration-300 ease-out"
+              class="absolute inset-0 flex items-center justify-center text-light-nav-text dark:text-dark-nav-text rounded-full transition-all ease-out"
               :style="{
+                transitionDuration: `${TRANSITION_DURATION}ms`,
                 opacity: currentLibraryName ? Math.max(0, drawerProgress) : 1,
                 pointerEvents:
                   !currentLibraryName || drawerProgress >= 0.5
@@ -165,7 +170,7 @@ onUnmounted(() => {
               @click="openAddLibraryModal"
             >
               <svg
-                class="w-5 h-5"
+                class="w-6 h-6"
                 viewBox="0 0 24 24"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
@@ -187,27 +192,35 @@ onUnmounted(() => {
           >
             <!-- Library Name -->
             <p
-              class="absolute text-nav text-light-nav-text dark:text-dark-nav-text text-center whitespace-nowrap transition-all duration-300 ease-out"
+              class="absolute text-nav text-light-nav-text dark:text-dark-nav-text text-center whitespace-nowrap"
               :style="{
                 opacity: currentLibraryName
-                  ? Math.max(0, 1 - drawerProgress * 3)
+                  ? Math.max(0, 1 - drawerProgress * 3 + 0.5)
                   : 0,
                 left: '50%',
-                transform: `translateX(calc(-50% + ${drawerProgress * 250}%))`,
+                transform: `translateX(calc(-50% + ${drawerProgress * 200}%))`,
+                transition:
+                  drawerProgress === 0 || drawerProgress === 1
+                    ? `opacity ${TRANSITION_DURATION}ms ease-in-out, transform ${TRANSITION_DURATION}ms ease-in-out`
+                    : 'none',
               }"
             >
-              {{ currentLibraryName || "Library" }}
+              {{ currentLibraryName }}
             </p>
 
             <!-- Tab Name -->
             <p
-              class="absolute text-nav text-light-nav-text dark:text-dark-nav-text text-center whitespace-nowrap transition-all duration-300 ease-out"
+              class="absolute text-nav text-light-nav-text dark:text-dark-nav-text text-center whitespace-nowrap"
               :style="{
                 opacity: currentLibraryName
-                  ? Math.max(0, drawerProgress * 3 - 2)
+                  ? Math.max(0, drawerProgress * 3 - 1.5)
                   : 1,
                 left: '50%',
-                transform: `translateX(calc(-50% + ${currentLibraryName ? (1 - drawerProgress) * -100 : 0}%))`,
+                transform: `translateX(calc(-50% + ${(1 - drawerProgress) * -100}%))`,
+                transition:
+                  drawerProgress === 0 || drawerProgress === 1
+                    ? `opacity ${TRANSITION_DURATION}ms ease-in-out, transform ${TRANSITION_DURATION}ms ease-in-out`
+                    : 'none',
               }"
             >
               {{ activeTab }}
