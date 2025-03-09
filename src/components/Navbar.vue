@@ -1,23 +1,24 @@
 <script setup lang="ts">
+// ============= Imports =============
 import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { useTabStore } from "@/stores/tabStore";
 import { useSearchStore } from "@/stores/searchStore";
 import { useRoute } from "vue-router";
 
+// ============= Constants =============
+const TRANSITION_DURATION = 300; // milliseconds
+
+// ============= State =============
 const route = useRoute();
 const tabStore = useTabStore();
 const searchStore = useSearchStore();
 const activeTab = computed(() => tabStore.activeTab);
 const currentLibraryName = ref("");
-
 const searchQuery = ref("");
+const drawerProgress = ref(1);
 
-// Watch for changes in the search query and update the store
-watch(searchQuery, (newQuery) => {
-  searchStore.setSearchQuery(newQuery);
-});
-
-// Computed property to determine if the navbar should be hidden
+// ============= Computed Properties =============
+// Determine if navbar should be hidden
 const isNavbarHidden = computed(() => {
   return (
     route.name === "login" ||
@@ -26,12 +27,18 @@ const isNavbarHidden = computed(() => {
   );
 });
 
-// Computed property for search placeholder text
+// Search placeholder text based on active tab
 const searchPlaceholder = computed(() => {
   if (activeTab.value === "My Libraries") {
     return "Search books in your libraries";
   }
   return "Search book";
+});
+
+// ============= Event Handlers =============
+// Watch for changes in the search query and update the store
+watch(searchQuery, (newQuery) => {
+  searchStore.setSearchQuery(newQuery);
 });
 
 // Function to open the Add Library modal
@@ -45,19 +52,20 @@ const goBackToLibraries = () => {
   currentLibraryName.value = "";
 };
 
+// ============= Event Listeners =============
 // Listen for library name updates
 const updateLibraryName = (event: Event) => {
   const customEvent = event as CustomEvent;
   currentLibraryName.value = customEvent.detail;
 };
 
-const drawerProgress = ref(1);
-
+// Handle drawer progress updates
 const handleDrawerProgress = (event: Event) => {
   const progress = (event as CustomEvent).detail;
   drawerProgress.value = progress;
 };
 
+// ============= Lifecycle =============
 onMounted(() => {
   window.addEventListener("libraryNameUpdate", updateLibraryName);
   window.addEventListener("drawerProgress", handleDrawerProgress);
@@ -116,8 +124,9 @@ onUnmounted(() => {
           >
             <!-- Back Button -->
             <button
-              class="absolute inset-0 flex items-center justify-center text-light-nav-text dark:text-dark-nav-text rounded-full transition-all duration-300 ease-out"
+              class="absolute inset-0 flex items-center justify-center text-light-nav-text dark:text-dark-nav-text rounded-full transition-all ease-out"
               :style="{
+                transitionDuration: `${TRANSITION_DURATION}ms`,
                 opacity: currentLibraryName
                   ? Math.max(0, 1 - drawerProgress)
                   : 0,
@@ -185,7 +194,6 @@ onUnmounted(() => {
                   : 0,
                 left: '50%',
                 transform: `translateX(calc(-50% + ${drawerProgress * 250}%))`,
-                pointerEvents: 'none',
               }"
             >
               {{ currentLibraryName || "Library" }}

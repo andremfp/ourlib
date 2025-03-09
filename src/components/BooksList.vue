@@ -7,7 +7,7 @@ import type { Book } from "@/apis/types";
 import { useGesture } from "@vueuse/gesture";
 
 // ============= Constants =============
-const EDGE_SWIPE_THRESHOLD = 0.05;
+const EDGE_SWIPE_THRESHOLD = 0.1;
 const CLOSE_THRESHOLD = 0.3;
 const TRANSITION_DURATION = 300;
 const INITIAL_POSITION = 100;
