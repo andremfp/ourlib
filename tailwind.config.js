@@ -11,6 +11,9 @@ export default {
         "footer-padding": "env(safe-area-inset-bottom)",
         "nav-padding": "env(safe-area-inset-bottom)",
       },
+      borderWidth: {
+        hairline: "0.5px",
+      },
       colors: {
         // Navigation colors
         "light-nav": "#7ea6ff",
@@ -37,6 +40,12 @@ export default {
         "dark-border": "#6b7280",
         "light-placeholder": "#f3f4f6",
         "dark-placeholder": "#6b7280",
+
+        // iOS-specific colors
+        "ios-blue": "#007AFF",
+        "ios-red": "#FF3B30",
+        "ios-menu-light": "rgba(255, 255, 255, 0.9)",
+        "ios-menu-dark": "rgba(39, 39, 42, 0.9)",
       },
     },
   },
