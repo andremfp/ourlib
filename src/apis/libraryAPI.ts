@@ -20,6 +20,15 @@ export const createLibrary = async (library: Library) => {
   await setDoc(libraryDoc, library);
 };
 
+export const updateLibrary = async (
+  libraryId: string,
+  newLibraryName: string,
+) => {
+  await updateDoc(doc(firestore, librariesCollection, libraryId), {
+    name: newLibraryName,
+  });
+};
+
 export const getLibrary = async (
   libraryId: string,
 ): Promise<Library | null> => {
@@ -28,7 +37,6 @@ export const getLibrary = async (
 };
 
 export const getUserLibraries = async (owner: string): Promise<Library[]> => {
-  console.log("Getting libraries for owner:", owner);
   const querySnapshot = await getDocs(
     query(
       collection(firestore, librariesCollection),

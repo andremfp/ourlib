@@ -9,6 +9,9 @@ import type { Library } from "@/apis/types";
 
 // TODO:
 // - three dots in library to edit, delete with confirmation
+// - move add library modal to modals folder
+// - tidy code
+// - animation of menu items
 // - swipe down to update library view
 // - validate lib creation fields
 // - sort by with reverse
@@ -23,7 +26,6 @@ const tabStore = useTabStore();
 
 // Component state
 const libraries = ref<Library[]>([]);
-const allLibraries = ref<Library[]>([]);
 const selectedLibrary = ref<Library | null>(null);
 const isAddLibraryModalOpen = ref(false);
 const isLoading = ref(true);
@@ -39,9 +41,7 @@ const fetchLibraries = async (userId: string) => {
   try {
     isLoading.value = true;
     error.value = null;
-    const fetchedLibraries = await getUserLibraries(userId);
-    allLibraries.value = fetchedLibraries;
-    libraries.value = fetchedLibraries;
+    libraries.value = await getUserLibraries(userId);
   } catch (err) {
     console.error("Error fetching libraries:", err);
     error.value = "Failed to load libraries. Please try again.";
@@ -121,6 +121,21 @@ const setupEventListeners = () => {
       drawerProgress.value = 0;
     }, TRANSITION_DURATION);
   });
+
+  // Library updated handler
+  window.addEventListener("libraryUpdated", (event) => {
+    const { id, name } = (event as CustomEvent).detail;
+    const library = libraries.value.find((lib) => lib.id === id);
+    if (library) {
+      library.name = name;
+    }
+  });
+
+  // Library deleted handler
+  window.addEventListener("deleteLibrary", (event) => {
+    const id = (event as CustomEvent).detail;
+    libraries.value = libraries.value.filter((lib) => lib.id !== id);
+  });
 };
 
 /**
@@ -140,7 +155,6 @@ onMounted(() => {
     } else {
       // Reset state when user is not authenticated
       libraries.value = [];
-      allLibraries.value = [];
       isLoading.value = false;
     }
   });
@@ -165,7 +179,7 @@ const getParallaxStyle = (hasLibrary: boolean) => ({
     <!-- Loading State -->
     <div
       v-if="isLoading"
-      class="h-full flex justify-center items-center"
+      class="absolute inset-0 flex justify-center items-center"
       :style="getParallaxStyle(!!selectedLibrary)"
     >
       <svg

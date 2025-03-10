@@ -2,9 +2,12 @@
 // ============= Imports =============
 import { ref, onMounted, computed, onUnmounted } from "vue";
 import { getLibraryBooks } from "@/apis/bookAPI";
-import { getLibrary } from "@/apis/libraryAPI";
-import type { Book } from "@/apis/types";
+import { getLibrary, updateLibrary, deleteLibrary } from "@/apis/libraryAPI";
+import type { Book, Library } from "@/apis/types";
 import { useGesture } from "@vueuse/gesture";
+import RenameLibraryModal from "@/components/modals/RenameLibrary.vue";
+import DeleteLibraryModal from "@/components/modals/DeleteLibrary.vue";
+import LibraryOptionsMenu from "@/components/menus/LibraryOptions.vue";
 
 // ============= Constants =============
 const EDGE_SWIPE_THRESHOLD = 0.1;
@@ -25,6 +28,11 @@ const libraryName = ref("");
 const isLoading = ref(true);
 const drawerPosition = ref(INITIAL_POSITION);
 const isEdgeSwipeActive = ref(false);
+const showOptionsMenu = ref(false);
+const showRenameModal = ref(false);
+const showDeleteConfirmation = ref(false);
+const newLibraryName = ref("");
+const library = ref<Library | null>(null);
 
 // ============= Event Handlers =============
 const handleBackButton = () => {
@@ -32,6 +40,53 @@ const handleBackButton = () => {
   isEdgeSwipeActive.value = false;
   drawerPosition.value = INITIAL_POSITION;
   setTimeout(() => emit("close"), TRANSITION_DURATION);
+};
+
+const cancelOptionsMenu = () => {
+  showOptionsMenu.value = false;
+};
+
+const openRenameModal = () => {
+  newLibraryName.value = libraryName.value;
+  showRenameModal.value = true;
+  showOptionsMenu.value = false;
+};
+
+const openDeleteConfirmation = () => {
+  showDeleteConfirmation.value = true;
+  showOptionsMenu.value = false;
+};
+
+const handleRename = async (newName: string) => {
+  if (newName.trim() && library.value) {
+    await updateLibrary(props.libraryId, newName);
+    libraryName.value = newName;
+
+    // Update navbar title
+    window.dispatchEvent(
+      new CustomEvent("libraryNameUpdate", { detail: newName }),
+    );
+
+    // Update libraries list
+    window.dispatchEvent(
+      new CustomEvent("libraryUpdated", {
+        detail: { id: props.libraryId, name: newName },
+      }),
+    );
+  }
+  showRenameModal.value = false;
+};
+
+const handleDelete = async () => {
+  await deleteLibrary(props.libraryId);
+
+  window.dispatchEvent(
+    new CustomEvent("deleteLibrary", {
+      detail: props.libraryId,
+    }),
+  );
+  showDeleteConfirmation.value = false;
+  handleBackButton();
 };
 
 // ============= Gesture Setup =============
@@ -86,12 +141,18 @@ onMounted(() => {
   });
 
   window.addEventListener("backToLibraries", handleBackButton);
+  window.addEventListener("toggleOptionsMenu", () => {
+    showOptionsMenu.value = !showOptionsMenu.value;
+  });
 
   fetchBooks();
 });
 
 onUnmounted(() => {
   window.removeEventListener("backToLibraries", handleBackButton);
+  window.removeEventListener("toggleOptionsMenu", () => {
+    showOptionsMenu.value = !showOptionsMenu.value;
+  });
 });
 
 // ============= API Calls =============
@@ -99,8 +160,8 @@ const fetchBooks = async () => {
   try {
     isLoading.value = true;
     books.value = await getLibraryBooks(props.libraryId);
-    const library = await getLibrary(props.libraryId);
-    libraryName.value = library?.name || "Library";
+    library.value = await getLibrary(props.libraryId);
+    libraryName.value = library.value?.name || "Library";
   } finally {
     isLoading.value = false;
   }
@@ -194,5 +255,27 @@ const fetchBooks = async () => {
         This library has no books yet.
       </p>
     </div>
+
+    <LibraryOptionsMenu
+      :is-open="showOptionsMenu"
+      :library-name="libraryName"
+      @close="cancelOptionsMenu"
+      @rename="openRenameModal"
+      @delete="openDeleteConfirmation"
+    />
+
+    <RenameLibraryModal
+      :is-open="showRenameModal"
+      :library-name="libraryName"
+      @close="showRenameModal = false"
+      @rename="handleRename"
+    />
+
+    <DeleteLibraryModal
+      :is-open="showDeleteConfirmation"
+      :library-name="libraryName"
+      @close="showDeleteConfirmation = false"
+      @delete="handleDelete"
+    />
   </div>
 </template>

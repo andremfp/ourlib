@@ -16,10 +16,6 @@ const activeTab = computed(() => tabStore.activeTab);
 const currentLibraryName = ref("");
 const searchQuery = ref("");
 const drawerProgress = ref(1);
-const showOptionsMenu = ref(false);
-const showRenameModal = ref(false);
-const showDeleteConfirmation = ref(false);
-const newLibraryName = ref("");
 
 // ============= Computed Properties =============
 // Determine if navbar should be hidden
@@ -56,51 +52,9 @@ const goBackToLibraries = () => {
   }, TRANSITION_DURATION);
 };
 
-// Options menu functions
+// Function to toggle the options menu
 const toggleOptionsMenu = () => {
-  showOptionsMenu.value = !showOptionsMenu.value;
-};
-
-const openRenameModal = () => {
-  newLibraryName.value = currentLibraryName.value;
-  showRenameModal.value = true;
-  showOptionsMenu.value = false;
-};
-
-const openDeleteConfirmation = () => {
-  showDeleteConfirmation.value = true;
-  showOptionsMenu.value = false;
-};
-
-const cancelOptionsMenu = () => {
-  showOptionsMenu.value = false;
-};
-
-const handleRename = () => {
-  // TODO: Implement API call to rename library
-  if (newLibraryName.value.trim()) {
-    window.dispatchEvent(
-      new CustomEvent("renameLibrary", {
-        detail: {
-          oldName: currentLibraryName.value,
-          newName: newLibraryName.value,
-        },
-      }),
-    );
-    currentLibraryName.value = newLibraryName.value;
-  }
-  showRenameModal.value = false;
-};
-
-const handleDelete = () => {
-  // Dispatch event to delete library
-  window.dispatchEvent(
-    new CustomEvent("deleteLibrary", {
-      detail: currentLibraryName.value,
-    }),
-  );
-  showDeleteConfirmation.value = false;
-  goBackToLibraries();
+  window.dispatchEvent(new Event("toggleOptionsMenu"));
 };
 
 // ============= Event Listeners =============
@@ -117,9 +71,13 @@ const handleDrawerProgress = (event: Event) => {
 };
 
 // ============= Lifecycle =============
-onMounted(() => {
+const setupEventListeners = () => {
   window.addEventListener("libraryNameUpdate", updateLibraryName);
   window.addEventListener("drawerProgress", handleDrawerProgress);
+};
+
+onMounted(() => {
+  setupEventListeners();
 });
 
 onUnmounted(() => {
@@ -224,7 +182,7 @@ onUnmounted(() => {
           </button>
         </div>
 
-        <!-- 3-dot menu button (only visible when library is selected) -->
+        <!-- Add in the navbar next to the back button -->
         <div class="absolute right-0 w-8 h-8 z-10">
           <button
             class="absolute inset-0 flex items-center justify-center text-light-nav-text dark:text-dark-nav-text"
@@ -239,12 +197,7 @@ onUnmounted(() => {
             }"
             @click="toggleOptionsMenu"
           >
-            <svg
-              class="w-6 h-6"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
+            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none">
               <path
                 d="M12 13C12.5523 13 13 12.5523 13 12C13 11.4477 12.5523 11 12 11C11.4477 11 11 11.4477 11 12C11 12.5523 11.4477 13 12 13Z"
                 fill="currentColor"
@@ -320,132 +273,4 @@ onUnmounted(() => {
       </div>
     </div>
   </nav>
-
-  <!-- Options Menu (iOS style) - Teleported to body -->
-  <teleport to="body">
-    <div
-      v-if="showOptionsMenu"
-      class="fixed inset-0 bg-black/40 z-[100] flex items-end justify-center p-4"
-      @click.self="cancelOptionsMenu"
-    >
-      <div class="flex flex-col gap-2 w-full max-w-md">
-        <!-- Options group -->
-        <div
-          class="bg-light-bg/80 dark:bg-dark-nav/80 backdrop-blur-md rounded-xl w-full overflow-hidden"
-        >
-          <div
-            class="p-2 text-center text-light-secondary-text dark:text-dark-secondary-text text-sm"
-          >
-            {{ currentLibraryName }}
-          </div>
-
-          <div class="border-t border-dark-border/30">
-            <button
-              class="w-full py-4 text-center text-ios-blue"
-              @click="openRenameModal"
-            >
-              Rename
-            </button>
-          </div>
-
-          <div class="border-t border-dark-border/30">
-            <button
-              class="w-full py-4 text-center text-ios-red font-medium"
-              @click="openDeleteConfirmation"
-            >
-              Delete
-            </button>
-          </div>
-        </div>
-
-        <!-- Cancel button (separate) -->
-        <div
-          class="bg-light-bg dark:bg-dark-nav rounded-xl w-full overflow-hidden"
-        >
-          <button
-            class="w-full py-3 text-center font-medium text-ios-blue"
-            @click="cancelOptionsMenu"
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-    </div>
-  </teleport>
-
-  <!-- Rename Modal -->
-  <teleport to="body">
-    <div
-      v-if="showRenameModal"
-      class="fixed inset-0 bg-black/40 z-[100] flex items-center justify-center p-4"
-      @click.self="showRenameModal = false"
-    >
-      <div
-        class="w-full max-w-md bg-white/80 dark:bg-dark-nav/80 backdrop-blur-md rounded-xl p-4"
-      >
-        <h3
-          class="text-xl font-semibold text-light-primary-text dark:text-dark-primary-text mb-4"
-        >
-          Rename Library
-        </h3>
-        <input
-          v-model="newLibraryName"
-          type="text"
-          class="w-full p-2 mb-4 bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-lg text-light-primary-text dark:text-dark-primary-text"
-          placeholder="Library name"
-        />
-        <div class="flex justify-end space-x-2">
-          <button
-            class="px-4 py-2 text-ios-blue bg-transparent rounded-lg"
-            @click="showRenameModal = false"
-          >
-            Cancel
-          </button>
-          <button
-            class="px-4 py-2 text-white bg-ios-blue rounded-lg font-medium"
-            @click="handleRename"
-          >
-            Save
-          </button>
-        </div>
-      </div>
-    </div>
-  </teleport>
-
-  <!-- Delete Confirmation Modal -->
-  <teleport to="body">
-    <div
-      v-if="showDeleteConfirmation"
-      class="fixed inset-0 bg-black/40 z-[100] flex items-center justify-center p-4"
-      @click.self="showDeleteConfirmation = false"
-    >
-      <div
-        class="w-full max-w-md bg-white/80 dark:bg-dark-nav/80 backdrop-blur-md rounded-xl p-4"
-      >
-        <h3
-          class="text-xl font-semibold text-light-primary-text dark:text-dark-primary-text mb-2"
-        >
-          Delete Library
-        </h3>
-        <p class="text-light-secondary-text dark:text-dark-secondary-text mb-4">
-          Are you sure you want to delete "{{ currentLibraryName }}"? This
-          action cannot be undone.
-        </p>
-        <div class="flex justify-end space-x-2">
-          <button
-            class="px-4 py-2 text-ios-blue bg-transparent rounded-lg"
-            @click="showDeleteConfirmation = false"
-          >
-            Cancel
-          </button>
-          <button
-            class="px-4 py-2 text-white bg-ios-red rounded-lg font-medium"
-            @click="handleDelete"
-          >
-            Delete
-          </button>
-        </div>
-      </div>
-    </div>
-  </teleport>
 </template>

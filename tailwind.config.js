@@ -6,6 +6,12 @@ export default {
       fontSize: {
         xxs: "0.65rem",
         nav: "1.1rem",
+        "modal-title": "1.2rem",
+        "modal-text": "1rem",
+        "modal-button": "1rem",
+        "menu-title": "1.2rem",
+        "menu-text": "1rem",
+        "menu-button": "1rem",
       },
       spacing: {
         "footer-padding": "env(safe-area-inset-bottom)",
@@ -30,22 +36,14 @@ export default {
         "light-secondary-text": "#6B7280",
         "dark-primary-text": "#E5E7EB",
         "dark-secondary-text": "#9CA3AF",
-
-        // Card colors
-        "light-card": "#ffffff",
-        "dark-card": "#18181B",
+        "menu-blue": "#007AFF",
+        "warning-red": "#FF3B30",
 
         // UI Element colors
         "light-border": "#f9fafb",
         "dark-border": "#6b7280",
         "light-placeholder": "#f3f4f6",
         "dark-placeholder": "#6b7280",
-
-        // iOS-specific colors
-        "ios-blue": "#007AFF",
-        "ios-red": "#FF3B30",
-        "ios-menu-light": "rgba(255, 255, 255, 0.9)",
-        "ios-menu-dark": "rgba(39, 39, 42, 0.9)",
       },
     },
   },
