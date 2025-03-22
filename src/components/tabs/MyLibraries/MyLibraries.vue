@@ -2,175 +2,125 @@
 import { ref, onMounted } from "vue";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { getUserLibraries } from "@/apis/libraryAPI";
-import BooksList from "@/components/BooksList.vue";
-import AddLibraryComponent from "@/components/AddLibrary.vue";
-import { useTabStore } from "@/stores/tabStore";
+import LibraryDrawer from "./LibraryDrawer.vue";
+import AddLibraryComponent from "@/components/modals/AddLibrary.vue";
 import type { Library } from "@/apis/types";
+import { UI_STATE, ANIMATION, EVENTS } from "@/constants/constants";
 
 // TODO:
-// - three dots in library to edit, delete with confirmation
-// - move add library modal to modals folder
-// - tidy code
-// - animation of menu items
 // - swipe down to update library view
-// - validate lib creation fields
 // - sort by with reverse
 
-// ==================== Constants ====================
-const TRANSITION_DURATION = 300; // milliseconds
-const PARALLAX_OFFSET = 20; // percentage to shift libraries list
-
-// ==================== State Management ====================
+// ============= State =============
 const auth = getAuth();
-const tabStore = useTabStore();
-
-// Component state
 const libraries = ref<Library[]>([]);
 const selectedLibrary = ref<Library | null>(null);
 const isAddLibraryModalOpen = ref(false);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
-const drawerProgress = ref(0);
+const libraryDrawerProgress = ref<number>(UI_STATE.LIBRARY_DRAWER.CLOSED);
 
-// ==================== Data Fetching ====================
-/**
- * Fetches user's libraries from the backend
- * Handles loading state and error conditions
- */
+// ============= Methods =============
 const fetchLibraries = async (userId: string) => {
   try {
     isLoading.value = true;
     error.value = null;
     libraries.value = await getUserLibraries(userId);
-  } catch (err) {
-    console.error("Error fetching libraries:", err);
+  } catch {
     error.value = "Failed to load libraries. Please try again.";
   } finally {
     isLoading.value = false;
   }
 };
 
-// ==================== Event Handlers ====================
-/**
- * Library selection handler
- * Updates state and triggers animations
- */
 const selectLibrary = (library: Library) => {
   selectedLibrary.value = library;
-  drawerProgress.value = 0;
-  // Emit library name
+  libraryDrawerProgress.value = UI_STATE.LIBRARY_DRAWER.OPEN;
   window.dispatchEvent(
-    new CustomEvent("libraryNameUpdate", { detail: library.name }),
+    new CustomEvent(EVENTS.LIBRARY.NAVBAR_NAME_UPDATE, {
+      detail: library.name,
+    }),
   );
-  // Emit initial drawer progress
-  window.dispatchEvent(new CustomEvent("drawerProgress", { detail: 0 }));
-};
-
-/**
- * Drawer interaction handlers
- */
-const handleDrawerClose = () => {
-  selectedLibrary.value = null;
-  drawerProgress.value = 0;
-  window.dispatchEvent(new CustomEvent("libraryNameUpdate", { detail: "" }));
-};
-
-const handleDrawerProgress = (progress: number) => {
-  drawerProgress.value = progress;
-  // Emit to navbar - make sure progress is between 0 and 1
   window.dispatchEvent(
-    new CustomEvent("drawerProgress", {
+    new CustomEvent(EVENTS.LIBRARY_DRAWER.PROGRESS, {
+      detail: UI_STATE.LIBRARY_DRAWER.OPEN,
+    }),
+  );
+};
+
+const handleLibraryDrawerClose = () => {
+  selectedLibrary.value = null;
+  libraryDrawerProgress.value = UI_STATE.LIBRARY_DRAWER.CLOSED;
+  window.dispatchEvent(
+    new CustomEvent(EVENTS.LIBRARY.NAVBAR_NAME_UPDATE, {
+      detail: "",
+    }),
+  );
+};
+
+const handleLibraryDrawerProgress = (progress: number) => {
+  libraryDrawerProgress.value = progress;
+  window.dispatchEvent(
+    new CustomEvent(EVENTS.LIBRARY_DRAWER.PROGRESS, {
       detail: progress,
     }),
   );
 };
 
-// ==================== Modal Management ====================
-const openAddLibraryModal = () => {
-  isAddLibraryModalOpen.value = true;
-};
-
-const closeAddLibraryModal = () => {
-  isAddLibraryModalOpen.value = false;
-};
-
 const handleLibraryCreated = async () => {
   const userId = auth.currentUser?.uid;
-  if (userId) {
-    await fetchLibraries(userId);
-  }
+  if (userId) await fetchLibraries(userId);
 };
 
-/**
- * Sets up event listeners for inter-component communication
- * - Handles add library modal triggers
- * - Manages back navigation with animations
- */
+// ============= Event Handlers =============
 const setupEventListeners = () => {
-  // Add Library Modal trigger (from Navbar.vue)
-  window.addEventListener("openAddLibraryModal", openAddLibraryModal);
+  window.addEventListener(EVENTS.MODAL.OPEN_ADD_LIBRARY, () => {
+    isAddLibraryModalOpen.value = true;
+  });
 
-  // Back navigation handler
-  window.addEventListener("backToLibraries", () => {
-    // Start transition animation
-    drawerProgress.value = 1;
-
-    // Reset state after animation completes
+  window.addEventListener(EVENTS.LIBRARY_DRAWER.BACK_TO_LIBRARIES, () => {
+    libraryDrawerProgress.value = UI_STATE.LIBRARY_DRAWER.CLOSED;
     setTimeout(() => {
       selectedLibrary.value = null;
-      drawerProgress.value = 0;
-    }, TRANSITION_DURATION);
+      libraryDrawerProgress.value = UI_STATE.LIBRARY_DRAWER.CLOSED;
+    }, ANIMATION.LIBRARY_DRAWER.TRANSITION_DURATION);
   });
 
-  // Library updated handler
-  window.addEventListener("libraryUpdated", (event) => {
+  window.addEventListener(EVENTS.LIBRARY.UPDATED, (event: Event) => {
     const { id, name } = (event as CustomEvent).detail;
     const library = libraries.value.find((lib) => lib.id === id);
-    if (library) {
-      library.name = name;
-    }
+    if (library) library.name = name;
   });
 
-  // Library deleted handler
-  window.addEventListener("deleteLibrary", (event) => {
+  window.addEventListener(EVENTS.LIBRARY.DELETED, (event: Event) => {
     const id = (event as CustomEvent).detail;
     libraries.value = libraries.value.filter((lib) => lib.id !== id);
   });
 };
 
-/**
- * Lifecycle hooks and initialization
- */
+// ============= Lifecycle =============
 onMounted(() => {
-  // Set active tab
-  tabStore.setActiveTab("My Libraries");
-
-  // Setup event listeners
   setupEventListeners();
-
-  // Initialize auth state listener
-  const unsubscribe = onAuthStateChanged(auth, (user) => {
+  onAuthStateChanged(auth, (user) => {
     if (user) {
       fetchLibraries(user.uid);
     } else {
-      // Reset state when user is not authenticated
       libraries.value = [];
       isLoading.value = false;
+      libraryDrawerProgress.value = UI_STATE.LIBRARY_DRAWER.CLOSED;
     }
   });
-
-  // Cleanup on unmount
-  return () => unsubscribe();
 });
 
-// Common style for parallax animation
 const getParallaxStyle = (hasLibrary: boolean) => ({
   transform: hasLibrary
-    ? `translateX(${(1 - drawerProgress.value) * -PARALLAX_OFFSET}%)`
+    ? `translateX(${-libraryDrawerProgress.value * ANIMATION.LIBRARY_DRAWER.PARALLAX_OFFSET}%)`
     : "none",
-  transition: drawerProgress.value
-    ? "none"
-    : `transform ${TRANSITION_DURATION}ms ease-out`,
+  transition:
+    libraryDrawerProgress.value === UI_STATE.LIBRARY_DRAWER.CLOSED ||
+    libraryDrawerProgress.value === UI_STATE.LIBRARY_DRAWER.OPEN
+      ? `transform ${ANIMATION.LIBRARY_DRAWER.TRANSITION_DURATION}ms ease-out`
+      : "none",
 });
 </script>
 
@@ -325,18 +275,18 @@ const getParallaxStyle = (hasLibrary: boolean) => ({
       </div>
     </template>
 
-    <!-- Books Drawer -->
-    <BooksList
+    <!-- Library Drawer -->
+    <LibraryDrawer
       v-if="selectedLibrary"
       :libraryId="selectedLibrary.id"
-      @close="handleDrawerClose"
-      @progress="handleDrawerProgress"
+      @close="handleLibraryDrawerClose"
+      @progress="handleLibraryDrawerProgress"
     />
 
     <!-- Add Library Modal -->
     <AddLibraryComponent
       :isOpen="isAddLibraryModalOpen"
-      @close="closeAddLibraryModal"
+      @close="() => (isAddLibraryModalOpen = false)"
       @libraryCreated="handleLibraryCreated"
     />
   </div>

@@ -1,26 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useTabStore } from "@/stores/tabStore";
-
-type SVGRect = {
-  "stroke-linejoin": "round" | "miter" | "bevel" | "inherit";
-  width: string;
-  height: string;
-  x: string;
-  y: string;
-  rx: string;
-  ry: string;
-};
-
-type Tab = {
-  name: string;
-  label: string;
-  outlineSvg: Record<string, string>;
-  outlineRects?: SVGRect[];
-  outlinePaths: Record<string, string>[];
-  filledSvg: Record<string, string>;
-  filledPaths: Record<string, string>[];
-};
+import type { Tab } from "@/types/types";
 
 const tabStore = useTabStore();
 const activeTab = computed(() => tabStore.activeTab);

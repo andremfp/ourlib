@@ -5,6 +5,7 @@ import { auth, firestore } from "../firebase";
 import { createUserWithEmailAndPassword, signOut } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import logger from "@/utils/logger";
+import { UI_LIMITS } from "@/constants/constants";
 
 const username = ref("");
 const password = ref("");
@@ -12,12 +13,74 @@ const confirmPassword = ref("");
 const errorMessage = ref("");
 const router = useRouter();
 
+/**
+ * Validate password against the rules in UI_LIMITS.PASSWORD
+ */
+const validatePassword = (
+  password: string,
+): { valid: boolean; message: string } => {
+  // Check length
+  if (password.length < UI_LIMITS.PASSWORD.MIN_LENGTH) {
+    return {
+      valid: false,
+      message: `Password must be at least ${UI_LIMITS.PASSWORD.MIN_LENGTH} characters long.`,
+    };
+  }
+
+  if (password.length > UI_LIMITS.PASSWORD.MAX_LENGTH) {
+    return {
+      valid: false,
+      message: `Password cannot exceed ${UI_LIMITS.PASSWORD.MAX_LENGTH} characters.`,
+    };
+  }
+
+  // Check character requirements
+  const hasUppercase = /[A-Z]/.test(password);
+  const hasLowercase = /[a-z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecial = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password);
+
+  const missingRequirements = [];
+
+  if (UI_LIMITS.PASSWORD.REQUIRE_UPPERCASE && !hasUppercase) {
+    missingRequirements.push("uppercase letter");
+  }
+
+  if (UI_LIMITS.PASSWORD.REQUIRE_LOWERCASE && !hasLowercase) {
+    missingRequirements.push("lowercase letter");
+  }
+
+  if (UI_LIMITS.PASSWORD.REQUIRE_NUMBER && !hasNumber) {
+    missingRequirements.push("number");
+  }
+
+  if (UI_LIMITS.PASSWORD.REQUIRE_SPECIAL && !hasSpecial) {
+    missingRequirements.push("special character");
+  }
+
+  if (missingRequirements.length > 0) {
+    return {
+      valid: false,
+      message: `Password must include at least one ${missingRequirements.join(", ")}.`,
+    };
+  }
+
+  return { valid: true, message: "" };
+};
+
 const register = async () => {
   errorMessage.value = "";
 
   // Check if passwords match
   if (password.value !== confirmPassword.value) {
     errorMessage.value = "Passwords do not match.";
+    return;
+  }
+
+  // Validate password
+  const validation = validatePassword(password.value);
+  if (!validation.valid) {
+    errorMessage.value = validation.message;
     return;
   }
 
@@ -110,6 +173,24 @@ const register = async () => {
             autocomplete="new-password"
             required
           />
+          <div class="mt-1 text-xs text-gray-600 dark:text-gray-300">
+            Password must be {{ UI_LIMITS.PASSWORD.MIN_LENGTH }}-{{
+              UI_LIMITS.PASSWORD.MAX_LENGTH
+            }}
+            characters and include:
+            <ul class="list-disc ml-5 mt-1">
+              <li v-if="UI_LIMITS.PASSWORD.REQUIRE_UPPERCASE">
+                Uppercase letter
+              </li>
+              <li v-if="UI_LIMITS.PASSWORD.REQUIRE_LOWERCASE">
+                Lowercase letter
+              </li>
+              <li v-if="UI_LIMITS.PASSWORD.REQUIRE_NUMBER">Number</li>
+              <li v-if="UI_LIMITS.PASSWORD.REQUIRE_SPECIAL">
+                Special character
+              </li>
+            </ul>
+          </div>
         </div>
 
         <div>

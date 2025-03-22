@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useTabStore } from "@/stores/tabStore";
-import AddBook from "@/components/AddBook.vue";
-import Profile from "@/components/Profile.vue";
-import MyLibraries from "@/components/MyLibraries.vue";
+import AddBook from "@/components/tabs/AddBook.vue";
+import Profile from "@/components/tabs/Profile.vue";
+import MyLibraries from "@/components/tabs/MyLibraries/MyLibraries.vue";
 
 const tabStore = useTabStore();
 const activeTab = computed(() => tabStore.activeTab);

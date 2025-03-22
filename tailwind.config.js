@@ -1,4 +1,6 @@
 /** @type {import('tailwindcss').Config} */
+import tailwindTransitions from "./src/plugins/tailwindTransitions";
+
 export default {
   content: ["./index.html", "./src/**/*.{vue,js,ts,jsx,tsx}"],
   theme: {
@@ -45,7 +47,56 @@ export default {
         "light-placeholder": "#f3f4f6",
         "dark-placeholder": "#6b7280",
       },
+      // Animation durations
+      transitionDuration: {
+        backdrop: "250ms",
+        modal: "300ms",
+        slide: "300ms",
+      },
+      // Animation curves
+      transitionTimingFunction: {
+        smooth: "cubic-bezier(0.4, 0, 0.2, 1)",
+      },
+      // Keyframe animations
+      keyframes: {
+        fadeIn: {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+        fadeOut: {
+          "0%": { opacity: "1" },
+          "100%": { opacity: "0" },
+        },
+        modalIn: {
+          "0%": { opacity: "0", transform: "scale(0.95)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
+        },
+        modalOut: {
+          "0%": { opacity: "1", transform: "scale(1)" },
+          "100%": { opacity: "0", transform: "scale(0.95)" },
+        },
+        slideUp: {
+          "0%": { transform: "translateY(100%)" },
+          "100%": { transform: "translateY(0)" },
+        },
+        slideDown: {
+          "0%": { transform: "translateY(0)" },
+          "100%": { transform: "translateY(100%)" },
+        },
+      },
+      // Named animations
+      animation: {
+        "fade-in": "fadeIn backdrop smooth",
+        "fade-out": "fadeOut backdrop smooth",
+        "modal-in": "modalIn modal smooth",
+        "modal-out": "modalOut modal smooth",
+        "slide-up": "slideUp slide smooth",
+        "slide-down": "slideDown slide smooth",
+      },
     },
   },
-  plugins: [],
+  plugins: [
+    // Add Vue transitions plugin
+    tailwindTransitions,
+  ],
 };

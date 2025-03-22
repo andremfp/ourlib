@@ -1,12 +1,10 @@
 <script setup lang="ts">
-// ============= Imports =============
 import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { useTabStore } from "@/stores/tabStore";
 import { useSearchStore } from "@/stores/searchStore";
 import { useRoute } from "vue-router";
-
-// ============= Constants =============
-const TRANSITION_DURATION = 300; // milliseconds
+import { ANIMATION, UI_STATE, EVENTS, SEARCH } from "@/constants/constants";
+import type { RouteName, TabName } from "@/types/types";
 
 // ============= State =============
 const route = useRoute();
@@ -15,20 +13,17 @@ const searchStore = useSearchStore();
 const activeTab = computed(() => tabStore.activeTab);
 const currentLibraryName = ref("");
 const searchQuery = ref("");
-const drawerProgress = ref(1);
+const drawerProgress = ref(UI_STATE.LIBRARY_DRAWER.CLOSED);
 
 // ============= Computed Properties =============
 // Determine if navbar should be hidden
 const isNavbarHidden = computed(() => {
-  return ["login", "register", "not-found"].includes(route.name as string);
+  return UI_STATE.NAVBAR.HIDDEN_ROUTES.includes(route.name as RouteName);
 });
 
 // Search placeholder text based on active tab
 const searchPlaceholder = computed(() => {
-  if (activeTab.value === "My Libraries") {
-    return "Search books in your libraries";
-  }
-  return "Search book";
+  return SEARCH.PLACEHOLDERS.DEFAULT;
 });
 
 // ============= Event Handlers =============
@@ -39,22 +34,22 @@ watch(searchQuery, (newQuery) => {
 
 // Function to open the Add Library modal
 const openAddLibraryModal = () => {
-  window.dispatchEvent(new Event("openAddLibraryModal"));
+  window.dispatchEvent(new Event(EVENTS.MODAL.OPEN_ADD_LIBRARY));
 };
 
 // Function to go back to libraries list
 const goBackToLibraries = () => {
-  window.dispatchEvent(new Event("backToLibraries"));
+  window.dispatchEvent(new Event(EVENTS.LIBRARY_DRAWER.BACK_TO_LIBRARIES));
 
   // Delay clearing the library name until animation completes
   setTimeout(() => {
     currentLibraryName.value = "";
-  }, TRANSITION_DURATION);
+  }, ANIMATION.NAVBAR.TRANSITION_DURATION);
 };
 
 // Function to toggle the options menu
 const toggleOptionsMenu = () => {
-  window.dispatchEvent(new Event("toggleOptionsMenu"));
+  window.dispatchEvent(new Event(EVENTS.MENU.TOGGLE_LIBRARY_OPTIONS));
 };
 
 // ============= Event Listeners =============
@@ -72,8 +67,8 @@ const handleDrawerProgress = (event: Event) => {
 
 // ============= Lifecycle =============
 const setupEventListeners = () => {
-  window.addEventListener("libraryNameUpdate", updateLibraryName);
-  window.addEventListener("drawerProgress", handleDrawerProgress);
+  window.addEventListener(EVENTS.LIBRARY.NAVBAR_NAME_UPDATE, updateLibraryName);
+  window.addEventListener(EVENTS.LIBRARY_DRAWER.PROGRESS, handleDrawerProgress);
 };
 
 onMounted(() => {
@@ -81,8 +76,14 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  window.removeEventListener("libraryNameUpdate", updateLibraryName);
-  window.removeEventListener("drawerProgress", handleDrawerProgress);
+  window.removeEventListener(
+    EVENTS.LIBRARY.NAVBAR_NAME_UPDATE,
+    updateLibraryName,
+  );
+  window.removeEventListener(
+    EVENTS.LIBRARY_DRAWER.PROGRESS,
+    handleDrawerProgress,
+  );
 });
 </script>
 
@@ -97,7 +98,9 @@ onUnmounted(() => {
     <div class="w-full px-4 pb-2 pt-8 sm:pb-4 sm:pt-4">
       <!-- Standard view for most tabs -->
       <div
-        v-if="!['Add Book', 'Profile', 'My Libraries'].includes(activeTab)"
+        v-if="
+          !UI_STATE.NAVBAR.STANDARD_TITLE_TABS.includes(activeTab as TabName)
+        "
         class="relative"
       >
         <span class="absolute inset-y-0 left-0 flex items-center pl-2">
@@ -125,14 +128,20 @@ onUnmounted(() => {
           <button
             class="absolute inset-0 flex items-center justify-center text-light-nav-text dark:text-dark-nav-text"
             :style="{
-              opacity: currentLibraryName ? Math.max(0, 1 - drawerProgress) : 0,
+              opacity: currentLibraryName
+                ? drawerProgress
+                : UI_STATE.LIBRARY_DRAWER.CLOSED,
               pointerEvents:
-                currentLibraryName && drawerProgress < 0.5 ? 'auto' : 'none',
-              transition:
-                drawerProgress === 0 || drawerProgress === 1
-                  ? `opacity ${TRANSITION_DURATION}ms ease-in-out`
+                currentLibraryName &&
+                drawerProgress >= UI_STATE.NAVBAR.INTERACTION_THRESHOLD
+                  ? 'auto'
                   : 'none',
-              transform: `translateX(-8px)`,
+              transition:
+                drawerProgress === UI_STATE.LIBRARY_DRAWER.CLOSED ||
+                drawerProgress === UI_STATE.LIBRARY_DRAWER.OPEN
+                  ? `opacity ${ANIMATION.NAVBAR.TRANSITION_DURATION}ms ease-in-out`
+                  : 'none',
+              transform: `translateX(${ANIMATION.NAVBAR.BACK_BUTTON_OFFSET}px)`,
             }"
             @click="goBackToLibraries"
           >
@@ -155,12 +164,18 @@ onUnmounted(() => {
           <button
             class="absolute inset-0 flex items-center justify-center text-light-nav-text dark:text-dark-nav-text"
             :style="{
-              opacity: currentLibraryName ? Math.max(0, drawerProgress) : 1,
+              opacity: currentLibraryName
+                ? UI_STATE.LIBRARY_DRAWER.OPEN - drawerProgress
+                : UI_STATE.LIBRARY_DRAWER.OPEN,
               pointerEvents:
-                !currentLibraryName || drawerProgress >= 0.5 ? 'auto' : 'none',
+                !currentLibraryName ||
+                drawerProgress < UI_STATE.NAVBAR.INTERACTION_THRESHOLD
+                  ? 'auto'
+                  : 'none',
               transition:
-                drawerProgress === 0 || drawerProgress === 1
-                  ? `opacity ${TRANSITION_DURATION}ms ease-in-out`
+                drawerProgress === UI_STATE.LIBRARY_DRAWER.CLOSED ||
+                drawerProgress === UI_STATE.LIBRARY_DRAWER.OPEN
+                  ? `opacity ${ANIMATION.NAVBAR.TRANSITION_DURATION}ms ease-in-out`
                   : 'none',
             }"
             @click="openAddLibraryModal"
@@ -187,12 +202,18 @@ onUnmounted(() => {
           <button
             class="absolute inset-0 flex items-center justify-center text-light-nav-text dark:text-dark-nav-text"
             :style="{
-              opacity: currentLibraryName ? Math.max(0, 1 - drawerProgress) : 0,
+              opacity: currentLibraryName
+                ? drawerProgress
+                : UI_STATE.LIBRARY_DRAWER.CLOSED,
               pointerEvents:
-                currentLibraryName && drawerProgress < 0.5 ? 'auto' : 'none',
+                currentLibraryName &&
+                drawerProgress >= UI_STATE.NAVBAR.INTERACTION_THRESHOLD
+                  ? 'auto'
+                  : 'none',
               transition:
-                drawerProgress === 0 || drawerProgress === 1
-                  ? `opacity ${TRANSITION_DURATION}ms ease-in-out`
+                drawerProgress === UI_STATE.LIBRARY_DRAWER.CLOSED ||
+                drawerProgress === UI_STATE.LIBRARY_DRAWER.OPEN
+                  ? `opacity ${ANIMATION.NAVBAR.TRANSITION_DURATION}ms ease-in-out`
                   : 'none',
             }"
             @click="toggleOptionsMenu"
@@ -233,13 +254,21 @@ onUnmounted(() => {
             class="absolute text-nav text-light-nav-text dark:text-dark-nav-text text-center whitespace-nowrap"
             :style="{
               opacity: currentLibraryName
-                ? Math.max(0, 1 - drawerProgress * 3 + 0.5)
-                : 0,
+                ? Math.max(
+                    UI_STATE.LIBRARY_DRAWER.CLOSED,
+                    drawerProgress * ANIMATION.NAVBAR.TITLE_SLIDE_MULTIPLIER -
+                      ANIMATION.NAVBAR.TITLE_SLIDE_OFFSET,
+                  )
+                : UI_STATE.LIBRARY_DRAWER.CLOSED,
               left: '50%',
-              transform: `translateX(calc(-50% + ${drawerProgress * 250}%))`,
+              transform: `translateX(calc(-50% + ${
+                (UI_STATE.LIBRARY_DRAWER.OPEN - drawerProgress) *
+                ANIMATION.NAVBAR.LIBRARY_NAME_SLIDE
+              }%))`,
               transition:
-                drawerProgress === 0 || drawerProgress === 1
-                  ? `all ${TRANSITION_DURATION}ms ease-in-out`
+                drawerProgress === UI_STATE.LIBRARY_DRAWER.CLOSED ||
+                drawerProgress === UI_STATE.LIBRARY_DRAWER.OPEN
+                  ? `all ${ANIMATION.NAVBAR.TRANSITION_DURATION}ms ease-in-out`
                   : 'none',
             }"
           >
@@ -250,13 +279,21 @@ onUnmounted(() => {
             class="absolute text-nav text-light-nav-text dark:text-dark-nav-text text-center whitespace-nowrap"
             :style="{
               opacity: currentLibraryName
-                ? Math.max(0, drawerProgress * 3 - 1.5)
-                : 1,
+                ? Math.max(
+                    UI_STATE.LIBRARY_DRAWER.CLOSED,
+                    UI_STATE.LIBRARY_DRAWER.OPEN -
+                      drawerProgress * ANIMATION.NAVBAR.TITLE_SLIDE_MULTIPLIER +
+                      ANIMATION.NAVBAR.TITLE_SLIDE_OFFSET,
+                  )
+                : UI_STATE.LIBRARY_DRAWER.OPEN,
               left: '50%',
-              transform: `translateX(calc(-50% + ${(1 - drawerProgress) * -120}%))`,
+              transform: `translateX(calc(-50% + ${
+                drawerProgress * ANIMATION.NAVBAR.TAB_NAME_SLIDE
+              }%))`,
               transition:
-                drawerProgress === 0 || drawerProgress === 1
-                  ? `all ${TRANSITION_DURATION}ms ease-in-out`
+                drawerProgress === UI_STATE.LIBRARY_DRAWER.CLOSED ||
+                drawerProgress === UI_STATE.LIBRARY_DRAWER.OPEN
+                  ? `all ${ANIMATION.NAVBAR.TRANSITION_DURATION}ms ease-in-out`
                   : 'none',
             }"
           >

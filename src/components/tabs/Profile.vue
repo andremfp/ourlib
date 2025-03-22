@@ -5,8 +5,8 @@ import { getAuth, signOut, onAuthStateChanged } from "firebase/auth";
 import { getUser } from "@/apis/userAPI";
 import logger from "@/utils/logger";
 import { useTabStore } from "@/stores/tabStore";
-import ChangePasswordForm from "./ChangePasswordForm.vue";
-import DeleteAccount from "./DeleteAccount.vue";
+import ChangePasswordForm from "@/components/modals/ChangePassword.vue";
+import DeleteAccount from "@/components/modals/DeleteAccount.vue";
 
 const auth = getAuth();
 const router = useRouter();
@@ -161,36 +161,12 @@ const logout = async () => {
       </button>
     </div>
 
-    <!-- Change Password Modal -->
-    <div
-      v-if="showChangePasswordModal"
-      id="change-password-modal"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
-    >
-      <div
-        class="bg-light-bg dark:bg-dark-bg rounded-lg shadow-lg w-full max-w-md"
-      >
-        <ChangePasswordForm
-          @close="showChangePasswordModal = false"
-          id="change-password-form"
-        />
-      </div>
-    </div>
+    <!-- Modals -->
+    <ChangePasswordForm
+      :isOpen="showChangePasswordModal"
+      @close="showChangePasswordModal = false"
+    />
 
-    <!-- Delete Account Modal -->
-    <div
-      v-if="showDeleteModal"
-      id="delete-account-modal"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
-    >
-      <div
-        class="bg-light-bg dark:bg-dark-bg rounded-lg shadow-lg w-full max-w-md p-6"
-      >
-        <DeleteAccount
-          @close="showDeleteModal = false"
-          id="delete-account-modal"
-        />
-      </div>
-    </div>
+    <DeleteAccount :isOpen="showDeleteModal" @close="showDeleteModal = false" />
   </div>
 </template>
