@@ -27,9 +27,13 @@ const renderComponent = computed(() => {
 </script>
 
 <template>
-  <div class="flex-1 flex justify-center items-center">
-    <component :is="renderComponent" v-if="renderComponent" />
-    <div v-else class="text-white">
+  <div class="flex-1 h-full flex">
+    <component
+      :is="renderComponent"
+      v-if="renderComponent"
+      class="w-full h-full"
+    />
+    <div v-else class="text-white w-full flex items-center justify-center">
       No component found for tab: {{ activeTab }}
     </div>
   </div>

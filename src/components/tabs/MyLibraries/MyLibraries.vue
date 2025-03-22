@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { getUserLibraries } from "@/apis/libraryAPI";
 import LibraryDrawer from "./LibraryDrawer.vue";
@@ -8,7 +8,6 @@ import type { Library } from "@/apis/types";
 import { UI_STATE, ANIMATION, EVENTS } from "@/constants/constants";
 
 // TODO:
-// - swipe down to update library view
 // - sort by with reverse
 
 // ============= State =============
@@ -17,19 +16,52 @@ const libraries = ref<Library[]>([]);
 const selectedLibrary = ref<Library | null>(null);
 const isAddLibraryModalOpen = ref(false);
 const isLoading = ref(true);
+const isRefreshing = ref(false);
 const error = ref<string | null>(null);
 const libraryDrawerProgress = ref<number>(UI_STATE.LIBRARY_DRAWER.CLOSED);
+
+// Pull-to-refresh state
+const pullIndicatorHeight = ref(0);
+const refreshTriggerHeight = 100; // Height in pixels to trigger refresh
+const mainContainer = ref<HTMLElement | null>(null);
+let touchStartY = 0;
+let pullStarted = false;
+let refreshInProgress = false;
 
 // ============= Methods =============
 const fetchLibraries = async (userId: string) => {
   try {
-    isLoading.value = true;
+    if (isRefreshing.value) {
+      // When refreshing via pull, keep the existing libraries visible
+      isRefreshing.value = true;
+    } else {
+      // Initial load - show full loading screen
+      isLoading.value = true;
+    }
     error.value = null;
     libraries.value = await getUserLibraries(userId);
   } catch {
     error.value = "Failed to load libraries. Please try again.";
   } finally {
     isLoading.value = false;
+    isRefreshing.value = false;
+    pullIndicatorHeight.value = 0; // Reset pull indicator when refresh is done
+    refreshInProgress = false;
+  }
+};
+
+const refreshLibraries = async () => {
+  if (isRefreshing.value || refreshInProgress) return; // Prevent multiple refresh calls
+
+  refreshInProgress = true;
+  isRefreshing.value = true;
+  const userId = auth.currentUser?.uid;
+  if (userId) {
+    await fetchLibraries(userId);
+  } else {
+    isRefreshing.value = false;
+    pullIndicatorHeight.value = 0;
+    refreshInProgress = false;
   }
 };
 
@@ -72,6 +104,67 @@ const handleLibraryCreated = async () => {
   if (userId) await fetchLibraries(userId);
 };
 
+// Touch handlers for pull-to-refresh
+const onTouchStart = (e: TouchEvent) => {
+  if (selectedLibrary.value || isRefreshing.value || refreshInProgress) return;
+
+  // Check if we're at the top of the scroll
+  const container = mainContainer.value;
+  if (!container || container.scrollTop > 0) return;
+
+  // Record the starting touch position
+  touchStartY = e.touches[0].clientY;
+  pullStarted = true;
+};
+
+const onTouchMove = (e: TouchEvent) => {
+  if (
+    !pullStarted ||
+    selectedLibrary.value ||
+    isRefreshing.value ||
+    refreshInProgress
+  )
+    return;
+
+  const container = mainContainer.value;
+  if (!container) return;
+
+  // If we've scrolled down from the top, don't activate pull-to-refresh
+  if (container.scrollTop > 5) {
+    pullStarted = false;
+    pullIndicatorHeight.value = 0;
+    return;
+  }
+
+  const currentY = e.touches[0].clientY;
+  const pullDistance = currentY - touchStartY;
+
+  if (pullDistance > 0) {
+    // Apply a resistance factor - pull indicator grows slower as it gets larger
+    pullIndicatorHeight.value = Math.min(
+      Math.pow(pullDistance, 0.75),
+      refreshTriggerHeight * 1.5,
+    );
+  } else {
+    // Reset when user pulls up
+    pullIndicatorHeight.value = 0;
+  }
+};
+
+const onTouchEnd = () => {
+  if (!pullStarted || isRefreshing.value || refreshInProgress) return;
+
+  // If pulled past threshold, trigger refresh
+  if (pullIndicatorHeight.value > refreshTriggerHeight) {
+    refreshLibraries();
+  } else {
+    // Reset otherwise
+    pullIndicatorHeight.value = 0;
+  }
+
+  pullStarted = false;
+};
+
 // ============= Event Handlers =============
 const setupEventListeners = () => {
   window.addEventListener(EVENTS.MODAL.OPEN_ADD_LIBRARY, () => {
@@ -112,6 +205,10 @@ onMounted(() => {
   });
 });
 
+onUnmounted(() => {
+  // Nothing to clean up
+});
+
 const getParallaxStyle = (hasLibrary: boolean) => ({
   transform: hasLibrary
     ? `translateX(${-libraryDrawerProgress.value * ANIMATION.LIBRARY_DRAWER.PARALLAX_OFFSET}%)`
@@ -125,10 +222,56 @@ const getParallaxStyle = (hasLibrary: boolean) => ({
 </script>
 
 <template>
-  <div class="bg-light-bg dark:bg-dark-bg w-full">
-    <!-- Loading State -->
+  <div
+    :class="[
+      'bg-light-bg dark:bg-dark-bg w-full h-full',
+      libraries.length > 0 ? '' : 'overflow-hidden',
+    ]"
+    @touchstart.passive="onTouchStart"
+    @touchmove.passive="onTouchMove"
+    @touchend="onTouchEnd"
+    ref="mainContainer"
+  >
+    <!-- Pull indicator shown when pulling -->
     <div
-      v-if="isLoading"
+      class="flex items-center justify-center bg-light-bg dark:bg-dark-bg border-b border-light-border/20 dark:border-dark-border/20"
+      :style="{
+        height: `${pullIndicatorHeight}px`,
+        transition: pullIndicatorHeight > 0 ? 'none' : 'height 0.3s ease-out',
+        minHeight: pullIndicatorHeight > 0 ? '1px' : '0px',
+      }"
+    >
+      <div v-if="pullIndicatorHeight > 0" class="flex items-center px-4 py-2">
+        <svg
+          class="h-6 w-6 mr-2 text-light-secondary-text dark:text-dark-secondary-text"
+          :class="{ 'animate-spin': isRefreshing }"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+          />
+        </svg>
+        <span class="text-light-secondary-text dark:text-dark-secondary-text">
+          {{
+            isRefreshing
+              ? "Refreshing..."
+              : pullIndicatorHeight > refreshTriggerHeight
+                ? "Release to refresh"
+                : "Pull to refresh"
+          }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Initial loading state -->
+    <div
+      v-if="isLoading && libraries.length === 0"
       class="absolute inset-0 flex justify-center items-center"
       :style="getParallaxStyle(!!selectedLibrary)"
     >
@@ -175,12 +318,11 @@ const getParallaxStyle = (hasLibrary: boolean) => ({
       <!-- Libraries List -->
       <div
         v-if="libraries.length > 0"
-        class="h-full"
+        class="flex flex-col h-fit"
         :style="getParallaxStyle(!!selectedLibrary)"
       >
-        <ul
-          class="h-full overflow-auto divide-y divide-light-border/40 dark:divide-dark-border/40"
-        >
+        <!-- Library list - auto places items at their natural height -->
+        <ul class="divide-y divide-light-border/40 dark:divide-dark-border/40">
           <li
             v-for="library in libraries"
             :key="library.id"
