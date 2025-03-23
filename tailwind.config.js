@@ -8,6 +8,7 @@ export default {
       fontSize: {
         xxs: "0.65rem",
         nav: "1.1rem",
+        "nav-subtext": "0.8rem",
         "modal-title": "1.2rem",
         "modal-text": "1rem",
         "modal-button": "1rem",

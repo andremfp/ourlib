@@ -93,6 +93,8 @@ async function handleSubmit() {
       name: trimmedName,
       ownerId: userId,
       booksCount: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     } as Library);
 
     // Reset form and emit success event

@@ -5,7 +5,7 @@ import { getUserLibraries } from "@/apis/libraryAPI";
 import LibraryDrawer from "./LibraryDrawer.vue";
 import AddLibraryComponent from "@/components/modals/AddLibrary.vue";
 import type { Library } from "@/apis/types";
-import { UI_STATE, ANIMATION, EVENTS } from "@/constants/constants";
+import { UI_STATE, ANIMATION, EVENTS, SORT } from "@/constants/constants";
 
 // TODO:
 // - sort by with reverse
@@ -19,6 +19,10 @@ const isLoading = ref(true);
 const isRefreshing = ref(false);
 const error = ref<string | null>(null);
 const libraryDrawerProgress = ref<number>(UI_STATE.LIBRARY_DRAWER.CLOSED);
+
+// Sort settings
+const sortBy = ref<string>(SORT.BY.NAME);
+const sortReverse = ref<boolean>(SORT.DIRECTION.ASC);
 
 // Pull-to-refresh state
 const pullIndicatorHeight = ref(0);
@@ -40,6 +44,9 @@ const fetchLibraries = async (userId: string) => {
     }
     error.value = null;
     libraries.value = await getUserLibraries(userId);
+
+    // Sort libraries with current settings
+    sortLibraries();
   } catch {
     error.value = "Failed to load libraries. Please try again.";
   } finally {
@@ -48,6 +55,36 @@ const fetchLibraries = async (userId: string) => {
     pullIndicatorHeight.value = 0; // Reset pull indicator when refresh is done
     refreshInProgress = false;
   }
+};
+
+// Sort libraries based on current sort settings
+const sortLibraries = () => {
+  if (!libraries.value.length) return;
+
+  libraries.value.sort((a, b) => {
+    let result = 0;
+
+    if (sortBy.value === SORT.BY.NAME) {
+      result = a.name.localeCompare(b.name);
+    } else {
+      // Use createdAt timestamp or fallback to numeric comparison
+      const aTimestamp = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTimestamp = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      result = aTimestamp - bTimestamp;
+    }
+
+    return sortReverse.value ? -result : result;
+  });
+};
+
+// Handle sort changes from navbar
+const handleSortChange = (event: Event) => {
+  const { sortBy: newSortBy, sortReverse: newSortReverse } = (
+    event as CustomEvent
+  ).detail;
+  sortBy.value = newSortBy;
+  sortReverse.value = newSortReverse;
+  sortLibraries();
 };
 
 const refreshLibraries = async () => {
@@ -183,12 +220,16 @@ const setupEventListeners = () => {
     const { id, name } = (event as CustomEvent).detail;
     const library = libraries.value.find((lib) => lib.id === id);
     if (library) library.name = name;
+    sortLibraries();
   });
 
   window.addEventListener(EVENTS.LIBRARY.DELETED, (event: Event) => {
     const id = (event as CustomEvent).detail;
     libraries.value = libraries.value.filter((lib) => lib.id !== id);
   });
+
+  // Add listener for sort change events
+  window.addEventListener(EVENTS.LIBRARY.SORT_CHANGED, handleSortChange);
 };
 
 // ============= Lifecycle =============
@@ -206,7 +247,8 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  // Nothing to clean up
+  // Clean up sort change event listener
+  window.removeEventListener(EVENTS.LIBRARY.SORT_CHANGED, handleSortChange);
 });
 
 const getParallaxStyle = (hasLibrary: boolean) => ({

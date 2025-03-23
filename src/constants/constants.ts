@@ -66,6 +66,7 @@ export const EVENTS = {
     NAVBAR_NAME_UPDATE: "navbarNameUpdate",
     UPDATED: "libraryUpdated",
     DELETED: "libraryDeleted",
+    SORT_CHANGED: "librarySortChanged",
   },
   // Drawer-related events
   LIBRARY_DRAWER: {
@@ -102,5 +103,17 @@ export const UI_LIMITS = {
 export const SEARCH = {
   PLACEHOLDERS: {
     DEFAULT: "Search book",
+  },
+} as const;
+
+// Sort Constants
+export const SORT = {
+  BY: {
+    NAME: "NAME",
+    DATE: "DATE ADDED",
+  },
+  DIRECTION: {
+    ASC: false,
+    DESC: true,
   },
 } as const;

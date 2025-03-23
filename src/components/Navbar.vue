@@ -3,7 +3,13 @@ import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { useTabStore } from "@/stores/tabStore";
 import { useSearchStore } from "@/stores/searchStore";
 import { useRoute } from "vue-router";
-import { ANIMATION, UI_STATE, EVENTS, SEARCH } from "@/constants/constants";
+import {
+  ANIMATION,
+  UI_STATE,
+  EVENTS,
+  SEARCH,
+  SORT,
+} from "@/constants/constants";
 import type { RouteName, TabName } from "@/types/types";
 
 // ============= State =============
@@ -14,6 +20,10 @@ const activeTab = computed(() => tabStore.activeTab);
 const currentLibraryName = ref("");
 const searchQuery = ref("");
 const drawerProgress = ref(UI_STATE.LIBRARY_DRAWER.CLOSED);
+
+// Sort state
+const sortBy = ref<string>(SORT.BY.NAME);
+const sortReverse = ref<boolean>(SORT.DIRECTION.ASC);
 
 // ============= Computed Properties =============
 // Determine if navbar should be hidden
@@ -52,6 +62,37 @@ const toggleOptionsMenu = () => {
   window.dispatchEvent(new Event(EVENTS.MENU.TOGGLE_LIBRARY_OPTIONS));
 };
 
+// Function to change sort method
+const changeSortBy = () => {
+  // Toggle between name and date added
+  if (sortBy.value === SORT.BY.NAME) {
+    sortBy.value = SORT.BY.DATE;
+    sortReverse.value = true; // Newest to oldest
+  } else {
+    sortBy.value = SORT.BY.NAME;
+    sortReverse.value = false; // A to Z
+  }
+  dispatchSortEvent();
+};
+
+// Function to toggle sort direction
+const toggleSortDirection = () => {
+  sortReverse.value = !sortReverse.value;
+  dispatchSortEvent();
+};
+
+// Dispatch sort event with current sort settings
+const dispatchSortEvent = () => {
+  window.dispatchEvent(
+    new CustomEvent(EVENTS.LIBRARY.SORT_CHANGED, {
+      detail: {
+        sortBy: sortBy.value,
+        sortReverse: sortReverse.value,
+      },
+    }),
+  );
+};
+
 // ============= Event Listeners =============
 // Listen for library name updates
 const updateLibraryName = (event: Event) => {
@@ -73,6 +114,8 @@ const setupEventListeners = () => {
 
 onMounted(() => {
   setupEventListeners();
+  // Dispatch initial sort settings
+  dispatchSortEvent();
 });
 
 onUnmounted(() => {
@@ -307,6 +350,49 @@ onUnmounted(() => {
         <p class="text-light-nav-text dark:text-dark-nav-text">
           {{ activeTab }}
         </p>
+      </div>
+    </div>
+
+    <!-- Sort controls - Only show when in My Libraries tab and no library is selected -->
+    <div
+      v-if="activeTab === 'My Libraries' && !currentLibraryName"
+      class="flex justify-between items-center px-4 py-2 text-nav-subtext text-light-nav-text dark:text-dark-nav-text border-t border-light-border/20 dark:border-dark-border/20"
+      :style="{
+        opacity: currentLibraryName
+          ? UI_STATE.LIBRARY_DRAWER.OPEN - drawerProgress
+          : UI_STATE.LIBRARY_DRAWER.OPEN,
+        transition:
+          drawerProgress === UI_STATE.LIBRARY_DRAWER.CLOSED ||
+          drawerProgress === UI_STATE.LIBRARY_DRAWER.OPEN
+            ? `opacity ${ANIMATION.NAVBAR.TRANSITION_DURATION}ms ease-in-out`
+            : 'none',
+      }"
+    >
+      <!-- Left side: Sort method -->
+      <div class="flex items-center">
+        <span class="font-light mr-1">SORTED BY:</span>
+        <button @click="changeSortBy" class="font-bold">
+          {{ sortBy }}
+        </button>
+      </div>
+
+      <!-- Right side: Sort direction control -->
+      <div class="flex items-center">
+        <svg
+          class="w-4 h-4 mr-1"
+          :class="{ 'transform rotate-180': sortReverse }"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="1.5"
+            d="M12 5v14M12 19l7-7M12 19l-7-7"
+          />
+        </svg>
+        <button @click="toggleSortDirection" class="font-bold">REVERSE</button>
       </div>
     </div>
   </nav>
