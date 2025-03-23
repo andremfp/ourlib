@@ -142,7 +142,7 @@ const onTouchMove = (e: TouchEvent) => {
   if (pullDistance > 0) {
     // Apply a resistance factor - pull indicator grows slower as it gets larger
     pullIndicatorHeight.value = Math.min(
-      Math.pow(pullDistance, 0.75),
+      Math.pow(pullDistance, 0.9),
       refreshTriggerHeight * 1.5,
     );
   } else {
