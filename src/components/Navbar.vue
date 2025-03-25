@@ -22,6 +22,8 @@ const searchQuery = ref("");
 const drawerProgress = ref(UI_STATE.LIBRARY_DRAWER.CLOSED);
 
 // Sort state
+const savedSortBy = ref<string>(SORT.BY.NAME);
+const savedSortReverse = ref<boolean>(SORT.DIRECTION.ASC);
 const sortBy = ref<string>(SORT.BY.NAME);
 const sortReverse = ref<boolean>(SORT.DIRECTION.ASC);
 
@@ -42,6 +44,17 @@ watch(searchQuery, (newQuery) => {
   searchStore.setSearchQuery(newQuery);
 });
 
+// Reset sort settings when navigating away from My Libraries tab
+watch(activeTab, (newTab, oldTab) => {
+  if (oldTab === "My Libraries" && newTab !== "My Libraries") {
+    // Reset sort settings when leaving the tab
+    sortBy.value = SORT.BY.NAME;
+    sortReverse.value = SORT.DIRECTION.ASC;
+    savedSortBy.value = SORT.BY.NAME;
+    savedSortReverse.value = SORT.DIRECTION.ASC;
+  }
+});
+
 // Function to open the Add Library modal
 const openAddLibraryModal = () => {
   window.dispatchEvent(new Event(EVENTS.MODAL.OPEN_ADD_LIBRARY));
@@ -54,6 +67,8 @@ const goBackToLibraries = () => {
   // Delay clearing the library name until animation completes
   setTimeout(() => {
     currentLibraryName.value = "";
+    sortBy.value = savedSortBy.value;
+    sortReverse.value = savedSortReverse.value;
   }, ANIMATION.NAVBAR.TRANSITION_DURATION);
 };
 
@@ -72,12 +87,25 @@ const changeSortBy = () => {
     sortBy.value = SORT.BY.NAME;
     sortReverse.value = false; // A to Z
   }
+
+  // Also update saved values when in libraries view
+  if (!currentLibraryName.value) {
+    savedSortBy.value = sortBy.value;
+    savedSortReverse.value = sortReverse.value;
+  }
+
   dispatchSortEvent();
 };
 
 // Function to toggle sort direction
 const toggleSortDirection = () => {
   sortReverse.value = !sortReverse.value;
+
+  // Also update saved values when in libraries view
+  if (!currentLibraryName.value) {
+    savedSortReverse.value = sortReverse.value;
+  }
+
   dispatchSortEvent();
 };
 
@@ -98,6 +126,10 @@ const dispatchSortEvent = () => {
 const updateLibraryName = (event: Event) => {
   const customEvent = event as CustomEvent;
   currentLibraryName.value = customEvent.detail;
+  savedSortBy.value = sortBy.value;
+  savedSortReverse.value = sortReverse.value;
+  sortBy.value = SORT.BY.NAME;
+  sortReverse.value = false;
 };
 
 // Handle drawer progress updates
@@ -353,45 +385,101 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- Sort controls - Only show when in My Libraries tab and no library is selected -->
+    <!-- Sort controls -->
     <div
-      v-if="activeTab === 'My Libraries' && !currentLibraryName"
+      v-if="activeTab === 'My Libraries'"
       class="flex justify-between items-center px-4 py-2 text-nav-subtext text-light-nav-text dark:text-dark-nav-text border-t border-light-border/20 dark:border-dark-border/20"
       :style="{
-        opacity: currentLibraryName
-          ? UI_STATE.LIBRARY_DRAWER.OPEN - drawerProgress
-          : UI_STATE.LIBRARY_DRAWER.OPEN,
+        opacity: 1, // Always visible
         transition:
           drawerProgress === UI_STATE.LIBRARY_DRAWER.CLOSED ||
           drawerProgress === UI_STATE.LIBRARY_DRAWER.OPEN
-            ? `opacity ${ANIMATION.NAVBAR.TRANSITION_DURATION}ms ease-in-out`
+            ? `all ${ANIMATION.NAVBAR.TRANSITION_DURATION}ms ease-in-out`
             : 'none',
       }"
     >
       <!-- Left side: Sort method -->
-      <div class="flex items-center">
+      <div class="flex items-center relative">
         <span class="font-light mr-1">SORTED BY:</span>
-        <button @click="changeSortBy" class="font-bold">
-          {{ sortBy }}
-        </button>
+        <div class="relative font-bold">
+          <!-- Libraries view sort value -->
+          <span
+            :style="{
+              opacity: currentLibraryName
+                ? UI_STATE.LIBRARY_DRAWER.OPEN - drawerProgress
+                : 1,
+              position: 'absolute',
+              transition: `opacity ${ANIMATION.NAVBAR.TRANSITION_DURATION}ms ease-in-out`,
+            }"
+          >
+            {{ savedSortBy }}
+          </span>
+
+          <!-- Drawer view sort value -->
+          <span
+            :style="{
+              opacity: currentLibraryName ? drawerProgress : 0,
+              transition: `opacity ${ANIMATION.NAVBAR.TRANSITION_DURATION}ms ease-in-out`,
+            }"
+          >
+            {{ sortBy }}
+          </span>
+
+          <!-- Invisible spacer to maintain width -->
+          <span class="invisible">{{ savedSortBy }}</span>
+        </div>
+        <!-- Make button cover both spans but not extend beyond its parent -->
+        <button
+          @click="changeSortBy"
+          class="absolute inset-0 w-full h-full"
+        ></button>
       </div>
 
       <!-- Right side: Sort direction control -->
       <div class="flex items-center">
-        <svg
-          class="w-4 h-4 mr-1"
-          :class="{ 'transform rotate-180': sortReverse }"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="1.5"
-            d="M12 5v14M12 19l7-7M12 19l-7-7"
-          />
-        </svg>
+        <div class="relative mr-1 w-4 h-4">
+          <!-- Libraries view arrow -->
+          <svg
+            class="w-4 h-4 absolute"
+            :class="{ 'transform rotate-180': savedSortReverse }"
+            :style="{
+              opacity: currentLibraryName
+                ? UI_STATE.LIBRARY_DRAWER.OPEN - drawerProgress
+                : 1,
+              transition: `opacity ${ANIMATION.NAVBAR.TRANSITION_DURATION}ms ease-in-out`,
+            }"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.5"
+              d="M12 5v14M12 19l7-7M12 19l-7-7"
+            />
+          </svg>
+
+          <!-- Drawer view arrow -->
+          <svg
+            class="w-4 h-4 absolute"
+            :class="{ 'transform rotate-180': sortReverse }"
+            :style="{
+              opacity: currentLibraryName ? drawerProgress : 0,
+              transition: `opacity ${ANIMATION.NAVBAR.TRANSITION_DURATION}ms ease-in-out`,
+            }"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.5"
+              d="M12 5v14M12 19l7-7M12 19l-7-7"
+            />
+          </svg>
+        </div>
         <button @click="toggleSortDirection" class="font-bold">REVERSE</button>
       </div>
     </div>

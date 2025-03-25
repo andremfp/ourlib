@@ -7,9 +7,6 @@ import AddLibraryComponent from "@/components/modals/AddLibrary.vue";
 import type { Library } from "@/apis/types";
 import { UI_STATE, ANIMATION, EVENTS, SORT } from "@/constants/constants";
 
-// TODO:
-// - sort by with reverse
-
 // ============= State =============
 const auth = getAuth();
 const libraries = ref<Library[]>([]);
