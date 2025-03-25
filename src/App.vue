@@ -1,6 +1,6 @@
 <script lang="ts">
 import TabsComponent from "@/components/Tabs.vue";
-import NavbarComponent from "@/components/Navbar.vue";
+import NavbarComponent from "@/components/Navbar/Navbar.vue";
 
 export default {
   components: {
