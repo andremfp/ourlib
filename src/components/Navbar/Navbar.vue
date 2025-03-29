@@ -9,10 +9,11 @@ import type { RouteName, TabName } from "@/types/types";
 // Import composables
 import { useSort } from "./composables/useSort";
 import { useDrawerTransition } from "./composables/useDrawerTransition";
-import { useNavigation } from "./composables/useNavigation";
+import { useLibrariesNavigation } from "./composables/useNavigation";
+import { useLibrariesActions } from "./composables/useActions";
 
 // Import components
-import LibraryHeader from "./LibraryHeader.vue";
+import LibrariesNavbar from "./LibrariesNavbar.vue";
 import SortControls from "./SortControls.vue";
 
 // Set up composable state
@@ -36,12 +37,12 @@ const {
 
 const {
   currentLibraryName,
-  openAddLibraryModal,
   goBackToLibraries,
-  toggleOptionsMenu,
   setupEventListeners: setupNavigationListeners,
   cleanupEventListeners: cleanupNavigationListeners,
-} = useNavigation();
+} = useLibrariesNavigation();
+
+const { openAddLibraryModal, toggleOptionsMenu } = useLibrariesActions();
 
 // Set up regular Vue state
 const route = useRoute();
@@ -139,7 +140,7 @@ onUnmounted(() => {
       </div>
 
       <!-- My Libraries specific view -->
-      <LibraryHeader
+      <LibrariesNavbar
         v-else-if="activeTab === 'My Libraries'"
         :active-tab="activeTab"
         :current-library-name="currentLibraryName"

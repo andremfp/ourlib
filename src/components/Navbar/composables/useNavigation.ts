@@ -1,13 +1,8 @@
 import { ref } from "vue";
 import { EVENTS, ANIMATION } from "@/constants/constants";
 
-export function useNavigation() {
+export function useLibrariesNavigation() {
   const currentLibraryName = ref("");
-
-  // Function to open the Add Library modal
-  const openAddLibraryModal = () => {
-    window.dispatchEvent(new Event(EVENTS.MODAL.OPEN_ADD_LIBRARY));
-  };
 
   // Function to go back to libraries list
   const goBackToLibraries = (onComplete?: () => void) => {
@@ -18,11 +13,6 @@ export function useNavigation() {
       currentLibraryName.value = "";
       if (onComplete) onComplete();
     }, ANIMATION.NAVBAR.TRANSITION_DURATION);
-  };
-
-  // Function to toggle the options menu
-  const toggleOptionsMenu = () => {
-    window.dispatchEvent(new Event(EVENTS.MENU.TOGGLE_LIBRARY_OPTIONS));
   };
 
   // Listen for library name updates
@@ -52,9 +42,7 @@ export function useNavigation() {
 
   return {
     currentLibraryName,
-    openAddLibraryModal,
     goBackToLibraries,
-    toggleOptionsMenu,
     updateLibraryName,
     setupEventListeners,
     cleanupEventListeners,
