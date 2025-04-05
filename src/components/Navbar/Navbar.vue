@@ -6,17 +6,22 @@ import { useRoute } from "vue-router";
 import { UI_STATE, SEARCH } from "@/constants/constants";
 import type { RouteName, TabName } from "@/types/types";
 
+// Import components
+import LibrariesNavbar from "./LibrariesNavbar.vue";
+import SortControls from "./SortControls.vue";
+
 // Import composables
 import { useSort } from "./composables/useSort";
 import { useDrawerTransition } from "./composables/useDrawerTransition";
 import { useLibrariesNavigation } from "./composables/useNavigation";
 import { useLibrariesActions } from "./composables/useActions";
 
-// Import components
-import LibrariesNavbar from "./LibrariesNavbar.vue";
-import SortControls from "./SortControls.vue";
+// Initialize stores
+const route = useRoute();
+const tabStore = useTabStore();
+const searchStore = useSearchStore();
 
-// Set up composable state
+// Initialize composables
 const {
   sortBy,
   sortReverse,
@@ -44,55 +49,37 @@ const {
 
 const { openAddLibraryModal, toggleOptionsMenu } = useLibrariesActions();
 
-// Set up regular Vue state
-const route = useRoute();
-const tabStore = useTabStore();
-const searchStore = useSearchStore();
-const activeTab = computed(() => tabStore.activeTab);
+// Local state
 const searchQuery = ref("");
+const activeTab = computed(() => tabStore.activeTab);
 
-// ============= Computed Properties =============
-// Determine if navbar should be hidden
-const isNavbarHidden = computed(() => {
-  return UI_STATE.NAVBAR.HIDDEN_ROUTES.includes(route.name as RouteName);
-});
+// Computed properties
+const isNavbarHidden = computed(() =>
+  UI_STATE.NAVBAR.HIDDEN_ROUTES.includes(route.name as RouteName),
+);
 
-// Search placeholder text based on active tab
-const searchPlaceholder = computed(() => {
-  return SEARCH.PLACEHOLDERS.DEFAULT;
-});
+const searchPlaceholder = computed(() => SEARCH.PLACEHOLDERS.DEFAULT);
 
-// ============= Event Handlers =============
-// Watch for changes in the search query and update the store
-watch(searchQuery, (newQuery) => {
-  searchStore.setSearchQuery(newQuery);
-});
+// Handle back button click with sort logic synchronization
+const handleGoBack = () => goBackToLibraries(() => exitLibraryView());
 
-// Reset sort settings when navigating away from My Libraries tab
+// Watch handlers
+watch(searchQuery, (newQuery) => searchStore.setSearchQuery(newQuery));
+
 watch(activeTab, (newTab, oldTab) => {
   if (oldTab === "My Libraries" && newTab !== "My Libraries") {
     resetSort();
   }
 });
 
-// Watch for library name changes to reset sort accordingly
 watch(currentLibraryName, (newName, oldName) => {
   if (newName && !oldName) {
-    // Library opened - save current sort and set new sort for the library view
     enterLibraryView(newName);
-  } else if (!newName && oldName) {
-    // Library closed - already handled in handleGoBack
   }
+  // Library closed is already handled in handleGoBack
 });
 
-// Handle back button click and synchronize with sort logic
-const handleGoBack = () => {
-  goBackToLibraries(() => {
-    exitLibraryView();
-  });
-};
-
-// ============= Lifecycle =============
+// Lifecycle hooks
 onMounted(() => {
   setupDrawerListeners();
   setupNavigationListeners();
@@ -113,7 +100,7 @@ onUnmounted(() => {
   >
     <div class="w-full pb-nav-padding"></div>
     <div class="w-full px-4 pb-2 pt-8 sm:pb-4 sm:pt-4">
-      <!-- Standard view for most tabs -->
+      <!-- Search input for standard tabs -->
       <div
         v-if="
           !UI_STATE.NAVBAR.STANDARD_TITLE_TABS.includes(activeTab as TabName)
@@ -150,7 +137,7 @@ onUnmounted(() => {
         @toggle-options="toggleOptionsMenu"
       />
 
-      <!-- Simple title for Add Book and Profile tabs -->
+      <!-- Simple title for standard tabs -->
       <div v-else class="text-center">
         <p class="text-light-nav-text dark:text-dark-nav-text">
           {{ activeTab }}
@@ -158,7 +145,7 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- Sort controls -->
+    <!-- Sort controls for My Libraries tab -->
     <SortControls
       v-if="activeTab === 'My Libraries'"
       :sort-by="sortBy"

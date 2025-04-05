@@ -13,7 +13,7 @@ export default {
 <template>
   <div
     id="app"
-    class="grid grid-rows-[auto_1fr_auto] min-h-screen bg-light-bg dark:bg-dark-bg"
+    class="grid grid-rows-[auto_1fr_auto] min-h-screen bg-light-bg dark:bg-dark-bg overscroll-behavior-x-contain"
   >
     <!-- Navbar Component -->
     <NavbarComponent />
