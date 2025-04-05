@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted, computed } from "vue";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { getUserLibraries } from "@/apis/libraryAPI";
 import LibraryDrawer from "./LibraryDrawer.vue";
 import AddLibraryComponent from "@/components/modals/AddLibrary.vue";
 import type { Library } from "@/apis/types";
-import { UI_STATE, ANIMATION, EVENTS, SORT } from "@/constants/constants";
+import { UI_STATE, ANIMATION, EVENTS } from "@/constants/constants";
+import { usePullToRefresh } from "./composables/usePullToRefresh";
+import { useLibrarySort } from "./composables/useLibrarySort";
 
 // ============= State =============
 const auth = getAuth();
@@ -17,17 +19,27 @@ const isRefreshing = ref(false);
 const error = ref<string | null>(null);
 const libraryDrawerProgress = ref<number>(UI_STATE.LIBRARY_DRAWER.CLOSED);
 
-// Sort settings
-const sortBy = ref<string>(SORT.BY.NAME);
-const sortReverse = ref<boolean>(SORT.DIRECTION.ASC);
-
-// Pull-to-refresh state
-const pullIndicatorHeight = ref(0);
-const refreshTriggerHeight = 100; // Height in pixels to trigger refresh
+// Pull-to-refresh state moved to composable
 const mainContainer = ref<HTMLElement | null>(null);
-let touchStartY = 0;
-let pullStarted = false;
-let refreshInProgress = false;
+
+// ============= Composables =============
+const isDrawerOpen = computed(() => !!selectedLibrary.value);
+
+const {
+  pullIndicatorHeight,
+  refreshTriggerHeight,
+  onTouchStart,
+  onTouchMove,
+  onTouchEnd,
+} = usePullToRefresh(mainContainer, isDrawerOpen, isRefreshing, async () => {
+  await refreshLibraries();
+});
+
+// Sorting logic moved to composable
+const { handleSortChange, sortLibraries } = useLibrarySort(
+  libraries,
+  isDrawerOpen,
+);
 
 // ============= Methods =============
 const fetchLibraries = async (userId: string) => {
@@ -41,61 +53,24 @@ const fetchLibraries = async (userId: string) => {
     }
     error.value = null;
     libraries.value = await getUserLibraries(userId);
-
-    // Sort libraries with current settings
     sortLibraries();
   } catch {
     error.value = "Failed to load libraries. Please try again.";
   } finally {
     isLoading.value = false;
     isRefreshing.value = false;
-    pullIndicatorHeight.value = 0; // Reset pull indicator when refresh is done
-    refreshInProgress = false;
   }
 };
 
-// Sort libraries based on current sort settings
-const sortLibraries = () => {
-  if (!libraries.value.length) return;
-
-  libraries.value.sort((a, b) => {
-    let result = 0;
-
-    if (sortBy.value === SORT.BY.NAME) {
-      result = a.name.localeCompare(b.name);
-    } else {
-      // Use createdAt timestamp or fallback to numeric comparison
-      const aTimestamp = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const bTimestamp = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      result = aTimestamp - bTimestamp;
-    }
-
-    return sortReverse.value ? -result : result;
-  });
-};
-
-// Handle sort changes from navbar
-const handleSortChange = (event: Event) => {
-  const { sortBy: newSortBy, sortReverse: newSortReverse } = (
-    event as CustomEvent
-  ).detail;
-  sortBy.value = newSortBy;
-  sortReverse.value = newSortReverse;
-  sortLibraries();
-};
-
 const refreshLibraries = async () => {
-  if (isRefreshing.value || refreshInProgress) return; // Prevent multiple refresh calls
+  if (isRefreshing.value) return;
 
-  refreshInProgress = true;
   isRefreshing.value = true;
   const userId = auth.currentUser?.uid;
   if (userId) {
     await fetchLibraries(userId);
   } else {
     isRefreshing.value = false;
-    pullIndicatorHeight.value = 0;
-    refreshInProgress = false;
   }
 };
 
@@ -118,115 +93,58 @@ const handleLibraryDrawerClose = () => {
   selectedLibrary.value = null;
   libraryDrawerProgress.value = UI_STATE.LIBRARY_DRAWER.CLOSED;
   window.dispatchEvent(
-    new CustomEvent(EVENTS.LIBRARY.NAVBAR_NAME_UPDATE, {
-      detail: "",
-    }),
+    new CustomEvent(EVENTS.LIBRARY.NAVBAR_NAME_UPDATE, { detail: "" }),
   );
+  sortLibraries();
 };
 
 const handleLibraryDrawerProgress = (progress: number) => {
   libraryDrawerProgress.value = progress;
   window.dispatchEvent(
-    new CustomEvent(EVENTS.LIBRARY_DRAWER.PROGRESS, {
-      detail: progress,
-    }),
+    new CustomEvent(EVENTS.LIBRARY_DRAWER.PROGRESS, { detail: progress }),
   );
 };
 
 const handleLibraryCreated = async () => {
   const userId = auth.currentUser?.uid;
   if (userId) await fetchLibraries(userId);
-};
-
-// Touch handlers for pull-to-refresh
-const onTouchStart = (e: TouchEvent) => {
-  if (selectedLibrary.value || isRefreshing.value || refreshInProgress) return;
-
-  // Check if we're at the top of the scroll
-  const container = mainContainer.value;
-  if (!container || container.scrollTop > 0) return;
-
-  // Record the starting touch position
-  touchStartY = e.touches[0].clientY;
-  pullStarted = true;
-};
-
-const onTouchMove = (e: TouchEvent) => {
-  if (
-    !pullStarted ||
-    selectedLibrary.value ||
-    isRefreshing.value ||
-    refreshInProgress
-  )
-    return;
-
-  const container = mainContainer.value;
-  if (!container) return;
-
-  // If we've scrolled down from the top, don't activate pull-to-refresh
-  if (container.scrollTop > 5) {
-    pullStarted = false;
-    pullIndicatorHeight.value = 0;
-    return;
-  }
-
-  const currentY = e.touches[0].clientY;
-  const pullDistance = currentY - touchStartY;
-
-  if (pullDistance > 0) {
-    // Apply a resistance factor - pull indicator grows slower as it gets larger
-    pullIndicatorHeight.value = Math.min(
-      Math.pow(pullDistance, 0.9),
-      refreshTriggerHeight * 1.5,
-    );
-  } else {
-    // Reset when user pulls up
-    pullIndicatorHeight.value = 0;
-  }
-};
-
-const onTouchEnd = () => {
-  if (!pullStarted || isRefreshing.value || refreshInProgress) return;
-
-  // If pulled past threshold, trigger refresh
-  if (pullIndicatorHeight.value > refreshTriggerHeight) {
-    refreshLibraries();
-  } else {
-    // Reset otherwise
-    pullIndicatorHeight.value = 0;
-  }
-
-  pullStarted = false;
+  // Sorting handled by watcher in useLibrarySort
 };
 
 // ============= Event Handlers =============
+const onOpenAddLibraryModal = () => {
+  isAddLibraryModalOpen.value = true;
+};
+const onBackToLibraries = () => {
+  libraryDrawerProgress.value = UI_STATE.LIBRARY_DRAWER.CLOSED;
+  setTimeout(() => {
+    selectedLibrary.value = null;
+    // No need to set progress again here, already closing
+  }, ANIMATION.LIBRARY_DRAWER.TRANSITION_DURATION);
+};
+const onLibraryUpdated = (event: Event) => {
+  const { id, name } = (event as CustomEvent).detail;
+  const index = libraries.value.findIndex((lib) => lib.id === id);
+  if (index !== -1) {
+    libraries.value[index] = { ...libraries.value[index], name };
+    sortLibraries(); // Call sort explicitly after update
+  }
+};
+const onLibraryDeleted = (event: Event) => {
+  const id = (event as CustomEvent).detail;
+  libraries.value = libraries.value.filter((lib) => lib.id !== id);
+  sortLibraries(); // Call sort explicitly after delete
+};
+
 const setupEventListeners = () => {
-  window.addEventListener(EVENTS.MODAL.OPEN_ADD_LIBRARY, () => {
-    isAddLibraryModalOpen.value = true;
-  });
-
-  window.addEventListener(EVENTS.LIBRARY_DRAWER.BACK_TO_LIBRARIES, () => {
-    libraryDrawerProgress.value = UI_STATE.LIBRARY_DRAWER.CLOSED;
-    setTimeout(() => {
-      selectedLibrary.value = null;
-      libraryDrawerProgress.value = UI_STATE.LIBRARY_DRAWER.CLOSED;
-    }, ANIMATION.LIBRARY_DRAWER.TRANSITION_DURATION);
-  });
-
-  window.addEventListener(EVENTS.LIBRARY.UPDATED, (event: Event) => {
-    const { id, name } = (event as CustomEvent).detail;
-    const library = libraries.value.find((lib) => lib.id === id);
-    if (library) library.name = name;
-    sortLibraries();
-  });
-
-  window.addEventListener(EVENTS.LIBRARY.DELETED, (event: Event) => {
-    const id = (event as CustomEvent).detail;
-    libraries.value = libraries.value.filter((lib) => lib.id !== id);
-  });
-
-  // Add listener for sort change events
-  window.addEventListener(EVENTS.LIBRARY.SORT_CHANGED, handleSortChange);
+  window.addEventListener(EVENTS.MODAL.OPEN_ADD_LIBRARY, onOpenAddLibraryModal);
+  window.addEventListener(
+    EVENTS.LIBRARY_DRAWER.BACK_TO_LIBRARIES,
+    onBackToLibraries,
+  );
+  window.addEventListener(EVENTS.LIBRARY.UPDATED, onLibraryUpdated);
+  window.addEventListener(EVENTS.LIBRARY.DELETED, onLibraryDeleted);
+  window.addEventListener(EVENTS.LIBRARY.SORT_CHANGED, handleSortChange); // Use handler from composable
 };
 
 // ============= Lifecycle =============
@@ -239,13 +157,24 @@ onMounted(() => {
       libraries.value = [];
       isLoading.value = false;
       libraryDrawerProgress.value = UI_STATE.LIBRARY_DRAWER.CLOSED;
+      isRefreshing.value = false;
     }
   });
 });
 
 onUnmounted(() => {
-  // Clean up sort change event listener
-  window.removeEventListener(EVENTS.LIBRARY.SORT_CHANGED, handleSortChange);
+  // Remove specific listeners added in setupEventListeners using the correct references
+  window.removeEventListener(
+    EVENTS.MODAL.OPEN_ADD_LIBRARY,
+    onOpenAddLibraryModal,
+  );
+  window.removeEventListener(
+    EVENTS.LIBRARY_DRAWER.BACK_TO_LIBRARIES,
+    onBackToLibraries,
+  );
+  window.removeEventListener(EVENTS.LIBRARY.UPDATED, onLibraryUpdated);
+  window.removeEventListener(EVENTS.LIBRARY.DELETED, onLibraryDeleted);
+  window.removeEventListener(EVENTS.LIBRARY.SORT_CHANGED, handleSortChange); // Use the *same* handler reference
 });
 
 const getParallaxStyle = (hasLibrary: boolean) => ({
@@ -267,7 +196,7 @@ const getParallaxStyle = (hasLibrary: boolean) => ({
       libraries.length > 0 ? '' : 'overflow-hidden',
     ]"
     @touchstart.passive="onTouchStart"
-    @touchmove.passive="onTouchMove"
+    @touchmove="onTouchMove"
     @touchend="onTouchEnd"
     ref="mainContainer"
   >
@@ -347,7 +276,8 @@ const getParallaxStyle = (hasLibrary: boolean) => ({
       </p>
       <button
         @click="() => auth.currentUser && fetchLibraries(auth.currentUser.uid)"
-        class="px-4 py-2 bg-light-nav text-white rounded-lg"
+        :disabled="isLoading || isRefreshing"
+        class="px-4 py-2 bg-light-nav text-white rounded-lg disabled:opacity-50"
       >
         Try Again
       </button>
@@ -360,7 +290,6 @@ const getParallaxStyle = (hasLibrary: boolean) => ({
         class="flex flex-col h-fit"
         :style="getParallaxStyle(!!selectedLibrary)"
       >
-        <!-- Library list - auto places items at their natural height -->
         <ul class="divide-y divide-light-border/40 dark:divide-dark-border/40">
           <li
             v-for="library in libraries"
@@ -371,10 +300,8 @@ const getParallaxStyle = (hasLibrary: boolean) => ({
             <div class="flex items-center p-4">
               <!-- Book Covers Placeholder -->
               <div class="relative w-24 h-24 mr-4">
-                <!-- Placeholder Design -->
                 <div class="absolute inset-0 flex items-center">
                   <div class="flex -space-x-3">
-                    <!-- Multiple book spine placeholders -->
                     <div
                       v-for="index in 3"
                       :key="index"
