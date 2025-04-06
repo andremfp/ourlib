@@ -13,6 +13,7 @@
       <Transition name="modalAnim" appear>
         <div
           v-if="!isModalLeaving && props.isOpen"
+          id="delete-account-modal"
           class="relative z-[51] w-full max-w-md bg-light-bg dark:bg-dark-nav rounded-xl p-4"
         >
           <!-- Modal header -->

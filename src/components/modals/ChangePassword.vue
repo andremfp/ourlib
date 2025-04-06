@@ -206,6 +206,7 @@ const changePassword = async () => {
       <Transition name="modalAnim" appear>
         <div
           v-if="!isModalLeaving && props.isOpen"
+          id="change-password-modal"
           class="relative z-[51] w-full max-w-md bg-light-bg dark:bg-dark-nav rounded-xl p-4"
         >
           <!-- Modal header -->
@@ -312,7 +313,7 @@ const changePassword = async () => {
             </div>
 
             <!-- Action buttons -->
-            <div class="flex justify-end space-x-3">
+            <div class="flex justify-end space-x-3 mt-4">
               <button
                 type="button"
                 id="change-password-cancel-btn"

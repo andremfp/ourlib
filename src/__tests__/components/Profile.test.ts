@@ -1,19 +1,23 @@
-import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeEach,
+  afterEach,
+  type Mock,
+} from "vitest";
 import { mount, flushPromises, VueWrapper } from "@vue/test-utils";
 import { createRouter, createMemoryHistory, type Router } from "vue-router";
 import {
   signOut,
-  deleteUser,
   onAuthStateChanged,
-  EmailAuthProvider,
-  reauthenticateWithCredential,
-  updatePassword,
   type Auth,
   type User,
 } from "firebase/auth";
-import { getUser, removeUser } from "@/apis/userAPI";
+import { getUser } from "@/apis/userAPI";
 import { useTabStore } from "@/stores/tabStore";
-import Profile from "@/components/Profile.vue";
+import Profile from "@/components/tabs/Profile.vue";
 import logger from "@/utils/logger";
 
 const resetActiveTabMock = vi.fn();
@@ -24,19 +28,12 @@ vi.mock("firebase/auth", () => ({
     currentUser: { uid: "test-uid", email: "test@example.com" },
   })),
   signOut: vi.fn(() => Promise.resolve()),
-  deleteUser: vi.fn(() => Promise.resolve()),
   onAuthStateChanged: vi.fn(),
-  EmailAuthProvider: {
-    credential: vi.fn(() => "mock-credential"),
-  },
-  reauthenticateWithCredential: vi.fn(() => Promise.resolve()),
-  updatePassword: vi.fn(() => Promise.resolve()),
 }));
 
 // Mock APIs and stores
 vi.mock("@/apis/userAPI", () => ({
   getUser: vi.fn(() => Promise.resolve({ username: "TestUser" })),
-  removeUser: vi.fn(),
 }));
 
 vi.mock("@/stores/tabStore", () => ({
@@ -84,8 +81,28 @@ describe("Profile.vue", () => {
     wrapper = mount(Profile, {
       global: {
         plugins: [router],
+        stubs: {
+          DeleteAccount: {
+            template:
+              '<div id="delete-account-modal" v-if="isOpen">Stubbed Delete Modal</div>',
+            props: ["isOpen"],
+          },
+          ChangePasswordForm: {
+            template:
+              '<div id="change-password-modal" v-if="isOpen">Stubbed Change Password Modal</div>',
+            props: ["isOpen"],
+          },
+        },
       },
+      attachTo: document.body,
     });
+  });
+
+  afterEach(() => {
+    // Clean up the component from the DOM
+    if (wrapper) {
+      wrapper.unmount();
+    }
   });
 
   it("shows loading state while fetching user data", async () => {
@@ -147,157 +164,26 @@ describe("Profile.vue", () => {
   });
 
   describe("Account Deletion", () => {
-    beforeEach(async () => {
+    it("shows stubbed delete modal when button is clicked", async () => {
       const deleteButton = wrapper.find("#delete-account-btn");
       await deleteButton.trigger("click");
       await wrapper.vm.$nextTick();
-    });
 
-    it("shows delete confirmation modal", () => {
-      expect(wrapper.find("#delete-account-modal").exists()).toBe(true);
-      expect(wrapper.text()).toContain("Confirm Account Deletion");
-    });
-
-    it("successfully deletes account", async () => {
-      const confirmButton = wrapper.find("#delete-account-confirm-btn");
-      await confirmButton.trigger("click");
-      await flushPromises();
-
-      expect(removeUser).toHaveBeenCalledWith("test-uid");
-      expect(deleteUser).toHaveBeenCalled();
-      expect(useTabStore().resetActiveTab).toHaveBeenCalled();
-      expect(router.currentRoute.value.path).toBe("/");
-    });
-
-    it("handles deletion errors", async () => {
-      const error = new Error("Deletion failed");
-      (removeUser as Mock).mockRejectedValueOnce(error);
-
-      const confirmButton = wrapper.find("#delete-account-confirm-btn");
-      await confirmButton.trigger("click");
-      await flushPromises();
-
-      expect(vi.mocked(logger.error)).toHaveBeenCalledWith(
-        "Account deletion error:",
-        error.message,
-      );
-    });
-
-    it("closes modal on cancel", async () => {
-      const cancelButton = wrapper.find("#delete-account-cancel-btn");
-      await cancelButton.trigger("click");
-      await wrapper.vm.$nextTick();
-
-      expect(wrapper.find("#delete-account-modal").exists()).toBe(false);
+      const modalElement = wrapper.find("#delete-account-modal");
+      expect(modalElement.exists()).toBe(true);
+      expect(modalElement.text()).toContain("Stubbed Delete Modal");
     });
   });
 
   describe("Password Change Modal", () => {
-    beforeEach(async () => {
+    it("shows stubbed change password modal when button is clicked", async () => {
       const changePasswordButton = wrapper.find("#change-password-btn");
       await changePasswordButton.trigger("click");
       await wrapper.vm.$nextTick();
-    });
 
-    it("shows password change modal", () => {
-      expect(wrapper.find("#change-password-modal").exists()).toBe(true);
-    });
-
-    it("validates matching passwords", async () => {
-      // Fill in the form with non-matching passwords
-      await wrapper.find("#currentPassword").setValue("current123");
-      await wrapper.find("#newPassword").setValue("new123");
-      await wrapper.find("#confirmNewPassword").setValue("different123");
-
-      // Submit the form
-      await wrapper.find("form").trigger("submit");
-      await wrapper.vm.$nextTick();
-
-      // Check for error message
-      expect(wrapper.text()).toContain("New passwords do not match");
-    });
-
-    it("successfully changes password when all inputs are valid", async () => {
-      // Fill in the form
-      await wrapper.find("#currentPassword").setValue("current123");
-      await wrapper.find("#newPassword").setValue("new123");
-      await wrapper.find("#confirmNewPassword").setValue("new123");
-
-      // Submit the form
-      await wrapper.find("form").trigger("submit");
-      await flushPromises();
-
-      // Verify the correct methods were called
-      expect(EmailAuthProvider.credential).toHaveBeenCalledWith(
-        "test@example.com",
-        "current123",
-      );
-      expect(reauthenticateWithCredential).toHaveBeenCalled();
-      expect(updatePassword).toHaveBeenCalledWith(expect.anything(), "new123");
-      expect(window.alert).toHaveBeenCalledWith(
-        "Password updated successfully!",
-      );
-
-      // Verify modal is closed
-      expect(wrapper.find("#change-password-modal").exists()).toBe(false);
-    });
-
-    it("handles reauthentication failure", async () => {
-      // Mock reauthentication failure
-      (reauthenticateWithCredential as Mock).mockRejectedValueOnce(
-        new Error("Invalid password"),
-      );
-
-      // Fill in the form
-      await wrapper.find("#currentPassword").setValue("wrong123");
-      await wrapper.find("#newPassword").setValue("new123");
-      await wrapper.find("#confirmNewPassword").setValue("new123");
-
-      // Submit the form
-      await wrapper.find("form").trigger("submit");
-      await flushPromises();
-
-      // Verify error handling
-      expect(wrapper.text()).toContain(
-        "Failed to change password. Please check your current password and try again",
-      );
-      expect(logger.error).toHaveBeenCalledWith(
-        "Error changing password:",
-        "Invalid password",
-      );
-    });
-
-    it("handles password update failure", async () => {
-      // Mock password update failure
-      (updatePassword as Mock).mockRejectedValueOnce(
-        new Error("Password update failed"),
-      );
-
-      // Fill in the form
-      await wrapper.find("#currentPassword").setValue("current123");
-      await wrapper.find("#newPassword").setValue("new123");
-      await wrapper.find("#confirmNewPassword").setValue("new123");
-
-      // Submit the form
-      await wrapper.find("form").trigger("submit");
-      await flushPromises();
-
-      // Verify error handling
-      expect(wrapper.text()).toContain(
-        "Failed to change password. Please check your current password and try again",
-      );
-      expect(logger.error).toHaveBeenCalledWith(
-        "Error changing password:",
-        "Password update failed",
-      );
-    });
-
-    it("closes modal when cancel button is clicked", async () => {
-      const cancelButton = wrapper.find("#change-password-cancel-btn");
-      await cancelButton.trigger("click");
-      await wrapper.vm.$nextTick();
-
-      expect(wrapper.find("#change-password-modal").exists()).toBe(false);
+      const modalElement = wrapper.find("#change-password-modal");
+      expect(modalElement.exists()).toBe(true);
+      expect(modalElement.text()).toContain("Stubbed Change Password Modal");
     });
   });
 });
