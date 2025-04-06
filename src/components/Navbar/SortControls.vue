@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ANIMATION } from "@/constants/constants";
+import { ANIMATION, UI_STATE } from "@/constants/constants";
 
 defineProps<{
   sortBy: string;
@@ -19,6 +19,14 @@ const changeSortBy = () => {
 const toggleSortDirection = () => {
   emit("toggleSortDirection");
 };
+
+const transitionStyle = (progress: number) => ({
+  transition:
+    progress === UI_STATE.LIBRARY_DRAWER.CLOSED ||
+    progress === UI_STATE.LIBRARY_DRAWER.OPEN
+      ? `all ${ANIMATION.NAVBAR.TRANSITION_DURATION}ms ease-in-out`
+      : "none",
+});
 </script>
 
 <template>
@@ -34,7 +42,7 @@ const toggleSortDirection = () => {
           :style="{
             opacity: currentLibraryName ? 1 - drawerProgress : 1,
             position: 'absolute',
-            transition: `opacity ${ANIMATION.NAVBAR.TRANSITION_DURATION}ms ease-in-out`,
+            ...transitionStyle(drawerProgress),
           }"
         >
           {{ savedSortBy }}
@@ -44,19 +52,22 @@ const toggleSortDirection = () => {
         <span
           :style="{
             opacity: currentLibraryName ? drawerProgress : 0,
-            transition: `opacity ${ANIMATION.NAVBAR.TRANSITION_DURATION}ms ease-in-out`,
+            ...transitionStyle(drawerProgress),
           }"
         >
           {{ sortBy }}
         </span>
 
         <!-- Invisible spacer to maintain width -->
-        <span class="invisible">{{ savedSortBy }}</span>
+        <span class="invisible">{{
+          savedSortBy.length > sortBy.length ? savedSortBy : sortBy
+        }}</span>
       </div>
       <!-- Make button cover both spans but not extend beyond its parent -->
       <button
         @click="changeSortBy"
         class="absolute inset-0 w-full h-full"
+        aria-label="Change sort method"
       ></button>
     </div>
 
@@ -69,7 +80,7 @@ const toggleSortDirection = () => {
           :class="{ 'transform rotate-180': savedSortReverse }"
           :style="{
             opacity: currentLibraryName ? 1 - drawerProgress : 1,
-            transition: `opacity ${ANIMATION.NAVBAR.TRANSITION_DURATION}ms ease-in-out`,
+            ...transitionStyle(drawerProgress),
           }"
           viewBox="0 0 24 24"
           fill="none"
@@ -89,7 +100,7 @@ const toggleSortDirection = () => {
           :class="{ 'transform rotate-180': sortReverse }"
           :style="{
             opacity: currentLibraryName ? drawerProgress : 0,
-            transition: `opacity ${ANIMATION.NAVBAR.TRANSITION_DURATION}ms ease-in-out`,
+            ...transitionStyle(drawerProgress),
           }"
           viewBox="0 0 24 24"
           fill="none"
@@ -103,7 +114,13 @@ const toggleSortDirection = () => {
           />
         </svg>
       </div>
-      <button @click="toggleSortDirection" class="font-bold">REVERSE</button>
+      <button
+        @click="toggleSortDirection"
+        class="font-bold"
+        aria-label="Reverse sort direction"
+      >
+        REVERSE
+      </button>
     </div>
   </div>
 </template>
