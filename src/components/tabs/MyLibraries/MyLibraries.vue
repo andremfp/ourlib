@@ -1,29 +1,28 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from "vue";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { getUserLibraries } from "@/apis/libraryAPI";
+import { ref, onMounted, onUnmounted } from "vue";
 import LibraryDrawer from "./LibraryDrawer.vue";
 import AddLibraryComponent from "@/components/modals/AddLibrary.vue";
-import type { Library } from "@/apis/types";
 import { UI_STATE, ANIMATION, EVENTS } from "@/constants/constants";
 import { usePullToRefresh } from "./composables/usePullToRefresh";
 import { useLibrarySort } from "./composables/useLibrarySort";
+import { useLibraryList } from "./composables/useLibraryList";
+import { useLibraryDrawer } from "./composables/useLibraryDrawer";
 
 // ============= State =============
-const auth = getAuth();
-const libraries = ref<Library[]>([]);
-const selectedLibrary = ref<Library | null>(null);
 const isAddLibraryModalOpen = ref(false);
-const isLoading = ref(true);
-const isRefreshing = ref(false);
-const error = ref<string | null>(null);
-const libraryDrawerProgress = ref<number>(UI_STATE.LIBRARY_DRAWER.CLOSED);
-
-// Pull-to-refresh state moved to composable
 const mainContainer = ref<HTMLElement | null>(null);
 
 // ============= Composables =============
-const isDrawerOpen = computed(() => !!selectedLibrary.value);
+const { libraries, isLoading, isRefreshing, error, refreshLibraries } =
+  useLibraryList();
+const {
+  selectedLibrary,
+  libraryDrawerProgress,
+  isDrawerOpen,
+  selectLibrary,
+  closeDrawer,
+  handleLibraryDrawerProgress,
+} = useLibraryDrawer();
 
 const {
   pullIndicatorHeight,
@@ -31,150 +30,71 @@ const {
   onTouchStart,
   onTouchMove,
   onTouchEnd,
-} = usePullToRefresh(mainContainer, isDrawerOpen, isRefreshing, async () => {
-  await refreshLibraries();
-});
+} = usePullToRefresh(
+  mainContainer,
+  isDrawerOpen,
+  isRefreshing,
+  refreshLibraries,
+);
 
-// Sorting logic moved to composable
 const { handleSortChange, sortLibraries } = useLibrarySort(
   libraries,
   isDrawerOpen,
 );
 
 // ============= Methods =============
-const fetchLibraries = async (userId: string) => {
-  try {
-    if (isRefreshing.value) {
-      // When refreshing via pull, keep the existing libraries visible
-      isRefreshing.value = true;
-    } else {
-      // Initial load - show full loading screen
-      isLoading.value = true;
-    }
-    error.value = null;
-    libraries.value = await getUserLibraries(userId);
-    sortLibraries();
-  } catch {
-    error.value = "Failed to load libraries. Please try again.";
-  } finally {
-    isLoading.value = false;
-    isRefreshing.value = false;
-  }
-};
-
-const refreshLibraries = async () => {
-  if (isRefreshing.value) return;
-
-  isRefreshing.value = true;
-  const userId = auth.currentUser?.uid;
-  if (userId) {
-    await fetchLibraries(userId);
-  } else {
-    isRefreshing.value = false;
-  }
-};
-
-const selectLibrary = (library: Library) => {
-  selectedLibrary.value = library;
-  libraryDrawerProgress.value = UI_STATE.LIBRARY_DRAWER.OPEN;
-  window.dispatchEvent(
-    new CustomEvent(EVENTS.LIBRARY.NAVBAR_NAME_UPDATE, {
-      detail: library.name,
-    }),
-  );
-  window.dispatchEvent(
-    new CustomEvent(EVENTS.LIBRARY_DRAWER.PROGRESS, {
-      detail: UI_STATE.LIBRARY_DRAWER.OPEN,
-    }),
-  );
-};
-
-const handleLibraryDrawerClose = () => {
-  selectedLibrary.value = null;
-  libraryDrawerProgress.value = UI_STATE.LIBRARY_DRAWER.CLOSED;
-  window.dispatchEvent(
-    new CustomEvent(EVENTS.LIBRARY.NAVBAR_NAME_UPDATE, { detail: "" }),
-  );
-  sortLibraries();
-};
-
-const handleLibraryDrawerProgress = (progress: number) => {
-  libraryDrawerProgress.value = progress;
-  window.dispatchEvent(
-    new CustomEvent(EVENTS.LIBRARY_DRAWER.PROGRESS, { detail: progress }),
-  );
-};
-
 const handleLibraryCreated = async () => {
-  const userId = auth.currentUser?.uid;
-  if (userId) await fetchLibraries(userId);
-  // Sorting handled by watcher in useLibrarySort
+  await refreshLibraries();
 };
 
 // ============= Event Handlers =============
 const onOpenAddLibraryModal = () => {
   isAddLibraryModalOpen.value = true;
 };
-const onBackToLibraries = () => {
-  libraryDrawerProgress.value = UI_STATE.LIBRARY_DRAWER.CLOSED;
-  setTimeout(() => {
-    selectedLibrary.value = null;
-    // No need to set progress again here, already closing
-  }, ANIMATION.LIBRARY_DRAWER.TRANSITION_DURATION);
-};
+
 const onLibraryUpdated = (event: Event) => {
   const { id, name } = (event as CustomEvent).detail;
   const index = libraries.value.findIndex((lib) => lib.id === id);
   if (index !== -1) {
     libraries.value[index] = { ...libraries.value[index], name };
-    sortLibraries(); // Call sort explicitly after update
+    sortLibraries();
+    if (selectedLibrary.value && selectedLibrary.value.id === id) {
+      selectedLibrary.value.name = name;
+      window.dispatchEvent(
+        new CustomEvent(EVENTS.LIBRARY.NAVBAR_NAME_UPDATE, { detail: name }),
+      );
+    }
   }
 };
-const onLibraryDeleted = (event: Event) => {
+const onLibraryDeleted = async (event: Event) => {
   const id = (event as CustomEvent).detail;
+  if (selectedLibrary.value?.id === id) {
+    closeDrawer();
+  }
   libraries.value = libraries.value.filter((lib) => lib.id !== id);
-  sortLibraries(); // Call sort explicitly after delete
+  sortLibraries();
 };
 
 const setupEventListeners = () => {
   window.addEventListener(EVENTS.MODAL.OPEN_ADD_LIBRARY, onOpenAddLibraryModal);
-  window.addEventListener(
-    EVENTS.LIBRARY_DRAWER.BACK_TO_LIBRARIES,
-    onBackToLibraries,
-  );
   window.addEventListener(EVENTS.LIBRARY.UPDATED, onLibraryUpdated);
   window.addEventListener(EVENTS.LIBRARY.DELETED, onLibraryDeleted);
-  window.addEventListener(EVENTS.LIBRARY.SORT_CHANGED, handleSortChange); // Use handler from composable
+  window.addEventListener(EVENTS.LIBRARY.SORT_CHANGED, handleSortChange);
 };
 
 // ============= Lifecycle =============
 onMounted(() => {
   setupEventListeners();
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      fetchLibraries(user.uid);
-    } else {
-      libraries.value = [];
-      isLoading.value = false;
-      libraryDrawerProgress.value = UI_STATE.LIBRARY_DRAWER.CLOSED;
-      isRefreshing.value = false;
-    }
-  });
 });
 
 onUnmounted(() => {
-  // Remove specific listeners added in setupEventListeners using the correct references
   window.removeEventListener(
     EVENTS.MODAL.OPEN_ADD_LIBRARY,
     onOpenAddLibraryModal,
   );
-  window.removeEventListener(
-    EVENTS.LIBRARY_DRAWER.BACK_TO_LIBRARIES,
-    onBackToLibraries,
-  );
   window.removeEventListener(EVENTS.LIBRARY.UPDATED, onLibraryUpdated);
   window.removeEventListener(EVENTS.LIBRARY.DELETED, onLibraryDeleted);
-  window.removeEventListener(EVENTS.LIBRARY.SORT_CHANGED, handleSortChange); // Use the *same* handler reference
+  window.removeEventListener(EVENTS.LIBRARY.SORT_CHANGED, handleSortChange);
 });
 
 const getParallaxStyle = (hasLibrary: boolean) => ({
@@ -275,7 +195,7 @@ const getParallaxStyle = (hasLibrary: boolean) => ({
         {{ error }}
       </p>
       <button
-        @click="() => auth.currentUser && fetchLibraries(auth.currentUser.uid)"
+        @click="() => refreshLibraries()"
         :disabled="isLoading || isRefreshing"
         class="px-4 py-2 bg-light-nav text-white rounded-lg disabled:opacity-50"
       >
@@ -387,7 +307,7 @@ const getParallaxStyle = (hasLibrary: boolean) => ({
     <LibraryDrawer
       v-if="selectedLibrary"
       :libraryId="selectedLibrary.id"
-      @close="handleLibraryDrawerClose"
+      @close="closeDrawer"
       @progress="handleLibraryDrawerProgress"
     />
 
