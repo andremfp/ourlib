@@ -25,29 +25,35 @@ export function useLibrarySort(
       return;
     }
 
-    // Create a shallow copy to sort, then replace the original ref's value
-    // This ensures reactivity triggers correctly if watchers depend on the array reference
+    const currentOrderIds = librariesRef.value.map((lib) => lib.id);
+
+    // Create a shallow copy to sort
     const sortedLibraries = [...librariesRef.value].sort((a, b) => {
       let result = 0;
       if (sortBy.value === SORT.BY.NAME) {
-        // Ensure names are defined before comparing
         const nameA = a.name || "";
         const nameB = b.name || "";
         result = nameA.localeCompare(nameB);
       } else if (sortBy.value === SORT.BY.DATE) {
-        // Handle potentially undefined or invalid date strings
         const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
         const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        // Check for valid timestamps before subtracting
         result = (isNaN(timeA) ? 0 : timeA) - (isNaN(timeB) ? 0 : timeB);
       }
-      // Add other sort criteria here if needed
-
       return sortReverse.value ? -result : result;
     });
 
-    // Assign the sorted array back to the ref's value
-    librariesRef.value = sortedLibraries;
+    const newOrderIds = sortedLibraries.map((lib) => lib.id);
+
+    // Only assign back if the order of IDs has actually changed
+    // Use JSON.stringify for a simple but effective shallow comparison of ID order
+    if (JSON.stringify(currentOrderIds) !== JSON.stringify(newOrderIds)) {
+      logger.debug("[useLibrarySort] Library order changed, updating ref.");
+      librariesRef.value = sortedLibraries;
+    } else {
+      logger.debug(
+        "[useLibrarySort] Library order unchanged, skipping ref update.",
+      );
+    }
   };
 
   // Handle sort changes from external events (e.g., navbar)
@@ -59,18 +65,26 @@ export function useLibrarySort(
       typeof detail.sortBy === "string" &&
       typeof detail.sortReverse === "boolean"
     ) {
-      // Check if values actually changed to prevent unnecessary sorts
-      if (
-        sortBy.value !== detail.sortBy ||
-        sortReverse.value !== detail.sortReverse
-      ) {
+      let stateChanged = false;
+      // Check if values actually changed to prevent unnecessary sorts/watcher triggers
+      if (sortBy.value !== detail.sortBy) {
         sortBy.value = detail.sortBy;
+        stateChanged = true;
+      }
+      if (sortReverse.value !== detail.sortReverse) {
         sortReverse.value = detail.sortReverse;
-        // Sorting is handled by the watcher below
-        logger.info("[useLibrarySort] Sort settings changed.", {
+        stateChanged = true;
+      }
+
+      if (stateChanged) {
+        logger.info("[useLibrarySort] Sort settings changed via event.", {
           sortBy: sortBy.value,
           sortReverse: sortReverse.value,
         });
+        // Explicitly sort if state changed and drawer is closed
+        if (!isDrawerOpen.value) {
+          sortLibraries();
+        }
       }
     } else {
       logger.warn(
@@ -80,16 +94,18 @@ export function useLibrarySort(
     }
   };
 
-  // Watch sort criteria changes to trigger re-sorting, but only if the drawer is closed
-  watch([sortBy, sortReverse], () => {
-    if (!isDrawerOpen.value) {
-      sortLibraries();
-    }
-    // If drawer is open, sorting will be handled explicitly on close
-  });
-
-  // Initial sort when the composable is used
-  sortLibraries();
+  // Watch sort criteria changes OR library list changes to trigger re-sorting,
+  // primarily for initial sort or potential state changes not triggered by the global event handler.
+  watch(
+    [sortBy, sortReverse, librariesRef], // Watch librariesRef as well
+    () => {
+      if (!isDrawerOpen.value) {
+        sortLibraries();
+      }
+      // If drawer is open, sorting will be handled explicitly on close or potentially ignored
+    },
+    { immediate: true }, // Ensure initial sort happens
+  );
 
   return {
     handleSortChange,

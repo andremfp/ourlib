@@ -9,12 +9,16 @@ import { useLibraryList } from "./composables/useLibraryList";
 import { useLibraryDrawer } from "./composables/useLibraryDrawer";
 
 // ============= State =============
+// Component-specific UI state
 const isAddLibraryModalOpen = ref(false);
-const mainContainer = ref<HTMLElement | null>(null);
+const mainContainer = ref<HTMLElement | null>(null); // Ref for pull-to-refresh target
 
 // ============= Composables =============
+// Handles fetching libraries based on auth state
 const { libraries, isLoading, isRefreshing, error, refreshLibraries } =
   useLibraryList();
+
+// Handles drawer state and interactions
 const {
   selectedLibrary,
   libraryDrawerProgress,
@@ -24,6 +28,7 @@ const {
   handleLibraryDrawerProgress,
 } = useLibraryDrawer();
 
+// Handles pull-to-refresh gesture and calls refreshLibraries
 const {
   pullIndicatorHeight,
   refreshTriggerHeight,
@@ -32,53 +37,66 @@ const {
   onTouchEnd,
 } = usePullToRefresh(
   mainContainer,
-  isDrawerOpen,
+  isDrawerOpen, // Disable pull-to-refresh when drawer is open
   isRefreshing,
   refreshLibraries,
 );
 
+// Handles sorting logic based on libraries and drawer state
 const { handleSortChange, sortLibraries } = useLibrarySort(
   libraries,
   isDrawerOpen,
 );
 
 // ============= Methods =============
+// Triggered by the AddLibrary modal upon successful creation
 const handleLibraryCreated = async () => {
-  await refreshLibraries();
+  await refreshLibraries(); // Refresh the list to include the new library
 };
 
 // ============= Event Handlers =============
+// Listener for the global event to open the Add Library modal
 const onOpenAddLibraryModal = () => {
   isAddLibraryModalOpen.value = true;
 };
 
+// Listener for the global event indicating a library's details were updated
 const onLibraryUpdated = (event: Event) => {
   const { id, name } = (event as CustomEvent).detail;
   const index = libraries.value.findIndex((lib) => lib.id === id);
   if (index !== -1) {
+    // Update the library data in the main list
     libraries.value[index] = { ...libraries.value[index], name };
-    sortLibraries();
+    sortLibraries(); // Re-sort the list
+    // If the updated library is currently selected in the drawer, update its name there too
     if (selectedLibrary.value && selectedLibrary.value.id === id) {
       selectedLibrary.value.name = name;
+      // Notify navbar to update displayed title
       window.dispatchEvent(
         new CustomEvent(EVENTS.LIBRARY.NAVBAR_NAME_UPDATE, { detail: name }),
       );
     }
   }
 };
+
+// Listener for the global event indicating a library was deleted
 const onLibraryDeleted = async (event: Event) => {
   const id = (event as CustomEvent).detail;
+  // If the deleted library is the one open in the drawer, close the drawer
   if (selectedLibrary.value?.id === id) {
     closeDrawer();
   }
+  // Remove the library from the main list
   libraries.value = libraries.value.filter((lib) => lib.id !== id);
-  sortLibraries();
+  sortLibraries(); // Re-sort the list
 };
 
+// Sets up global event listeners managed by this component
 const setupEventListeners = () => {
   window.addEventListener(EVENTS.MODAL.OPEN_ADD_LIBRARY, onOpenAddLibraryModal);
   window.addEventListener(EVENTS.LIBRARY.UPDATED, onLibraryUpdated);
   window.addEventListener(EVENTS.LIBRARY.DELETED, onLibraryDeleted);
+  // Listen for sort changes triggered elsewhere (e.g., Navbar)
   window.addEventListener(EVENTS.LIBRARY.SORT_CHANGED, handleSortChange);
 };
 
@@ -88,6 +106,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  // Clean up the global listeners when the component is destroyed
   window.removeEventListener(
     EVENTS.MODAL.OPEN_ADD_LIBRARY,
     onOpenAddLibraryModal,
@@ -97,10 +116,12 @@ onUnmounted(() => {
   window.removeEventListener(EVENTS.LIBRARY.SORT_CHANGED, handleSortChange);
 });
 
+// Calculates the parallax effect style for the libraries list based on drawer progress
 const getParallaxStyle = (hasLibrary: boolean) => ({
   transform: hasLibrary
     ? `translateX(${-libraryDrawerProgress.value * ANIMATION.LIBRARY_DRAWER.PARALLAX_OFFSET}%)`
     : "none",
+  // Apply transition only when fully open or closed for smoothness
   transition:
     libraryDrawerProgress.value === UI_STATE.LIBRARY_DRAWER.CLOSED ||
     libraryDrawerProgress.value === UI_STATE.LIBRARY_DRAWER.OPEN

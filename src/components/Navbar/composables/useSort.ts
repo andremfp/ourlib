@@ -10,19 +10,19 @@ export function useSort() {
 
   // Function to change sort method
   const changeSortBy = () => {
-    // Toggle between name and date added
+    // Toggle between name and date added and set default direction
     if (sortBy.value === SORT.BY.NAME) {
       sortBy.value = SORT.BY.DATE;
-      sortReverse.value = true; // Newest to oldest
+      sortReverse.value = SORT.DIRECTION.DESC; // Default for Date: Newest to Oldest
     } else {
       sortBy.value = SORT.BY.NAME;
-      sortReverse.value = false; // A to Z
+      sortReverse.value = SORT.DIRECTION.ASC; // Default for Name: A to Z
     }
 
     // Also update saved values when in libraries view
     if (!isInLibraryView()) {
       savedSortBy.value = sortBy.value;
-      savedSortReverse.value = sortReverse.value;
+      savedSortReverse.value = sortReverse.value; // Update saved direction too
     }
 
     dispatchSortEvent();
