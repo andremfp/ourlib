@@ -1,23 +1,11 @@
 <script lang="ts">
 import TabsComponent from "@/components/Tabs.vue";
-import { useTabStore } from "@/stores/tabStore";
+import NavbarComponent from "@/components/Navbar/Navbar.vue";
 
 export default {
   components: {
     TabsComponent,
-  },
-  setup() {
-    let activeTab;
-    try {
-      const tabStore = useTabStore();
-      activeTab = tabStore.activeTab;
-    } catch {
-      activeTab = "Home";
-    }
-
-    return {
-      activeTab,
-    };
+    NavbarComponent,
   },
 };
 </script>
@@ -27,48 +15,8 @@ export default {
     id="app"
     class="grid grid-rows-[auto_1fr_auto] min-h-screen bg-light-bg dark:bg-dark-bg"
   >
-    <!-- Fixed Navbar -->
-    <nav
-      class="sticky top-0 z-50 bg-light-nav dark:bg-dark-nav"
-      :class="{
-        'h-0 opacity-0 overflow-hidden':
-          $route.name === 'login' ||
-          $route.name === 'register' ||
-          $route.name === 'not-found',
-        'h-auto opacity-100':
-          $route.name != 'login' &&
-          $route.name != 'register' &&
-          $route.name != 'not-found',
-      }"
-    >
-      <div class="w-full pb-nav-padding"></div>
-      <div class="w-full px-4 pb-2 pt-8 sm:pb-4 sm:pt-4">
-        <div
-          v-if="activeTab !== 'Add Book' && activeTab !== 'Profile'"
-          class="relative"
-        >
-          <span class="absolute inset-y-0 left-0 flex items-center pl-2">
-            <svg class="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              ></path>
-            </svg>
-          </span>
-          <input
-            type="text"
-            class="w-full py-1 pl-8 bg-white dark:bg-zinc-700 dark:placeholder:text-zinc-400 rounded-xl text-gray-800 dark:text-gray-100 outline-none"
-            placeholder="Search book"
-          />
-        </div>
-        <div v-else class="relative">
-          <p class="text-gray-400 text-md text-center">{{ activeTab }}</p>
-        </div>
-      </div>
-    </nav>
+    <!-- Navbar Component -->
+    <NavbarComponent />
 
     <!-- Main Content (Scrollable) -->
     <main class="overflow-auto">

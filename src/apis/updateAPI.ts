@@ -11,7 +11,7 @@ import {
 import type { Update } from "./types";
 
 // Collection name
-const updatesCollection = "Updates";
+const updatesCollection = "updates";
 
 // Add a new update
 export const addUpdate = async (

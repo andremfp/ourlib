@@ -1,42 +1,39 @@
-<script lang="ts">
+<script setup lang="ts">
 import { computed } from "vue";
 import { useTabStore } from "@/stores/tabStore";
-import AddBook from "@/components/AddBook.vue";
-import Profile from "@/components/Profile.vue";
+import AddBook from "@/components/tabs/AddBook.vue";
+import Profile from "@/components/tabs/Profile.vue";
+import MyLibraries from "@/components/tabs/MyLibraries/MyLibraries.vue";
 
-export default {
-  setup() {
-    const { activeTab } = useTabStore();
+const tabStore = useTabStore();
+const activeTab = computed(() => tabStore.activeTab);
 
-    const renderComponent = computed(() => {
-      switch (activeTab.value) {
-        // case "Home":
-        //   return Home;
-        // case "My Library":
-        //   return MyLibrary;
-        case "Add Book":
-          return AddBook;
-        // case "Search":
-        //   return Search;
-        case "Profile":
-          return Profile;
-        default:
-          return null;
-      }
-    });
-
-    return {
-      renderComponent,
-      activeTab,
-    };
-  },
-};
+const renderComponent = computed(() => {
+  switch (activeTab.value) {
+    // case "Home":
+    //   return Home;
+    case "My Libraries":
+      return MyLibraries;
+    case "Add Book":
+      return AddBook;
+    // case "Search":
+    //   return Search;
+    case "Profile":
+      return Profile;
+    default:
+      return null;
+  }
+});
 </script>
 
 <template>
-  <div class="flex-1 flex justify-center items-center">
-    <component :is="renderComponent" v-if="renderComponent" />
-    <div v-else class="text-white">
+  <div class="flex-1 h-full flex">
+    <component
+      :is="renderComponent"
+      v-if="renderComponent"
+      class="w-full h-full"
+    />
+    <div v-else class="text-white w-full flex items-center justify-center">
       No component found for tab: {{ activeTab }}
     </div>
   </div>
