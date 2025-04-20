@@ -7,10 +7,10 @@
 import { computed, onMounted, onUnmounted, watch, ref } from "vue";
 import { useTabStore } from "@/stores/tabStore";
 import { useSearchStore } from "@/stores/searchStore";
-import { useRoute } from "vue-router";
-import { UI_STATE, SEARCH } from "@/constants/constants"; // Removed EVENTS
-import type { RouteName, TabName } from "@/types/types";
-import logger from "@/utils/logger"; // Import logger
+import { useViewStore, type ViewName } from "@/stores/viewStore";
+import { UI_STATE, SEARCH } from "@/constants/constants";
+import type { TabName } from "@/types/types";
+import logger from "@/utils/logger";
 
 // Child Components
 import LibrariesNavbar from "./LibrariesNavbar.vue";
@@ -23,9 +23,9 @@ import { useLibrariesNavigation } from "./composables/useNavigation";
 import { useLibrariesActions } from "./composables/useActions";
 
 // --- Store Access ---
-const route = useRoute();
 const tabStore = useTabStore();
 const searchStore = useSearchStore();
+const viewStore = useViewStore(); // Access view store
 
 // --- Composables Initialization ---
 const {
@@ -65,11 +65,12 @@ const {
 // --- Local State ---
 const searchQuery = ref("");
 const activeTab = computed(() => tabStore.activeTab);
+const activeView = computed(() => viewStore.activeView);
 
 // --- Computed Properties ---
-/** Determines if the Navbar should be hidden based on the current route. */
+/** Determines if the Navbar should be hidden based on the active view. */
 const isNavbarHidden = computed(() =>
-  UI_STATE.NAVBAR.HIDDEN_ROUTES.includes(route.name as RouteName),
+  UI_STATE.NAVBAR.HIDDEN_VIEWS.includes(activeView.value as ViewName),
 );
 
 /** Provides the placeholder text for the search input. */
@@ -134,8 +135,11 @@ onUnmounted(() => {
     <!-- Padding element to push content below the visual navbar -->
     <div class="w-full pb-nav-padding" aria-hidden="true"></div>
 
-    <!-- Main content area of the navbar -->
-    <div class="w-full px-4 pb-2 pt-8 sm:pb-4 sm:pt-4">
+    <!-- Main content area of the navbar (Only shown if activeView is Main) -->
+    <div
+      v-if="activeView === 'Main'"
+      class="w-full px-4 pb-2 pt-8 sm:pb-4 sm:pt-4"
+    >
       <!-- Search Input (for tabs that use search) -->
       <div
         v-if="
@@ -186,9 +190,9 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- Sort Controls (only for My Libraries tab) -->
+    <!-- Sort Controls (only for My Libraries tab when Main view is active) -->
     <SortControls
-      v-if="activeTab === 'My Libraries'"
+      v-if="activeView === 'Main' && activeTab === 'My Libraries'"
       :sort-by="sortBy"
       :sort-reverse="sortReverse"
       :saved-sort-by="savedSortBy"

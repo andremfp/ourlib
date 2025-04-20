@@ -1,13 +1,39 @@
-<script lang="ts">
+<script setup lang="ts">
+import { computed } from "vue";
+import { useRoute } from "vue-router"; // Keep useRoute for not-found check
+import { useViewStore } from "@/stores/viewStore"; // Import the view store
 import TabsComponent from "@/components/Tabs.vue";
 import NavbarComponent from "@/components/Navbar/Navbar.vue";
 
-export default {
-  components: {
-    TabsComponent,
-    NavbarComponent,
-  },
-};
+const route = useRoute(); // Get route access
+const viewStore = useViewStore(); // Get view store access
+
+// Compute active view from store
+const activeView = computed(() => viewStore.activeView);
+
+// Determine if the current route is the not-found route
+const isNotFoundRoute = computed(() => route.name === "not-found");
+
+// Determine if TabsComponent should be shown
+const showTabs = computed(
+  () => activeView.value === "Main" && !isNotFoundRoute.value,
+);
+
+// Determine the footer's dark background class
+const footerDarkBgClass = computed(() => {
+  // If it's the not-found route, use the main dark background
+  if (isNotFoundRoute.value) {
+    return "dark:bg-dark-bg";
+  }
+  // Otherwise, use the main dark background (for Login/Register)
+  return "dark:bg-dark-nav";
+});
+
+// Determine the padding div's background class
+const paddingDivBgClass = computed(() => {
+  // Only apply special background if Tabs are shown (Main view and not NotFound)
+  return showTabs.value ? "bg-white dark:bg-dark-bg" : "";
+});
 </script>
 
 <template>
@@ -24,20 +50,8 @@ export default {
     </main>
 
     <!-- Fixed Footer -->
-    <footer
-      class="sticky bottom-0 z-50 bg-light-bg"
-      :class="[
-        $route.name === 'not-found' ? 'dark:bg-dark-bg' : 'dark:bg-dark-nav',
-      ]"
-    >
-      <TabsComponent
-        v-if="
-          $route.name !== 'login' &&
-          $route.name !== 'register' &&
-          $route.name !== 'not-found'
-        "
-        class="w-full"
-      />
+    <footer class="sticky bottom-0 z-50 bg-light-bg" :class="footerDarkBgClass">
+      <TabsComponent v-if="showTabs" class="w-full" />
       <div v-else class="mx-auto p-6 flex justify-center">
         <a
           href="https://github.com/andremfp/ourlib"
@@ -56,16 +70,7 @@ export default {
           </svg>
         </a>
       </div>
-      <div
-        :class="[
-          'w-full pb-footer-padding',
-          $route.name != 'login' &&
-          $route.name != 'register' &&
-          $route.name != 'not-found'
-            ? 'bg-white dark:bg-dark-bg'
-            : '',
-        ]"
-      ></div>
+      <div :class="['w-full pb-footer-padding', paddingDivBgClass]"></div>
     </footer>
   </div>
 </template>

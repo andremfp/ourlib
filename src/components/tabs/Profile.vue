@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { useRouter } from "vue-router";
 import { getAuth, signOut, onAuthStateChanged } from "firebase/auth";
 import { getUser } from "@/apis/userAPI";
 import logger from "@/utils/logger";
 import { useTabStore } from "@/stores/tabStore";
+import { useViewStore } from "@/stores/viewStore";
 import ChangePasswordForm from "@/components/modals/ChangePassword.vue";
 import DeleteAccount from "@/components/modals/DeleteAccount.vue";
 
 const auth = getAuth();
-const router = useRouter();
+const viewStore = useViewStore();
+const tabStore = useTabStore();
 const username = ref<string | null>(null);
 const loading = ref(true);
 const showChangePasswordModal = ref(false);
@@ -44,9 +45,9 @@ onMounted(() => {
 const logout = async () => {
   try {
     await signOut(auth);
-    logger.info("User logged out");
-    useTabStore().resetActiveTab();
-    router.push("/");
+    logger.info("User logged out, resetting tab and setting view to Login");
+    tabStore.resetActiveTab();
+    viewStore.setView("Login");
   } catch (error: any) {
     logger.error("Logout error:", error.message);
   }

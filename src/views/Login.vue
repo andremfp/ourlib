@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { useRouter } from "vue-router";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { useViewStore } from "@/stores/viewStore";
 import logger from "@/utils/logger";
 
 const username = ref("");
 const password = ref("");
 const errorMessage = ref("");
 const auth = getAuth();
-const router = useRouter();
+const viewStore = useViewStore();
 
 // Login handler
 const login = async () => {
@@ -16,9 +16,8 @@ const login = async () => {
 
   // Check if the user is already logged in
   if (auth.currentUser) {
-    logger.info("User is already logged in");
-    // Redirect to /about since the user is already authenticated
-    await router.push("/main");
+    logger.info("User is already logged in, setting view to Main");
+    viewStore.setView("Main");
     return;
   }
 
@@ -26,10 +25,9 @@ const login = async () => {
     // Just expose username to frontend
     const dummyEmail = username.value + "@dummy.com";
     await signInWithEmailAndPassword(auth, dummyEmail, password.value);
-    logger.info("User logged in successfully");
+    logger.info("User logged in successfully, setting view to Main");
 
-    // Redirect to main page
-    await router.push("/main");
+    viewStore.setView("Main");
   } catch (error: any) {
     logger.error("Login error:", error.message);
 
@@ -45,6 +43,11 @@ const login = async () => {
         errorMessage.value = "An error occurred. Please try again.";
     }
   }
+};
+
+// Function to switch to Register view
+const goToRegister = () => {
+  viewStore.setView("Register");
 };
 </script>
 
@@ -129,13 +132,14 @@ const login = async () => {
 
       <p class="mt-4 text-center text-gray-600 dark:text-zinc-300 text-sm">
         Don't have an account?
-        <router-link
-          to="/register"
-          class="text-blue-500 underline"
+        <button
+          type="button"
+          @click="goToRegister"
+          class="text-blue-500 underline bg-transparent border-none cursor-pointer p-0 m-0 align-baseline"
           aria-label="Go to registration page"
         >
           Sign up
-        </router-link>
+        </button>
       </p>
     </div>
   </div>

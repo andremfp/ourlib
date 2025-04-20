@@ -1,4 +1,5 @@
-import type { RouteName, TabName } from "@/types/types";
+import type { TabName } from "@/types/types";
+import type { ViewName } from "@/stores/viewStore";
 
 // Animation Constants
 export const ANIMATION = {
@@ -53,7 +54,7 @@ export const UI_STATE = {
     OPEN: 1,
   },
   NAVBAR: {
-    HIDDEN_ROUTES: ["login", "register", "not-found"] as RouteName[],
+    HIDDEN_VIEWS: ["Login", "Register"] as ViewName[],
     STANDARD_TITLE_TABS: ["Add Book", "Profile", "My Libraries"] as TabName[],
     INTERACTION_THRESHOLD: 0.5, // Threshold for enabling/disabling button interactions
   },

@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { useRouter } from "vue-router";
 import { auth, firestore } from "../firebase";
 import { createUserWithEmailAndPassword, signOut } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import logger from "@/utils/logger";
 import { UI_LIMITS } from "@/constants/constants";
+import { useViewStore } from "@/stores/viewStore";
 
 const username = ref("");
 const password = ref("");
 const confirmPassword = ref("");
 const errorMessage = ref("");
-const router = useRouter();
+const viewStore = useViewStore();
 
 /**
  * Validate password against the rules in UI_LIMITS.PASSWORD
@@ -102,8 +102,9 @@ const register = async () => {
       createdAt: new Date(),
     });
 
+    logger.info("User data stored, signing out and setting view to Login");
     await signOut(auth);
-    router.push("/");
+    viewStore.setView("Login");
   } catch (error: any) {
     logger.error("Registration error:", error.message);
 
@@ -120,6 +121,11 @@ const register = async () => {
         errorMessage.value = "An error occurred. Please try again.";
     }
   }
+};
+
+// Function to switch to Login view
+const goToLogin = () => {
+  viewStore.setView("Login");
 };
 </script>
 
@@ -224,13 +230,14 @@ const register = async () => {
       </form>
       <p class="mt-4 text-center text-gray-600 dark:text-zinc-300 text-sm">
         Already have an account?
-        <router-link
-          to="/"
-          class="text-blue-500 underline"
+        <button
+          type="button"
+          @click="goToLogin"
+          class="text-blue-500 underline bg-transparent border-none cursor-pointer p-0 m-0 align-baseline"
           aria-label="Go to login page"
         >
           Sign in
-        </router-link>
+        </button>
       </p>
     </div>
   </div>
