@@ -1,21 +1,22 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, onUnmounted, toRef } from "vue";
-import { ANIMATION, EVENTS, UI_STATE } from "@/constants/constants";
+import { EVENTS, ANIMATION } from "@/constants/constants";
 import LibraryOptionsMenu from "@/components/menus/LibraryOptions.vue";
-import logger from "@/utils/logger";
 import { useActiveLibrary } from "./composables/useActiveLibrary";
 import { useDrawerSwipeGesture } from "./composables/useDrawerSwipeGesture";
 
 // ============= PROPS & EMITS =============
-const props = defineProps<{ libraryId: string }>();
+const props = defineProps<{
+  libraryId: string;
+}>();
 const libraryIdRef = toRef(props, "libraryId"); // Reactive ref for library ID passed to composables
 
 const emit = defineEmits<{ close: []; progress: [progress: number] }>();
 
 // ============= STATE =============
-// Component-specific UI state
 const showLibraryOptionsMenu = ref(false);
 const drawerElementRef = ref<HTMLElement | null>(null); // Template ref for the main drawer div
+const forceInitialPosition = ref(true); // Controls whether the drawer should be positioned offscreen initially
 
 // ============= COMPOSABLES =============
 // Manages fetching, updating, and deleting the active library's data
@@ -31,12 +32,10 @@ const {
 
 // Manages the swipe-to-close gesture and drawer position/transition state
 const domTargetRef = computed(() => drawerElementRef.value);
-const { libraryDrawerPosition, isEdgeSwipeActive } = useDrawerSwipeGesture(
-  domTargetRef,
-  emit,
-);
+const { libraryDrawerPosition, drawerTransition, animateClose } =
+  useDrawerSwipeGesture(domTargetRef, emit);
 
-// ============= LIBRARY MANAGEMENT WRAPPER =============
+// ============= LIBRARY MANAGEMENT =============
 // Coordinates library deletion with closing the drawer UI
 async function handleDeleteAndClose() {
   const success = await handleLibraryDelete(); // Attempt deletion via composable
@@ -44,16 +43,17 @@ async function handleDeleteAndClose() {
     // If backend deletion succeeds, trigger the UI close sequence
     handleBackButton();
   }
-  // UI feedback for deletion failure could be added here (e.g., using 'error' ref)
 }
 
 // ============= UI EVENT HANDLERS =============
 // Handles programmatic close requests (e.g., back button event)
 function handleBackButton() {
-  logger.debug("LibraryDrawer: Closing drawer via handleBackButton");
-  emit("progress", UI_STATE.LIBRARY_DRAWER.CLOSED);
-  // The gesture composable handles the actual animation based on emitted events/state
-  setTimeout(() => emit("close"), 50); // Emit close after a short delay for animation start
+  animateClose();
+}
+
+// Handles progress updates from the gesture handler
+function handleProgress(progress: number) {
+  emit("progress", progress);
 }
 
 // Toggles the visibility of the library options menu
@@ -63,15 +63,26 @@ function toggleLibraryOptionsMenu() {
 
 // ============= LIFECYCLE =============
 onMounted(() => {
-  logger.debug("LibraryDrawer mounted");
+  // Force the drawer to start offscreen
+  forceInitialPosition.value = true;
 
-  // Trigger initial opening animation
-  requestAnimationFrame(() => {
-    // libraryDrawerPosition starts at CLOSED (100) visually,
-    // setting progress to OPEN (1) signals the target state for animation.
-    emit("progress", UI_STATE.LIBRARY_DRAWER.OPEN);
-    // The CSS transition handles the animation based on libraryDrawerPosition change
-  });
+  // Use a reliable animation sequence with proper timing
+  // First render frame - drawer is offscreen (position: 100%)
+  setTimeout(() => {
+    // Second frame - emit initial state but keep drawer offscreen
+    handleProgress(0);
+
+    // Third frame - animate to final position with transition
+    setTimeout(() => {
+      forceInitialPosition.value = false;
+      // Apply smooth transition
+      drawerTransition.value = `transform ${ANIMATION.LIBRARY_DRAWER.TRANSITION_DURATION}ms ease-out`;
+      // Set position to fully open
+      libraryDrawerPosition.value = 0;
+      // Emit the final progress state
+      handleProgress(1);
+    }, 20);
+  }, 10);
 
   // Listen for global events relevant to this component instance
   window.addEventListener(
@@ -85,7 +96,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  // Clean up global listeners to prevent memory leaks
+  // Clean up all event listeners
   window.removeEventListener(
     EVENTS.LIBRARY_DRAWER.BACK_TO_LIBRARIES,
     handleBackButton,
@@ -103,10 +114,10 @@ onUnmounted(() => {
     ref="drawerElementRef"
     class="fixed inset-y-0 right-0 w-full bg-light-bg dark:bg-dark-bg shadow-xl touch-pan-x z-40"
     :style="{
-      transform: `translateX(${libraryDrawerPosition}%)`, // Position controlled by swipe gesture composable
-      transition: isEdgeSwipeActive
-        ? 'none'
-        : `transform ${ANIMATION.LIBRARY_DRAWER.TRANSITION_DURATION}ms ease-out`, // Disable CSS transition during active swipe
+      transform: forceInitialPosition
+        ? 'translateX(100%)'
+        : `translateX(${libraryDrawerPosition}%)`, // Start offscreen if forceInitialPosition is true
+      transition: drawerTransition, // Use the dynamic transition from the gesture composable
     }"
   >
     <!-- Loading State -->

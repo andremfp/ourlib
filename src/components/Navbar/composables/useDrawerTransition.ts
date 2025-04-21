@@ -21,7 +21,6 @@ export function useDrawerTransition() {
   const handleDrawerProgress = (event: Event) => {
     const progress = (event as CustomEvent).detail;
     if (typeof progress === "number" && progress >= 0 && progress <= 1) {
-      // No need for excessive logging here as this event fires rapidly during drag
       drawerProgress.value = progress;
     } else {
       logger.warn(
