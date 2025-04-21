@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted } from "vue";
 import LibraryDrawer from "./LibraryDrawer.vue";
 import AddLibraryComponent from "@/components/modals/AddLibrary.vue";
-import { UI_STATE, ANIMATION, EVENTS } from "@/constants/constants";
+import { ANIMATION, EVENTS } from "@/constants/constants";
 import { usePullToRefresh } from "./composables/usePullToRefresh";
 import { useLibrarySort } from "./composables/useLibrarySort";
 import { useLibraryList } from "./composables/useLibraryList";
@@ -117,17 +117,23 @@ onUnmounted(() => {
 });
 
 // Calculates the parallax effect style for the libraries list based on drawer progress
-const getParallaxStyle = (hasLibrary: boolean) => ({
-  transform: hasLibrary
-    ? `translateX(${-libraryDrawerProgress.value * ANIMATION.LIBRARY_DRAWER.PARALLAX_OFFSET}%)`
-    : "none",
-  // Apply transition only when fully open or closed for smoothness
-  transition:
-    libraryDrawerProgress.value === UI_STATE.LIBRARY_DRAWER.CLOSED ||
-    libraryDrawerProgress.value === UI_STATE.LIBRARY_DRAWER.OPEN
-      ? `transform ${ANIMATION.LIBRARY_DRAWER.TRANSITION_DURATION}ms ease-out`
-      : "none",
-});
+const getParallaxStyle = (hasLibrary: boolean) => {
+  const progress = libraryDrawerProgress.value;
+
+  // No parallax if no library is selected
+  if (!hasLibrary) return { transform: "translateX(0%)", transition: "none" };
+
+  const offsetValue = -progress * ANIMATION.LIBRARY_DRAWER.PARALLAX_OFFSET;
+
+  // Synchronized transition with drawer animation
+  return {
+    transform: `translateX(${offsetValue}%)`,
+    transition:
+      progress === 0 || progress === 1
+        ? `transform ${ANIMATION.LIBRARY_DRAWER.TRANSITION_DURATION}ms ease-out`
+        : "none",
+  };
+};
 </script>
 
 <template>
