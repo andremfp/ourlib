@@ -19,6 +19,7 @@ import { getUser } from "@/apis/userAPI";
 import { useTabStore } from "@/stores/tabStore";
 import Profile from "@/components/tabs/Profile.vue";
 import logger from "@/utils/logger";
+import { createPinia, setActivePinia } from "pinia";
 
 const resetActiveTabMock = vi.fn();
 
@@ -77,10 +78,14 @@ describe("Profile.vue", () => {
     // Default successful user fetch
     (getUser as Mock).mockResolvedValue({ username: "Test User" });
 
-    // Mount component
+    // Create and set active pinia instance
+    const pinia = createPinia();
+    setActivePinia(pinia);
+
+    // Mount with pinia added to plugins
     wrapper = mount(Profile, {
       global: {
-        plugins: [router],
+        plugins: [router, pinia],
         stubs: {
           DeleteAccount: {
             template:
