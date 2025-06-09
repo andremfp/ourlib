@@ -1,7 +1,7 @@
 import { ref, onMounted, onUnmounted } from "vue";
 import { getAuth, onAuthStateChanged, type User } from "firebase/auth";
 import { getUserLibraries } from "@/apis/libraryAPI";
-import type { Library } from "@/apis/types";
+import type { Library } from "@/apis/schema";
 import logger from "@/utils/logger";
 
 /**

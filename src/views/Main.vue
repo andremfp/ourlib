@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useTabStore } from "@/stores/tabStore";
-import AddBook from "@/components/tabs/AddBook.vue";
+import AddBook from "@/components/tabs/AddBook/AddBook.vue";
 import Profile from "@/components/tabs/Profile.vue";
 import MyLibraries from "@/components/tabs/MyLibraries/MyLibraries.vue";
 

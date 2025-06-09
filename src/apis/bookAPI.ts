@@ -10,7 +10,7 @@ import {
   query,
   where,
 } from "firebase/firestore";
-import type { Book } from "./types";
+import type { Book } from "./schema";
 
 const booksCollection = "books";
 

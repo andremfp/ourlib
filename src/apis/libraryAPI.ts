@@ -11,7 +11,7 @@ import {
   query,
   where,
 } from "firebase/firestore";
-import type { Library } from "./types";
+import type { Library } from "./schema";
 
 const librariesCollection = "libraries";
 

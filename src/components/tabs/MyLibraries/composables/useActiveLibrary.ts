@@ -1,7 +1,7 @@
 import { ref, watch, type Ref } from "vue";
 import { getLibraryBooks } from "@/apis/bookAPI";
 import { getLibrary, updateLibrary, deleteLibrary } from "@/apis/libraryAPI";
-import type { Book, Library } from "@/apis/types";
+import type { Book, Library } from "@/apis/schema";
 import { EVENTS } from "@/constants/constants";
 import logger from "@/utils/logger";
 

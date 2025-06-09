@@ -1,60 +1,21 @@
 <script setup lang="ts">
 import CameraComponent from "@/components/Camera.vue";
-import { ref, computed } from "vue";
-import { fetchBookDetails } from "@/apis/fetchBook";
-import type { BookDetails } from "@/apis/fetchBook";
-import logger from "@/utils/logger";
+import { useAddBook } from "./composables/useAddBook";
 
-const showCamera = ref(false);
-const scannedISBN = ref("");
-const bookDetails = ref<BookDetails | null>(null);
-const isLoadingBookDetails = ref(false);
-
-const toggleCamera = () => {
-  showCamera.value = !showCamera.value;
-  if (!showCamera.value) {
-    resetScanning();
-  }
-  logger.debug(`Camera visibility toggled: ${showCamera.value}`);
-};
-
-const handleISBN = async (isbn: string) => {
-  scannedISBN.value = isbn;
-  showCamera.value = false;
-
-  logger.info("Scanned ISBN:", isbn);
-
-  isLoadingBookDetails.value = true;
-
-  try {
-    bookDetails.value = await fetchBookDetails(isbn);
-    logger.info("Book details fetched successfully:", bookDetails.value);
-  } catch (error) {
-    logger.error("Error fetching book details:", error);
-    bookDetails.value = null;
-  } finally {
-    isLoadingBookDetails.value = false;
-    logger.debug("Loading state reset");
-  }
-};
-
-const resetScanning = () => {
-  scannedISBN.value = "";
-  bookDetails.value = null;
-  logger.debug("Scanning state reset");
-};
-
-const thumbnailUrl = computed(() => {
-  if (bookDetails.value?.thumbnail) {
-    return window.URL.createObjectURL(bookDetails.value.thumbnail);
-  }
-  return "";
-});
+const {
+  showCamera,
+  scannedISBN,
+  bookDetails,
+  isLoadingBookDetails,
+  toggleCamera,
+  handleISBN,
+  thumbnailUrl,
+} = useAddBook();
 </script>
 
 <template>
   <div
-    class="flex flex-col items-center justify-center bg-light-bg dark:bg-dark-bg space-y-6"
+    class="flex flex-col items-center justify-center bg-light-bg dark:bg-dark-bg space-y-6 p-4 min-h-screen"
   >
     <button
       @click="toggleCamera"
@@ -63,9 +24,14 @@ const thumbnailUrl = computed(() => {
       {{ showCamera ? "Cancel" : "Scan a Book" }}
     </button>
 
-    <CameraComponent v-if="showCamera" @isbn-scanned="handleISBN" />
+    <div v-if="showCamera" class="w-full flex justify-center">
+      <CameraComponent @isbn-scanned="handleISBN" />
+    </div>
 
-    <div v-if="scannedISBN" class="mt-4 space-y-4 text-center">
+    <div
+      v-if="scannedISBN && !showCamera"
+      class="mt-4 space-y-4 text-center w-full max-w-lg"
+    >
       <p class="text-lg font-semibold text-gray-700 dark:text-gray-200">
         Scanned ISBN: <span class="text-blue-500">{{ scannedISBN }}</span>
       </p>

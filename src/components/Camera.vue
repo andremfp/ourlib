@@ -1,227 +1,144 @@
 <script lang="ts">
-import { defineComponent, ref, onMounted, onBeforeUnmount } from "vue";
+import { defineComponent, onMounted, onBeforeUnmount } from "vue";
 import logger from "@/utils/logger";
-
-interface CameraStatus {
-  loading: boolean;
-  error: boolean;
-  message: string;
-}
-
-interface VideoConstraints {
-  facingMode: string;
-  width: {
-    ideal: number;
-  };
-  height: {
-    ideal: number;
-  };
-}
-
-interface MediaConstraints {
-  video: VideoConstraints;
-}
+import {
+  Html5QrcodeScanner,
+  Html5QrcodeSupportedFormats,
+  Html5QrcodeScannerState,
+} from "html5-qrcode";
+import type { QrcodeSuccessCallback } from "html5-qrcode";
 
 export default defineComponent({
   name: "CameraFeed",
 
   setup(_, { emit }) {
-    const videoElement = ref<HTMLVideoElement | null>(null);
-    const stream = ref<MediaStream | null>(null);
-    const status = ref<CameraStatus>({
-      loading: true,
-      error: false,
-      message: "Initializing camera...",
-    });
+    const READER_ELEMENT_ID = "html5-qrcode-reader";
+    let html5QrcodeScanner: Html5QrcodeScanner | null = null;
+    let readyInterval: any = null;
 
-    const barcodeReader = ref<any | null>(null); // Temporarily set to `any`
-    let scanning = false;
     let lastScannedCode: string | null = null;
     let lastScannedTime = 0;
-    let animationFrameId: number | null = null; // Add this to track the animation frame
-
-    const handleError = (error: Error): void => {
-      status.value.error = true;
-      status.value.loading = false;
-
-      let errorMessage = "An error occurred while accessing the camera";
-
-      switch (error.name) {
-        case "NotFoundError":
-          errorMessage = "No camera found on this device";
-          break;
-        case "NotAllowedError":
-          errorMessage = "Camera access denied by user";
-          break;
-        case "NotReadableError":
-          errorMessage = "Camera is already in use";
-          break;
-        case "OverconstrainedError":
-          errorMessage = "Camera cannot satisfy the requested constraints";
-          break;
-      }
-
-      status.value.message = errorMessage;
-      logger.error(`Error: ${error.name} - ${error.message}`);
-    };
 
     const isValidISBN = (code: string): boolean => {
       const cleanCode = code.replace(/[-\s]/g, "");
       return /^(\d{10}|\d{13})$/.test(cleanCode);
     };
 
-    const startScanning = async () => {
-      if (!scanning) {
-        logger.debug("Scanning stopped, exiting scan loop");
-        return;
-      }
+    const onScanSuccess: QrcodeSuccessCallback = (
+      decodedText,
+      decodedResult,
+    ) => {
+      logger.info(
+        `[Html5QrcodeScanner] Success! Decoded text: ${decodedText}`,
+        decodedResult,
+      );
+      const currentTime = Date.now();
 
       if (
-        !videoElement.value ||
-        !barcodeReader.value ||
-        !stream.value?.active
+        decodedText === lastScannedCode &&
+        currentTime - lastScannedTime <= 3000
       ) {
-        logger.debug("Required elements not available or stream inactive");
-        stopScanning();
+        logger.debug(
+          `[Html5QrcodeScanner] ISBN '${decodedText}' was scanned recently. Debouncing.`,
+        );
         return;
       }
 
-      try {
-        logger.info("Scanning for barcode...");
-        const result = await barcodeReader.value.decodeFromVideoElement(
-          videoElement.value,
+      if (isValidISBN(decodedText)) {
+        logger.info(
+          `[Html5QrcodeScanner] Valid ISBN '${decodedText}' detected.`,
         );
+        lastScannedCode = decodedText;
+        lastScannedTime = currentTime;
+        emit("isbn-scanned", decodedText);
 
-        if (result) {
-          const text = result.getText();
-          const currentTime = Date.now();
-
-          if (
-            isValidISBN(text) &&
-            (text !== lastScannedCode || currentTime - lastScannedTime > 3000)
-          ) {
-            logger.info("Valid ISBN detected:", text);
-            lastScannedCode = text;
-            lastScannedTime = currentTime;
-            emit("isbn-scanned", text);
-          }
-        }
-      } catch (error) {
-        // Only log non-standard errors
-        if (
-          error instanceof Error &&
-          !error.message.includes(
-            "No MultiFormat Readers were able to detect",
-          ) &&
-          scanning // Only log if we're still meant to be scanning
-        ) {
-          logger.warn("Scanning error:", error);
+        if (html5QrcodeScanner) {
+          // Intentionally not awaiting this to avoid blocking
+          html5QrcodeScanner.clear().catch((err) => {
+            logger.error(
+              "[Html5QrcodeScanner] Error clearing scanner after success:",
+              err,
+            );
+          });
         }
       }
-
-      // Continue scanning if still active
-      if (scanning) {
-        animationFrameId = requestAnimationFrame(startScanning);
-      }
     };
 
-    const initializeBarcodeScanner = async () => {
-      if (!videoElement.value) return;
-
-      try {
-        // Dynamically import the BrowserMultiFormatReader
-        const { BrowserMultiFormatReader } = await import("@zxing/library");
-
-        // Assign the imported class to the barcodeReader ref
-        barcodeReader.value = new BrowserMultiFormatReader();
-        scanning = true;
-        startScanning();
-        logger.debug("Barcode scanner initialized");
-      } catch (error) {
-        logger.error("Failed to initialize scanner:", error);
-        handleError(error as Error);
-      }
-    };
-
-    const initializeCamera = async (): Promise<void> => {
-      try {
-        logger.debug("Requesting camera permissions...");
-
-        const constraints: MediaConstraints = {
-          video: {
-            facingMode: "environment",
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-          },
-        };
-
-        stream.value = await navigator.mediaDevices.getUserMedia(constraints);
-        logger.debug("Camera stream obtained successfully");
-
-        if (videoElement.value) {
-          videoElement.value.srcObject = stream.value;
-          videoElement.value.style.transform = "scale(2)";
-          videoElement.value.style.transformOrigin = "center";
-
-          videoElement.value.onloadedmetadata = () => {
-            status.value.loading = false;
-            status.value.message = "Camera active - Ready to scan";
-            logger.debug("Video element ready, initializing scanner");
-            initializeBarcodeScanner();
-          };
-        } else {
-          throw new Error("Video element not found");
-        }
-      } catch (error) {
-        handleError(error as Error);
-      }
-    };
-
-    const stopScanning = () => {
-      scanning = false;
-      if (animationFrameId !== null) {
-        cancelAnimationFrame(animationFrameId);
-        animationFrameId = null;
-      }
-      logger.debug("Scanning stopped gracefully");
-    };
-
-    const stopCamera = () => {
-      // First stop scanning to prevent any new decode attempts
-      stopScanning();
-
-      if (videoElement.value) {
-        videoElement.value.srcObject = null;
-      }
-
-      if (stream.value) {
-        logger.debug("Stopping all camera tracks");
-        stream.value.getTracks().forEach((track: MediaStreamTrack) => {
-          track.stop();
-        });
-        stream.value = null;
-      }
-
-      // Reset the barcode reader
-      if (barcodeReader.value) {
-        logger.debug("Resetting barcode reader");
-        barcodeReader.value.reset();
-        barcodeReader.value = null;
+    const onScanFailure = (error: string) => {
+      // We're only logging non-NotFoundExceptions as warnings.
+      if (!error.includes("NotFoundException")) {
+        logger.warn(`[Html5QrcodeScanner] Scan Error:`, error);
       }
     };
 
     onMounted(() => {
-      initializeCamera();
+      logger.debug("[Html5QrcodeScanner] CameraFeed component onMounted.");
+
+      const formatsToSupport = [
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
+      ];
+
+      const config = {
+        fps: 10,
+        rememberLastUsedCamera: true,
+        formatsToSupport: formatsToSupport,
+      };
+
+      html5QrcodeScanner = new Html5QrcodeScanner(
+        READER_ELEMENT_ID,
+        config,
+        false, // verbose
+      );
+
+      html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+
+      readyInterval = setInterval(() => {
+        if (
+          html5QrcodeScanner &&
+          html5QrcodeScanner.getState() === Html5QrcodeScannerState.SCANNING
+        ) {
+          logger.info(
+            "[Html5QrcodeScanner] Scanner is ready. Applying video constraints for focus and zoom.",
+          );
+          (html5QrcodeScanner as any)
+            .applyVideoConstraints({
+              focusMode: "continuous",
+              advanced: [{ zoom: 2.0 }],
+            })
+            .then(() => {
+              logger.info(
+                "[Html5QrcodeScanner] Video constraints applied successfully.",
+              );
+            })
+            .catch((err: any) => {
+              logger.warn(
+                "[Html5QrcodeScanner] Failed to apply video constraints:",
+                err,
+              );
+            });
+          clearInterval(readyInterval);
+        }
+      }, 1000);
     });
 
     onBeforeUnmount(() => {
-      stopCamera();
+      if (readyInterval) {
+        clearInterval(readyInterval);
+      }
+      logger.debug(
+        "[Html5QrcodeScanner] Unmounting. Clearing scanner instance.",
+      );
+      if (html5QrcodeScanner) {
+        // As per docs, calling clear() is the proper way to stop and unmount the scanner.
+        html5QrcodeScanner.clear().catch((err) => {
+          logger.error("[Html5QrcodeScanner] Error during unmount clear:", err);
+        });
+      }
     });
 
     return {
-      videoElement,
-      stream,
-      status,
+      READER_ELEMENT_ID,
     };
   },
 });
@@ -229,30 +146,13 @@ export default defineComponent({
 
 <template>
   <div
-    class="flex flex-col items-center justify-center bg-light-bg dark:bg-dark-bg space-y-6"
+    class="flex flex-col items-center justify-center bg-light-bg dark:bg-dark-bg p-4 w-full"
   >
-    <div class="mb-4">
-      <p :class="`text-lg ${status.error ? 'text-red-500' : 'text-green-500'}`">
-        {{ status.message }}
-      </p>
-    </div>
-
-    <div class="relative w-full max-w-md rounded-lg overflow-hidden shadow-lg">
-      <video
-        ref="videoElement"
-        class="w-full h-full object-cover"
-        autoplay
-        playsinline
-      ></video>
-
-      <div
-        v-if="status.loading"
-        class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50"
-      >
-        <div
-          class="animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent"
-        ></div>
-      </div>
-    </div>
+    <!-- The Html5QrcodeScanner will render its own UI, including status messages and a loading spinner, inside this div -->
+    <div
+      :id="READER_ELEMENT_ID"
+      class="w-full rounded-lg"
+      style="min-height: 300px"
+    ></div>
   </div>
 </template>
