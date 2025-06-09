@@ -25,7 +25,7 @@ const {
     </button>
 
     <div v-if="showCamera" class="w-full flex justify-center">
-      <CameraComponent @isbn-scanned="handleISBN" />
+      <CameraComponent @isbn-scanned="handleISBN" @cancel="toggleCamera" />
     </div>
 
     <div
