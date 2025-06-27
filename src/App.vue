@@ -2,14 +2,19 @@
 import { computed } from "vue";
 import { useRoute } from "vue-router"; // Keep useRoute for not-found check
 import { useViewStore } from "@/stores/viewStore"; // Import the view store
+import { useTabStore } from "@/stores/tabStore"; // Import the tab store
 import TabsComponent from "@/components/Tabs.vue";
 import NavbarComponent from "@/components/Navbar/Navbar.vue";
 
 const route = useRoute(); // Get route access
 const viewStore = useViewStore(); // Get view store access
+const tabStore = useTabStore(); // Get tab store access
 
 // Compute active view from store
 const activeView = computed(() => viewStore.activeView);
+
+// Compute active tab from store
+const activeTab = computed(() => tabStore.activeTab);
 
 // Determine if the current route is the not-found route
 const isNotFoundRoute = computed(() => route.name === "not-found");
@@ -34,6 +39,13 @@ const paddingDivBgClass = computed(() => {
   // Only apply special background if Tabs are shown (Main view and not NotFound)
   return showTabs.value ? "bg-white dark:bg-dark-bg" : "";
 });
+
+// Determine if main should be scrollable (disable for MyLibraries tab)
+const mainScrollClass = computed(() => {
+  const isMyLibrariesTab =
+    activeView.value === "Main" && activeTab.value === "My Libraries";
+  return isMyLibrariesTab ? "overflow-hidden" : "overflow-auto";
+});
 </script>
 
 <template>
@@ -44,8 +56,8 @@ const paddingDivBgClass = computed(() => {
     <!-- Navbar Component -->
     <NavbarComponent />
 
-    <!-- Main Content (Scrollable) -->
-    <main class="overflow-auto">
+    <!-- Main Content (Conditionally Scrollable) -->
+    <main :class="mainScrollClass">
       <router-view />
     </main>
 

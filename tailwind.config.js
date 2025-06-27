@@ -28,7 +28,7 @@ export default {
         "light-nav": "#7ea6ff",
         "light-nav-text": "#1F2937",
         //"dark-nav": "#27272A",
-        "dark-nav": "#772773",
+        "dark-nav": "#111666",
         "dark-nav-text": "#9CA3AF",
         "light-nav-sort-controls": "#a1bdff",
         "dark-nav-sort-controls": "#414145",
