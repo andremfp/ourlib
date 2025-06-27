@@ -42,15 +42,20 @@ const paddingDivBgClass = computed(() => {
     class="grid grid-rows-[auto_1fr_auto] min-h-screen bg-light-bg dark:bg-dark-bg"
   >
     <!-- Navbar Component -->
-    <NavbarComponent />
+    <NavbarComponent @wheel.stop @touchmove.stop />
 
-    <!-- Main Content -->
-    <main class="overflow-hidden">
+    <!-- Main Content (Scrollable) -->
+    <main class="overflow-auto">
       <router-view />
     </main>
 
     <!-- Fixed Footer -->
-    <footer class="sticky bottom-0 z-50 bg-light-bg" :class="footerDarkBgClass">
+    <footer
+      class="sticky bottom-0 z-50 bg-light-bg"
+      :class="footerDarkBgClass"
+      @wheel.stop
+      @touchmove.stop
+    >
       <TabsComponent v-if="showTabs" class="w-full" />
       <div v-else class="mx-auto p-6 flex justify-center">
         <a

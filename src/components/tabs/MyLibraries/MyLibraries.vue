@@ -139,7 +139,7 @@ const getParallaxStyle = (hasLibrary: boolean) => {
 
 <template>
   <div
-    class="bg-light-bg dark:bg-dark-bg w-full h-full flex flex-col"
+    class="bg-light-bg dark:bg-dark-bg w-full h-full flex flex-col relative"
     ref="mainContainer"
   >
     <!-- Pull indicator shown when pulling -->
@@ -181,11 +181,12 @@ const getParallaxStyle = (hasLibrary: boolean) => {
 
     <!-- Scrollable Content Container -->
     <div
-      class="flex-1 overflow-auto"
+      class="flex-1 overflow-auto overscroll-none"
       ref="scrollContainer"
       @touchstart.passive="onTouchStart"
       @touchmove="onTouchMove"
       @touchend="onTouchEnd"
+      @wheel.stop
     >
       <!-- Initial loading state -->
       <div

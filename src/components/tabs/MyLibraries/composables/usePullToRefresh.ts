@@ -47,8 +47,13 @@ export function usePullToRefresh(
   };
 
   const isAtScrollTop = () => {
-    const scrollableElement = getScrollableElement();
-    return scrollableElement ? scrollableElement.scrollTop <= 0 : false;
+    const localContainer = getScrollableElement();
+    const mainElement = document.querySelector("main") as HTMLElement;
+    const localScrollTop = localContainer
+      ? localContainer.scrollTop <= 0
+      : false;
+    const mainScrollTop = mainElement ? mainElement.scrollTop <= 0 : true;
+    return localScrollTop && mainScrollTop;
   };
 
   const onTouchStart = (e: TouchEvent) => {
@@ -94,16 +99,23 @@ export function usePullToRefresh(
     const currentY = e.touches[0].clientY;
     const pullDistance = currentY - touchStartY;
 
+    // Check if we're still at the top of both the local container and main scroll
+    const localScrollTop = container.scrollTop <= 0;
+    const mainElement = document.querySelector("main") as HTMLElement;
+    const mainScrollTop = mainElement ? mainElement.scrollTop <= 0 : true;
+    const isAtTop = localScrollTop && mainScrollTop;
+
     // Only consider this a pull gesture if:
     // 1. We're pulling down (positive distance)
-    // 2. We're still at the top of the scroll
+    // 2. We're still at the top of both scroll containers
     // 3. The pull distance is significant enough
-    if (pullDistance > 10 && isAtScrollTop()) {
+    if (pullDistance > 10 && isAtTop) {
       // This is a pull-to-refresh gesture
       pullStarted = true;
 
       // Prevent default scrolling behavior only during active pull
       e.preventDefault();
+      e.stopPropagation();
 
       // Apply resistance and cap the pull height
       const resistedPull = Math.pow(pullDistance, PULL_RESISTANCE_FACTOR);
@@ -111,7 +123,7 @@ export function usePullToRefresh(
         resistedPull,
         refreshTriggerHeight.value * MAX_PULL_HEIGHT_FACTOR,
       );
-    } else if (pullDistance < 0 || !isAtScrollTop()) {
+    } else if (pullDistance < 0 || !isAtTop) {
       // User is scrolling up or has scrolled down, cancel pull gesture
       if (pullStarted) {
         resetPullState();
