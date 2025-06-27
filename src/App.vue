@@ -40,12 +40,8 @@ const paddingDivBgClass = computed(() => {
   return showTabs.value ? "bg-white dark:bg-dark-bg" : "";
 });
 
-// Determine if main should be scrollable (disable for MyLibraries tab)
-const mainScrollClass = computed(() => {
-  const isMyLibrariesTab =
-    activeView.value === "Main" && activeTab.value === "My Libraries";
-  return isMyLibrariesTab ? "overflow-hidden" : "overflow-auto";
-});
+// Main should always be scrollable - let pull-to-refresh handle the scrolling
+const mainScrollClass = computed(() => "overflow-auto");
 </script>
 
 <template>
@@ -85,10 +81,8 @@ const mainScrollClass = computed(() => {
       <div :class="['w-full pb-footer-padding', paddingDivBgClass]"></div>
     </footer>
 
-    <!-- Touch blocking overlays for MyLibraries tab - TEMPORARILY DISABLED FOR TESTING -->
-    <template
-      v-if="false && activeView === 'Main' && activeTab === 'My Libraries'"
-    >
+    <!-- Touch blocking overlays for MyLibraries tab -->
+    <template v-if="activeView === 'Main' && activeTab === 'My Libraries'">
       <!-- Navbar overlay - cover the entire navbar area -->
       <div
         class="absolute top-0 left-0 right-0 z-40 pointer-events-auto"

@@ -84,43 +84,78 @@ const updateDebugInfo = () => {
 
 // Initialize pull-to-refresh
 const initializePullToRefresh = () => {
-  if (scrollContainer.value && !pullToRefreshInstance) {
-    // TEMPORARILY DISABLE PTR TO TEST SCROLL DETECTION
-    console.log("Setting up scroll listeners...");
+  const mainElement = document.querySelector("main");
+  if (mainElement && !pullToRefreshInstance) {
+    console.log("Setting up pull-to-refresh on main element...");
 
-    // Add scroll listeners to multiple elements to see which one actually scrolls
-    const setupListener = (element: Element | Window, name: string) => {
-      const listener = () => {
-        console.log(`Scroll detected on: ${name}`);
-        updateDebugInfo();
-      };
-      element.addEventListener("scroll", listener);
-      console.log(`Added listener to: ${name}`);
-    };
+    // Add scroll listener for debug updates
+    mainElement.addEventListener("scroll", updateDebugInfo);
 
-    if (scrollContainer.value)
-      setupListener(scrollContainer.value, "scrollContainer");
-    const main = document.querySelector("main");
-    if (main) setupListener(main, "main");
-    setupListener(document.body, "body");
-    setupListener(document.documentElement, "html");
-    setupListener(window, "window");
+    pullToRefreshInstance = PullToRefresh.init({
+      mainElement: mainElement,
+      triggerElement: mainElement,
+      onRefresh() {
+        return refreshLibraries();
+      },
+      shouldPullToRefresh() {
+        // Only allow pull-to-refresh when:
+        // 1. Drawer is not open
+        // 2. Not currently refreshing
+        // 3. Main element is at the very top
+        const container = mainElement;
 
-    // DISABLE PTR FOR NOW
-    // pullToRefreshInstance = PullToRefresh.init({...});
+        if (!container) {
+          console.log("PTR Check: No main element found");
+          return false;
+        }
+
+        const scrollTop = container.scrollTop;
+        const scrollHeight = container.scrollHeight;
+        const clientHeight = container.clientHeight;
+        const isAtTop = scrollTop <= 1; // Small tolerance for rounding
+        const drawerClosed = !isDrawerOpen.value;
+        const notRefreshing = !isRefreshing.value;
+
+        const allowed = drawerClosed && notRefreshing && isAtTop;
+
+        // Update debug info for mobile display
+        debugInfo.value = {
+          scrollTop: Math.round(scrollTop * 100) / 100,
+          isAtTop,
+          drawerClosed,
+          notRefreshing,
+          allowed,
+          lastCheck: new Date().toLocaleTimeString(),
+          scrollHeight,
+          clientHeight,
+          mainScrollTop: Math.round(scrollTop * 100) / 100,
+          bodyScrollTop: 0,
+          htmlScrollTop: 0,
+          windowScrollY: 0,
+          callCount: debugInfo.value.callCount + 1,
+        };
+
+        console.log(
+          `PTR Check: scrollTop=${scrollTop}, drawerClosed=${drawerClosed}, notRefreshing=${notRefreshing}, isAtTop=${isAtTop}, allowed=${allowed}`,
+        );
+
+        return allowed;
+      },
+      distThreshold: 60,
+      distMax: 80,
+      distReload: 50,
+      instructionsPullToRefresh: "Pull down to refresh",
+      instructionsReleaseToRefresh: "Release to refresh",
+      instructionsRefreshing: "Refreshing...",
+    });
   }
 };
 
 // Destroy pull-to-refresh instance
 const destroyPullToRefresh = () => {
-  if (scrollContainer.value) {
-    scrollContainer.value.removeEventListener("scroll", updateDebugInfo);
-    document
-      .querySelector("main")
-      ?.removeEventListener("scroll", updateDebugInfo);
-    document.body.removeEventListener("scroll", updateDebugInfo);
-    document.documentElement.removeEventListener("scroll", updateDebugInfo);
-    window.removeEventListener("scroll", updateDebugInfo);
+  const mainElement = document.querySelector("main");
+  if (mainElement) {
+    mainElement.removeEventListener("scroll", updateDebugInfo);
   }
   if (pullToRefreshInstance) {
     PullToRefresh.destroyAll();
