@@ -1,6 +1,6 @@
 // src/components/tabs/MyLibraries/composables/useLibrarySort.ts
 import { ref, watch, type Ref } from "vue";
-import type { Library } from "@/apis/schema";
+import type { Library } from "@/schema";
 import { SORT } from "@/constants/constants";
 import logger from "@/utils/logger";
 

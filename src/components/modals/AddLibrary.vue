@@ -2,7 +2,7 @@
 import { ref, watch } from "vue";
 import { getAuth } from "firebase/auth";
 import { createLibrary } from "@/apis/libraryAPI";
-import type { Library } from "@/apis/schema";
+import type { Library } from "@/schema";
 import { UI_LIMITS } from "@/constants/constants";
 
 // ============= PROPS & EMITS =============

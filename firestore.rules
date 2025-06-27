@@ -13,22 +13,22 @@ service cloud.firestore {
     match /books/{bookId} {
       // Only allow creating a book if the user is authenticated and the library is owned by the user
       allow create: if request.auth != null &&
-              exists(/databases/$(database)/documents/libraries/$(request.resource.data.library)) &&
-              get(/databases/$(database)/documents/libraries/$(request.resource.data.library)).data.ownerId == request.auth.uid;
+              exists(request.resource.data.library) &&
+              get(request.resource.data.library).data.owner == /databases/$(database)/documents/users/$(request.auth.uid);
 
       // Only allow reading a book if the user is authenticated and the library is owned by them or they are a subscriber
       allow read: if request.auth != null &&
-                  (get(/databases/$(database)/documents/libraries/$(resource.data.library)).data.ownerId == request.auth.uid ||
-                   get(/databases/$(database)/documents/libraries/$(resource.data.library)).data.subscribers.hasAny([request.auth.uid]));
+                  (get(resource.data.library).data.owner == /databases/$(database)/documents/users/$(request.auth.uid) ||
+                   get(resource.data.library).data.subscribers.hasAny([request.auth.uid]));
 
       // Allow updating the book if the user is authenticated and either the owner of the library or the book is lent to them (borrower need to be subscriber of library)
       allow update: if request.auth != null &&
-                    (get(/databases/$(database)/documents/libraries/$(resource.data.library)).data.ownerId == request.auth.uid ||
-                     (resource.data.lentTo == request.auth.uid && request.resource.data.diff(resource.data).changedKeys().hasOnly(['lentTo', 'lentAt']) && get(/databases/$(database)/documents/libraries/$(resource.data.library)).data.subscribers.hasAny([request.auth.uid])));
+                    (get(resource.data.library).data.owner == /databases/$(database)/documents/users/$(request.auth.uid) ||
+                     (resource.data.lentTo != null && resource.data.lentTo == /databases/$(database)/documents/users/$(request.auth.uid) && request.resource.data.diff(resource.data).changedKeys().hasOnly(['lentTo', 'lentAt']) && get(resource.data.library).data.subscribers.hasAny([request.auth.uid])));
 
       // Allow deleting the book if the user is authenticated, the book is not lent out, and they are the library owner
       allow delete: if request.auth != null &&
-                    get(/databases/$(database)/documents/libraries/$(resource.data.library)).data.ownerId == request.auth.uid &&
+                    get(resource.data.library).data.owner == /databases/$(database)/documents/users/$(request.auth.uid) &&
                     resource.data.lentTo == null;
     }
 
@@ -37,26 +37,29 @@ service cloud.firestore {
       // Allow creating a library only if the user is authenticated
       allow create: if request.auth != null;
 
-      // Allow reading the library if the user is authenticated and either the owner, a subscriber, or a friend of the owner
-      allow read: if request.auth != null && (
-        resource.data.ownerId == request.auth.uid || 
-        resource.data.subscribers.hasAny([request.auth.uid]) || 
-        exists(/databases/$(database)/documents/users/$(resource.data.ownerId)) && 
-        get(/databases/$(database)/documents/users/$(resource.data.ownerId)).data.friends.hasAny([request.auth.uid])
-      );
+      // Allow reading the library if the user is the owner
+      allow read: if request.auth != null && resource.data.owner == /databases/$(database)/documents/users/$(request.auth.uid);
+      
+      // Allow reading the library if the user is a subscriber
+      allow read: if request.auth != null && resource.data.subscribers.hasAny([request.auth.uid]);
+      
+      // Allow reading the library if the user is a friend of the owner
+      allow read: if request.auth != null && 
+                  exists(resource.data.owner) && 
+                  get(resource.data.owner).data.friends.hasAny([request.auth.uid]);
 
-      // Allow updating the library only if the user is the owner of the library
-      allow update: if request.auth != null && resource.data.ownerId == request.auth.uid;
+      // Allow updating the library only if the user is the owner
+      allow update: if request.auth != null && resource.data.owner == /databases/$(database)/documents/users/$(request.auth.uid);
 
       // Allow subscribers or friends of the owner to update the 'subscribers' field only
       allow update: if request.auth != null && (
           resource.data.subscribers.hasAny([request.auth.uid]) || 
-          exists(/databases/$(database)/documents/users/$(resource.data.ownerId)) && 
-          get(/databases/$(database)/documents/users/$(resource.data.ownerId)).data.friends.hasAny([request.auth.uid])
+          (exists(resource.data.owner) && 
+           get(resource.data.owner).data.friends.hasAny([request.auth.uid]))
       ) &&  request.resource.data.diff(resource.data).changedKeys().hasOnly(['subscribers']);
 
-      // Allow deleting a library only if the user is the owner of the library
-      allow delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
+      // Allow deleting a library only if the user is the owner
+      allow delete: if request.auth != null && resource.data.owner == /databases/$(database)/documents/users/$(request.auth.uid);
     }
 
     // Rules for the 'Updates' collection

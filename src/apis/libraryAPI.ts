@@ -10,8 +10,9 @@ import {
   deleteDoc,
   query,
   where,
+  DocumentReference,
 } from "firebase/firestore";
-import type { Library } from "./schema";
+import type { Library, User } from "../schema";
 
 const librariesCollection = "libraries";
 
@@ -30,17 +31,19 @@ export const updateLibrary = async (
 };
 
 export const getLibrary = async (
-  libraryId: string,
+  libraryRef: DocumentReference<Library>,
 ): Promise<Library | null> => {
-  const docSnap = await getDoc(doc(firestore, librariesCollection, libraryId));
+  const docSnap = await getDoc(libraryRef);
   return docSnap.exists() ? (docSnap.data() as Library) : null;
 };
 
-export const getUserLibraries = async (owner: string): Promise<Library[]> => {
+export const getUserLibraries = async (
+  owner: DocumentReference<User>,
+): Promise<Library[]> => {
   const querySnapshot = await getDocs(
     query(
       collection(firestore, librariesCollection),
-      where("ownerId", "==", owner),
+      where("owner", "==", owner),
     ),
   );
   return querySnapshot.docs.map(

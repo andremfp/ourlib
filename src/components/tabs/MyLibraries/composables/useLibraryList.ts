@@ -1,8 +1,11 @@
 import { ref, onMounted, onUnmounted } from "vue";
-import { getAuth, onAuthStateChanged, type User } from "firebase/auth";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { getUserLibraries } from "@/apis/libraryAPI";
-import type { Library } from "@/apis/schema";
+import { COLLECTION_NAMES } from "@/constants";
+import type { Library, User } from "@/schema";
 import logger from "@/utils/logger";
+import { firestore } from "@/firebase";
+import { doc, DocumentReference } from "firebase/firestore";
 
 /**
  * Composable for fetching and managing the user's libraries based on auth state.
@@ -28,7 +31,12 @@ export function useLibraryList() {
     logger.info(`[useUserLibraries] Fetching libraries for user ${userId}...`);
 
     try {
-      const fetchedLibraries = await getUserLibraries(userId);
+      const userRef = doc(
+        firestore,
+        COLLECTION_NAMES.USERS,
+        userId,
+      ) as DocumentReference<User>;
+      const fetchedLibraries = await getUserLibraries(userRef);
       libraries.value = fetchedLibraries;
       logger.info(
         `[useUserLibraries] Fetched ${fetchedLibraries.length} libraries.`,
@@ -61,7 +69,7 @@ export function useLibraryList() {
 
   // Setup auth listener
   onMounted(() => {
-    unsubscribeAuth = onAuthStateChanged(auth, (user: User | null) => {
+    unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       if (user) {
         logger.info("[useUserLibraries] Auth state: User logged in.");
         // Fetch libraries only if they haven't been loaded yet for this user

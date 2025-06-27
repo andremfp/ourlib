@@ -9,8 +9,9 @@ import {
   getDocs,
   query,
   where,
+  DocumentReference,
 } from "firebase/firestore";
-import type { Book } from "./schema";
+import type { Book, Library } from "../schema";
 
 const booksCollection = "books";
 
@@ -24,11 +25,13 @@ export const getBook = async (bookId: string): Promise<Book | null> => {
   return docSnap.exists() ? (docSnap.data() as Book) : null;
 };
 
-export const getLibraryBooks = async (libraryId: string): Promise<Book[]> => {
+export const getLibraryBooks = async (
+  libraryRef: DocumentReference<Library>,
+): Promise<Book[]> => {
   const querySnapshot = await getDocs(
     query(
       collection(firestore, booksCollection),
-      where("library", "==", libraryId),
+      where("library", "==", libraryRef),
     ),
   );
   return querySnapshot.docs.map(
