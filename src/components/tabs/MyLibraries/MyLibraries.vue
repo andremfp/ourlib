@@ -27,6 +27,7 @@ const debugInfo = ref({
   lastCheck: "",
   scrollHeight: 0,
   clientHeight: 0,
+  mainScrollTop: 0,
 });
 
 // ============= Composables =============
@@ -47,19 +48,23 @@ const {
 // Update debug info on scroll
 const updateDebugInfo = () => {
   const container = scrollContainer.value;
-  if (container) {
-    const scrollTop = container.scrollTop;
+  const mainElement = document.querySelector("main");
+
+  if (container && mainElement) {
+    const containerScrollTop = container.scrollTop;
+    const mainScrollTop = mainElement.scrollTop;
     const scrollHeight = container.scrollHeight;
     const clientHeight = container.clientHeight;
-    const isAtTop = scrollTop <= 1;
+    const isAtTop = containerScrollTop <= 1;
 
     debugInfo.value = {
       ...debugInfo.value,
-      scrollTop: Math.round(scrollTop * 100) / 100,
+      scrollTop: Math.round(containerScrollTop * 100) / 100,
       isAtTop,
       scrollHeight,
       clientHeight,
       lastCheck: new Date().toLocaleTimeString(),
+      mainScrollTop: Math.round(mainScrollTop * 100) / 100,
     };
   }
 };
@@ -106,6 +111,7 @@ const initializePullToRefresh = () => {
           lastCheck: new Date().toLocaleTimeString(),
           scrollHeight,
           clientHeight,
+          mainScrollTop: 0, // This will be updated by scroll listener
         };
 
         // Debug logging - only log when someone tries to pull
@@ -247,7 +253,8 @@ const getParallaxStyle = (hasLibrary: boolean) => {
       class="fixed top-20 right-2 z-50 bg-red-500 text-white p-2 rounded text-xs max-w-xs"
     >
       <div><strong>PTR Debug</strong></div>
-      <div>ScrollTop: {{ debugInfo.scrollTop }}</div>
+      <div>Container ScrollTop: {{ debugInfo.scrollTop }}</div>
+      <div>Main ScrollTop: {{ debugInfo.mainScrollTop }}</div>
       <div>ScrollHeight: {{ debugInfo.scrollHeight }}</div>
       <div>ClientHeight: {{ debugInfo.clientHeight }}</div>
       <div>At Top: {{ debugInfo.isAtTop }}</div>
