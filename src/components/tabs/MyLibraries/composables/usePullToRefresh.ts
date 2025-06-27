@@ -9,7 +9,11 @@ const MAX_PULL_HEIGHT_FACTOR = 1.5; // Maximum pull height relative to trigger h
 /**
  * Composable for managing pull-to-refresh functionality.
  *
- * @param containerRef Ref to the main scrollable container element.
+ * This composable listens for touch events on the provided containerRef but checks
+ * the scroll position of the main scrollable element (main tag) to determine if
+ * pull-to-refresh should be enabled.
+ *
+ * @param containerRef Ref to the element that should listen for touch events.
  * @param isDisabled Ref<boolean> indicating if pull-to-refresh should be disabled (e.g., drawer open).
  * @param isRefreshing Ref<boolean> indicating if a refresh action is already in progress.
  * @param refreshAction Async function to execute when refresh is triggered.
@@ -46,7 +50,13 @@ export function usePullToRefresh(
     }
 
     const container = containerRef.value;
-    if (!container || container.scrollTop > 0) {
+    if (!container) {
+      return;
+    }
+
+    // Find the actual scrollable element (main element)
+    const scrollableElement = document.querySelector("main");
+    if (!scrollableElement || scrollableElement.scrollTop > 0) {
       return; // Ignore if not scrolled to the top
     }
 
@@ -68,8 +78,12 @@ export function usePullToRefresh(
     const container = containerRef.value;
     if (!container) return;
 
+    // Find the actual scrollable element (main element)
+    const scrollableElement = document.querySelector("main");
+    if (!scrollableElement) return;
+
     // If user scrolls down while pulling, cancel the pull gesture
-    if (container.scrollTop > 5) {
+    if (scrollableElement.scrollTop > 5) {
       resetPullState();
       return;
     }
