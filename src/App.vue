@@ -44,8 +44,8 @@ const paddingDivBgClass = computed(() => {
     <!-- Navbar Component -->
     <NavbarComponent />
 
-    <!-- Main Content (Scrollable) -->
-    <main class="overflow-auto">
+    <!-- Main Content -->
+    <main class="overflow-hidden">
       <router-view />
     </main>
 

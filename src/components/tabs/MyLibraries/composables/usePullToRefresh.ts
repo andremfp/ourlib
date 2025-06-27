@@ -11,7 +11,8 @@ const MAX_PULL_HEIGHT_FACTOR = 1.5; // Maximum pull height relative to trigger h
  *
  * This composable listens for touch events on the provided containerRef but checks
  * the scroll position of the main scrollable element (main tag) to determine if
- * pull-to-refresh should be enabled.
+ * pull-to-refresh should be enabled. It's designed to not interfere with normal
+ * scrolling behavior.
  *
  * @param containerRef Ref to the element that should listen for touch events.
  * @param isDisabled Ref<boolean> indicating if pull-to-refresh should be disabled (e.g., drawer open).
@@ -30,13 +31,24 @@ export function usePullToRefresh(
 
   let touchStartY = 0;
   let pullStarted = false;
-  let internalRefreshInProgress = false; // Prevent multiple triggers from one pull
+  let internalRefreshInProgress = false;
+  let isAtTopWhenStarted = false; // Track if we were at top when gesture started
 
   const resetPullState = () => {
     pullIndicatorHeight.value = 0;
     touchStartY = 0;
     pullStarted = false;
     internalRefreshInProgress = false;
+    isAtTopWhenStarted = false;
+  };
+
+  const getScrollableElement = () => {
+    return containerRef.value;
+  };
+
+  const isAtScrollTop = () => {
+    const scrollableElement = getScrollableElement();
+    return scrollableElement ? scrollableElement.scrollTop <= 0 : false;
   };
 
   const onTouchStart = (e: TouchEvent) => {
@@ -54,23 +66,24 @@ export function usePullToRefresh(
       return;
     }
 
-    // Find the actual scrollable element (main element)
-    const scrollableElement = document.querySelector("main");
-    if (!scrollableElement || scrollableElement.scrollTop > 0) {
-      return; // Ignore if not scrolled to the top
+    // Only start tracking if we're at the very top of the scroll
+    isAtTopWhenStarted = isAtScrollTop();
+
+    if (!isAtTopWhenStarted) {
+      return; // Don't track touch if not at top
     }
 
     touchStartY = e.touches[0].clientY;
-    pullStarted = true;
-    internalRefreshInProgress = false; // Reset on new pull start
+    pullStarted = false; // Don't start pull immediately, wait for actual pull gesture
+    internalRefreshInProgress = false;
   };
 
   const onTouchMove = (e: TouchEvent) => {
     if (
-      !pullStarted ||
       isRefreshing.value ||
       internalRefreshInProgress ||
-      e.touches.length > 1
+      e.touches.length > 1 ||
+      !isAtTopWhenStarted
     ) {
       return;
     }
@@ -78,21 +91,18 @@ export function usePullToRefresh(
     const container = containerRef.value;
     if (!container) return;
 
-    // Find the actual scrollable element (main element)
-    const scrollableElement = document.querySelector("main");
-    if (!scrollableElement) return;
-
-    // If user scrolls down while pulling, cancel the pull gesture
-    if (scrollableElement.scrollTop > 5) {
-      resetPullState();
-      return;
-    }
-
     const currentY = e.touches[0].clientY;
     const pullDistance = currentY - touchStartY;
 
-    if (pullDistance >= 0) {
-      // Prevent default page scroll/bounce when pulling down
+    // Only consider this a pull gesture if:
+    // 1. We're pulling down (positive distance)
+    // 2. We're still at the top of the scroll
+    // 3. The pull distance is significant enough
+    if (pullDistance > 10 && isAtScrollTop()) {
+      // This is a pull-to-refresh gesture
+      pullStarted = true;
+
+      // Prevent default scrolling behavior only during active pull
       e.preventDefault();
 
       // Apply resistance and cap the pull height
@@ -101,16 +111,20 @@ export function usePullToRefresh(
         resistedPull,
         refreshTriggerHeight.value * MAX_PULL_HEIGHT_FACTOR,
       );
-    } else {
-      // Reset if pulling up beyond the start point
-      resetPullState();
+    } else if (pullDistance < 0 || !isAtScrollTop()) {
+      // User is scrolling up or has scrolled down, cancel pull gesture
+      if (pullStarted) {
+        resetPullState();
+      }
     }
+    // For small positive distances (< 10px), we let normal scrolling handle it
   };
 
   const onTouchEnd = async () => {
-    // Exit if pull didn't start correctly, a refresh is already active (external or internal), or internal action is running
+    // Only proceed if we had an active pull gesture
     if (!pullStarted || isRefreshing.value || internalRefreshInProgress) {
-      // Ensure flag is reset if we exit early but pull had started
+      // Reset tracking state
+      isAtTopWhenStarted = false;
       if (pullStarted) {
         pullStarted = false;
       }
@@ -119,33 +133,28 @@ export function usePullToRefresh(
 
     const currentPullHeight = pullIndicatorHeight.value;
     const triggerHeight = refreshTriggerHeight.value;
-    pullStarted = false; // Mark pull gesture as ended *before* async logic
+    pullStarted = false; // Mark pull gesture as ended
+    isAtTopWhenStarted = false; // Reset tracking state
 
     if (currentPullHeight >= triggerHeight) {
       logger.info("[PullToRefresh] Threshold met. Triggering refresh action.");
-      internalRefreshInProgress = true; // Prevent re-triggering during this action
+      internalRefreshInProgress = true;
 
       try {
         await refreshAction();
         logger.info("[PullToRefresh] Refresh action completed successfully.");
-        // SUCCESS: Reset height to allow smooth closing transition
         pullIndicatorHeight.value = 0;
       } catch (error) {
         logger.error("[PullToRefresh] Refresh action failed:", error);
-        // FAILURE: Reset indicator immediately
         pullIndicatorHeight.value = 0;
       } finally {
-        // Reset internal flag *after* action completes/fails
         internalRefreshInProgress = false;
-        // Height reset is now handled within try/catch blocks
       }
     } else {
-      // Didn't pull far enough, reset indicator smoothly via transition
+      // Didn't pull far enough, reset indicator smoothly
       pullIndicatorHeight.value = 0;
     }
   };
-
-  // Relies on component's fetch logic finally block and CSS transition for indicator reset.
 
   return {
     pullIndicatorHeight: readonly(pullIndicatorHeight),
