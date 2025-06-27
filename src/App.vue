@@ -85,18 +85,18 @@ const mainScrollClass = computed(() => "overflow-auto");
     <template v-if="activeView === 'Main' && activeTab === 'My Libraries'">
       <!-- Navbar overlay - cover the entire navbar area -->
       <div
-        class="absolute top-0 left-0 right-0 z-40 pointer-events-auto"
+        class="fixed top-0 left-0 right-0 z-50 pointer-events-auto bg-red-500 bg-opacity-20"
         style="height: 120px"
-        @touchstart.prevent.stop
+        @touchstart.prevent.stop="console.log('Navbar overlay touched')"
         @touchmove.prevent.stop
         @touchend.prevent.stop
       ></div>
 
       <!-- Footer overlay - cover the tabs and safe area -->
       <div
-        class="absolute bottom-0 left-0 right-0 z-40 pointer-events-auto"
+        class="fixed bottom-0 left-0 right-0 z-50 pointer-events-auto bg-blue-500 bg-opacity-20"
         style="height: 100px"
-        @touchstart.prevent.stop
+        @touchstart.prevent.stop="console.log('Footer overlay touched')"
         @touchmove.prevent.stop
         @touchend.prevent.stop
       ></div>

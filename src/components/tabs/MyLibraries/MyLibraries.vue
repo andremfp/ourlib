@@ -56,30 +56,40 @@ const updateDebugInfo = () => {
   const bodyElement = document.body;
   const htmlElement = document.documentElement;
 
-  if (container) {
-    const containerScrollTop = container.scrollTop;
-    const mainScrollTop = mainElement?.scrollTop || 0;
-    const bodyScrollTop = bodyElement.scrollTop;
-    const htmlScrollTop = htmlElement.scrollTop;
-    const windowScrollY = window.scrollY;
-    const scrollHeight = container.scrollHeight;
-    const clientHeight = container.clientHeight;
-    const isAtTop = containerScrollTop <= 1;
+  // Get all scroll values
+  const containerScrollTop = container?.scrollTop || 0;
+  const mainScrollTop = mainElement?.scrollTop || 0;
+  const bodyScrollTop = bodyElement.scrollTop;
+  const htmlScrollTop = htmlElement.scrollTop;
+  const windowScrollY = window.scrollY;
 
-    debugInfo.value = {
-      ...debugInfo.value,
-      scrollTop: Math.round(containerScrollTop * 100) / 100,
-      isAtTop,
-      scrollHeight,
-      clientHeight,
-      lastCheck: new Date().toLocaleTimeString(),
-      mainScrollTop: Math.round(mainScrollTop * 100) / 100,
-      bodyScrollTop: Math.round(bodyScrollTop * 100) / 100,
-      htmlScrollTop: Math.round(htmlScrollTop * 100) / 100,
-      windowScrollY: Math.round(windowScrollY * 100) / 100,
-      callCount: debugInfo.value.callCount + 1,
-    };
-  }
+  // Find which element actually has scroll values > 0
+  const actualScrollTop = Math.max(
+    containerScrollTop,
+    mainScrollTop,
+    bodyScrollTop,
+    htmlScrollTop,
+    windowScrollY,
+  );
+  const isAtTop = actualScrollTop <= 1;
+
+  debugInfo.value = {
+    ...debugInfo.value,
+    scrollTop: Math.round(containerScrollTop * 100) / 100,
+    isAtTop,
+    scrollHeight: container?.scrollHeight || 0,
+    clientHeight: container?.clientHeight || 0,
+    lastCheck: new Date().toLocaleTimeString(),
+    mainScrollTop: Math.round(mainScrollTop * 100) / 100,
+    bodyScrollTop: Math.round(bodyScrollTop * 100) / 100,
+    htmlScrollTop: Math.round(htmlScrollTop * 100) / 100,
+    windowScrollY: Math.round(windowScrollY * 100) / 100,
+    callCount: debugInfo.value.callCount + 1,
+  };
+
+  console.log(
+    `Scroll Update: actual=${actualScrollTop}, isAtTop=${isAtTop}, main=${mainScrollTop}, html=${htmlScrollTop}, window=${windowScrollY}`,
+  );
 };
 
 // Initialize pull-to-refresh
@@ -101,42 +111,29 @@ const initializePullToRefresh = () => {
         // Only allow pull-to-refresh when:
         // 1. Drawer is not open
         // 2. Not currently refreshing
-        // 3. Main element is at the very top
-        const container = mainElement;
+        // 3. Page is at the very top (check all possible scroll containers)
 
-        if (!container) {
-          console.log("PTR Check: No main element found");
-          return false;
-        }
-
-        const scrollTop = container.scrollTop;
-        const scrollHeight = container.scrollHeight;
-        const clientHeight = container.clientHeight;
-        const isAtTop = scrollTop <= 1; // Small tolerance for rounding
         const drawerClosed = !isDrawerOpen.value;
         const notRefreshing = !isRefreshing.value;
 
+        // Check all possible scroll containers
+        const mainScrollTop = mainElement?.scrollTop || 0;
+        const bodyScrollTop = document.body.scrollTop;
+        const htmlScrollTop = document.documentElement.scrollTop;
+        const windowScrollY = window.scrollY;
+
+        const actualScrollTop = Math.max(
+          mainScrollTop,
+          bodyScrollTop,
+          htmlScrollTop,
+          windowScrollY,
+        );
+        const isAtTop = actualScrollTop <= 1;
+
         const allowed = drawerClosed && notRefreshing && isAtTop;
 
-        // Update debug info for mobile display
-        debugInfo.value = {
-          scrollTop: Math.round(scrollTop * 100) / 100,
-          isAtTop,
-          drawerClosed,
-          notRefreshing,
-          allowed,
-          lastCheck: new Date().toLocaleTimeString(),
-          scrollHeight,
-          clientHeight,
-          mainScrollTop: Math.round(scrollTop * 100) / 100,
-          bodyScrollTop: 0,
-          htmlScrollTop: 0,
-          windowScrollY: 0,
-          callCount: debugInfo.value.callCount + 1,
-        };
-
         console.log(
-          `PTR Check: scrollTop=${scrollTop}, drawerClosed=${drawerClosed}, notRefreshing=${notRefreshing}, isAtTop=${isAtTop}, allowed=${allowed}`,
+          `PTR Check: actualScroll=${actualScrollTop}, main=${mainScrollTop}, html=${htmlScrollTop}, window=${windowScrollY}, drawerClosed=${drawerClosed}, notRefreshing=${notRefreshing}, isAtTop=${isAtTop}, allowed=${allowed}`,
         );
 
         return allowed;
