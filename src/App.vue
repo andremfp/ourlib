@@ -46,6 +46,17 @@ const mainScrollClass = computed(() => {
     activeView.value === "Main" && activeTab.value === "My Libraries";
   return isMyLibrariesTab ? "overflow-hidden" : "overflow-auto";
 });
+
+// Check if we're on MyLibraries tab to prevent touch events on navbar/footer
+const isMyLibrariesTab = computed(() => {
+  return activeView.value === "Main" && activeTab.value === "My Libraries";
+});
+
+// Prevent touch events from propagating on navbar/footer when on MyLibraries
+const preventTouch = (e: TouchEvent) => {
+  e.stopPropagation();
+  e.preventDefault();
+};
 </script>
 
 <template>
@@ -54,7 +65,11 @@ const mainScrollClass = computed(() => {
     class="grid grid-rows-[auto_1fr_auto] min-h-screen bg-light-bg dark:bg-dark-bg"
   >
     <!-- Navbar Component -->
-    <NavbarComponent />
+    <NavbarComponent
+      @touchstart="isMyLibrariesTab ? preventTouch : undefined"
+      @touchmove="isMyLibrariesTab ? preventTouch : undefined"
+      @touchend="isMyLibrariesTab ? preventTouch : undefined"
+    />
 
     <!-- Main Content (Conditionally Scrollable) -->
     <main :class="mainScrollClass">
@@ -62,7 +77,13 @@ const mainScrollClass = computed(() => {
     </main>
 
     <!-- Fixed Footer -->
-    <footer class="sticky bottom-0 z-50 bg-light-bg" :class="footerDarkBgClass">
+    <footer
+      class="sticky bottom-0 z-50 bg-light-bg"
+      :class="footerDarkBgClass"
+      @touchstart="isMyLibrariesTab ? preventTouch : undefined"
+      @touchmove="isMyLibrariesTab ? preventTouch : undefined"
+      @touchend="isMyLibrariesTab ? preventTouch : undefined"
+    >
       <TabsComponent v-if="showTabs" class="w-full" />
       <div v-else class="mx-auto p-6 flex justify-center">
         <a
