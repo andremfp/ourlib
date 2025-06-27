@@ -17,6 +17,16 @@ const scrollContainer = ref<HTMLElement | null>(null); // Ref for scrollable con
 // Pull-to-refresh instance
 let pullToRefreshInstance: any = null;
 
+// Debug state for mobile testing
+const debugInfo = ref({
+  scrollTop: 0,
+  isAtTop: false,
+  drawerClosed: true,
+  notRefreshing: true,
+  allowed: false,
+  lastCheck: "",
+});
+
 // ============= Composables =============
 // Handles fetching libraries based on auth state
 const { libraries, isLoading, isRefreshing, error, refreshLibraries } =
@@ -47,8 +57,35 @@ const initializePullToRefresh = () => {
         // 2. Not currently refreshing
         // 3. Scroll container is at the very top
         const container = scrollContainer.value;
-        const isAtTop = container ? container.scrollTop <= 0 : false;
-        return !isDrawerOpen.value && !isRefreshing.value && isAtTop;
+
+        if (!container) {
+          console.log("PTR Check: No container found");
+          return false;
+        }
+
+        const scrollTop = container.scrollTop;
+        const isAtTop = scrollTop <= 0; // Strict check - must be exactly at top
+        const drawerClosed = !isDrawerOpen.value;
+        const notRefreshing = !isRefreshing.value;
+
+        const allowed = drawerClosed && notRefreshing && isAtTop;
+
+        // Update debug info for mobile display
+        debugInfo.value = {
+          scrollTop,
+          isAtTop,
+          drawerClosed,
+          notRefreshing,
+          allowed,
+          lastCheck: new Date().toLocaleTimeString(),
+        };
+
+        // Debug logging - only log when someone tries to pull
+        console.log(
+          `PTR Check: scrollTop=${scrollTop}, drawerClosed=${drawerClosed}, notRefreshing=${notRefreshing}, isAtTop=${isAtTop}, allowed=${allowed}`,
+        );
+
+        return allowed;
       },
       distThreshold: 60,
       distMax: 80,
@@ -174,6 +211,19 @@ const getParallaxStyle = (hasLibrary: boolean) => {
     class="bg-light-bg dark:bg-dark-bg w-full h-full flex flex-col"
     ref="mainContainer"
   >
+    <!-- Debug Panel for Mobile Testing -->
+    <div
+      class="fixed top-20 right-2 z-50 bg-red-500 text-white p-2 rounded text-xs max-w-xs"
+    >
+      <div><strong>PTR Debug</strong></div>
+      <div>ScrollTop: {{ debugInfo.scrollTop }}</div>
+      <div>At Top: {{ debugInfo.isAtTop }}</div>
+      <div>Drawer Closed: {{ debugInfo.drawerClosed }}</div>
+      <div>Not Refreshing: {{ debugInfo.notRefreshing }}</div>
+      <div>Allowed: {{ debugInfo.allowed }}</div>
+      <div>Last Check: {{ debugInfo.lastCheck }}</div>
+    </div>
+
     <!-- Scrollable Content Container - PullToRefresh library will handle the pull indicator -->
     <div class="flex-1 overflow-auto" ref="scrollContainer">
       <!-- Initial loading state -->

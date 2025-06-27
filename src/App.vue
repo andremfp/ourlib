@@ -85,19 +85,23 @@ const mainScrollClass = computed(() => {
       <div :class="['w-full pb-footer-padding', paddingDivBgClass]"></div>
     </footer>
 
-    <!-- Touch blocking overlays for MyLibraries tab -->
-    <template v-if="activeView === 'Main' && activeTab === 'My Libraries'">
-      <!-- Navbar overlay -->
+    <!-- Touch blocking overlays for MyLibraries tab - TEMPORARILY DISABLED FOR TESTING -->
+    <template
+      v-if="false && activeView === 'Main' && activeTab === 'My Libraries'"
+    >
+      <!-- Navbar overlay - cover the entire navbar area -->
       <div
-        class="absolute top-0 left-0 right-0 h-16 z-50 pointer-events-auto"
+        class="absolute top-0 left-0 right-0 z-40 pointer-events-auto"
+        style="height: 120px"
         @touchstart.prevent.stop
         @touchmove.prevent.stop
         @touchend.prevent.stop
       ></div>
 
-      <!-- Footer overlay -->
+      <!-- Footer overlay - cover the tabs and safe area -->
       <div
-        class="absolute bottom-0 left-0 right-0 h-24 z-50 pointer-events-auto"
+        class="absolute bottom-0 left-0 right-0 z-40 pointer-events-auto"
+        style="height: 100px"
         @touchstart.prevent.stop
         @touchmove.prevent.stop
         @touchend.prevent.stop
