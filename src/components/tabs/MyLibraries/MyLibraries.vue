@@ -31,6 +31,7 @@ const debugInfo = ref({
   bodyScrollTop: 0,
   htmlScrollTop: 0,
   windowScrollY: 0,
+  callCount: 0,
 });
 
 // ============= Composables =============
@@ -76,6 +77,7 @@ const updateDebugInfo = () => {
       bodyScrollTop: Math.round(bodyScrollTop * 100) / 100,
       htmlScrollTop: Math.round(htmlScrollTop * 100) / 100,
       windowScrollY: Math.round(windowScrollY * 100) / 100,
+      callCount: debugInfo.value.callCount + 1,
     };
   }
 };
@@ -83,8 +85,12 @@ const updateDebugInfo = () => {
 // Initialize pull-to-refresh
 const initializePullToRefresh = () => {
   if (scrollContainer.value && !pullToRefreshInstance) {
-    // Add scroll listener for real-time debug updates
+    // Add scroll listeners to multiple elements to see which one actually scrolls
     scrollContainer.value.addEventListener("scroll", updateDebugInfo);
+    document.querySelector("main")?.addEventListener("scroll", updateDebugInfo);
+    document.body.addEventListener("scroll", updateDebugInfo);
+    document.documentElement.addEventListener("scroll", updateDebugInfo);
+    window.addEventListener("scroll", updateDebugInfo);
     pullToRefreshInstance = PullToRefresh.init({
       mainElement: scrollContainer.value,
       triggerElement: scrollContainer.value,
@@ -126,6 +132,7 @@ const initializePullToRefresh = () => {
           bodyScrollTop: 0,
           htmlScrollTop: 0,
           windowScrollY: 0,
+          callCount: 0,
         };
 
         // Debug logging - only log when someone tries to pull
@@ -149,6 +156,12 @@ const initializePullToRefresh = () => {
 const destroyPullToRefresh = () => {
   if (scrollContainer.value) {
     scrollContainer.value.removeEventListener("scroll", updateDebugInfo);
+    document
+      .querySelector("main")
+      ?.removeEventListener("scroll", updateDebugInfo);
+    document.body.removeEventListener("scroll", updateDebugInfo);
+    document.documentElement.removeEventListener("scroll", updateDebugInfo);
+    window.removeEventListener("scroll", updateDebugInfo);
   }
   if (pullToRefreshInstance) {
     PullToRefresh.destroyAll();
@@ -267,6 +280,7 @@ const getParallaxStyle = (hasLibrary: boolean) => {
       class="fixed top-20 right-2 z-50 bg-red-500 text-white p-2 rounded text-xs max-w-xs"
     >
       <div><strong>PTR Debug</strong></div>
+      <div>Calls: {{ debugInfo.callCount }}</div>
       <div>Container: {{ debugInfo.scrollTop }}</div>
       <div>Main: {{ debugInfo.mainScrollTop }}</div>
       <div>Body: {{ debugInfo.bodyScrollTop }}</div>
@@ -274,7 +288,6 @@ const getParallaxStyle = (hasLibrary: boolean) => {
       <div>Window: {{ debugInfo.windowScrollY }}</div>
       <div>At Top: {{ debugInfo.isAtTop }}</div>
       <div>Allowed: {{ debugInfo.allowed }}</div>
-      <div>Last: {{ debugInfo.lastCheck }}</div>
     </div>
 
     <!-- Scrollable Content Container - PullToRefresh library will handle the pull indicator -->
