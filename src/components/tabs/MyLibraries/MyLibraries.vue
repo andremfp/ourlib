@@ -25,6 +25,8 @@ const debugInfo = ref({
   notRefreshing: true,
   allowed: false,
   lastCheck: "",
+  scrollHeight: 0,
+  clientHeight: 0,
 });
 
 // ============= Composables =============
@@ -42,9 +44,31 @@ const {
   handleLibraryDrawerProgress,
 } = useLibraryDrawer();
 
+// Update debug info on scroll
+const updateDebugInfo = () => {
+  const container = scrollContainer.value;
+  if (container) {
+    const scrollTop = container.scrollTop;
+    const scrollHeight = container.scrollHeight;
+    const clientHeight = container.clientHeight;
+    const isAtTop = scrollTop <= 1;
+
+    debugInfo.value = {
+      ...debugInfo.value,
+      scrollTop: Math.round(scrollTop * 100) / 100,
+      isAtTop,
+      scrollHeight,
+      clientHeight,
+      lastCheck: new Date().toLocaleTimeString(),
+    };
+  }
+};
+
 // Initialize pull-to-refresh
 const initializePullToRefresh = () => {
   if (scrollContainer.value && !pullToRefreshInstance) {
+    // Add scroll listener for real-time debug updates
+    scrollContainer.value.addEventListener("scroll", updateDebugInfo);
     pullToRefreshInstance = PullToRefresh.init({
       mainElement: scrollContainer.value,
       triggerElement: scrollContainer.value,
@@ -64,7 +88,9 @@ const initializePullToRefresh = () => {
         }
 
         const scrollTop = container.scrollTop;
-        const isAtTop = scrollTop <= 0; // Strict check - must be exactly at top
+        const scrollHeight = container.scrollHeight;
+        const clientHeight = container.clientHeight;
+        const isAtTop = scrollTop <= 1; // Small tolerance for rounding
         const drawerClosed = !isDrawerOpen.value;
         const notRefreshing = !isRefreshing.value;
 
@@ -72,12 +98,14 @@ const initializePullToRefresh = () => {
 
         // Update debug info for mobile display
         debugInfo.value = {
-          scrollTop,
+          scrollTop: Math.round(scrollTop * 100) / 100, // Round for display
           isAtTop,
           drawerClosed,
           notRefreshing,
           allowed,
           lastCheck: new Date().toLocaleTimeString(),
+          scrollHeight,
+          clientHeight,
         };
 
         // Debug logging - only log when someone tries to pull
@@ -99,6 +127,9 @@ const initializePullToRefresh = () => {
 
 // Destroy pull-to-refresh instance
 const destroyPullToRefresh = () => {
+  if (scrollContainer.value) {
+    scrollContainer.value.removeEventListener("scroll", updateDebugInfo);
+  }
   if (pullToRefreshInstance) {
     PullToRefresh.destroyAll();
     pullToRefreshInstance = null;
@@ -217,6 +248,8 @@ const getParallaxStyle = (hasLibrary: boolean) => {
     >
       <div><strong>PTR Debug</strong></div>
       <div>ScrollTop: {{ debugInfo.scrollTop }}</div>
+      <div>ScrollHeight: {{ debugInfo.scrollHeight }}</div>
+      <div>ClientHeight: {{ debugInfo.clientHeight }}</div>
       <div>At Top: {{ debugInfo.isAtTop }}</div>
       <div>Drawer Closed: {{ debugInfo.drawerClosed }}</div>
       <div>Not Refreshing: {{ debugInfo.notRefreshing }}</div>
