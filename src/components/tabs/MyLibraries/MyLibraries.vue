@@ -28,6 +28,9 @@ const debugInfo = ref({
   scrollHeight: 0,
   clientHeight: 0,
   mainScrollTop: 0,
+  bodyScrollTop: 0,
+  htmlScrollTop: 0,
+  windowScrollY: 0,
 });
 
 // ============= Composables =============
@@ -49,10 +52,15 @@ const {
 const updateDebugInfo = () => {
   const container = scrollContainer.value;
   const mainElement = document.querySelector("main");
+  const bodyElement = document.body;
+  const htmlElement = document.documentElement;
 
-  if (container && mainElement) {
+  if (container) {
     const containerScrollTop = container.scrollTop;
-    const mainScrollTop = mainElement.scrollTop;
+    const mainScrollTop = mainElement?.scrollTop || 0;
+    const bodyScrollTop = bodyElement.scrollTop;
+    const htmlScrollTop = htmlElement.scrollTop;
+    const windowScrollY = window.scrollY;
     const scrollHeight = container.scrollHeight;
     const clientHeight = container.clientHeight;
     const isAtTop = containerScrollTop <= 1;
@@ -65,6 +73,9 @@ const updateDebugInfo = () => {
       clientHeight,
       lastCheck: new Date().toLocaleTimeString(),
       mainScrollTop: Math.round(mainScrollTop * 100) / 100,
+      bodyScrollTop: Math.round(bodyScrollTop * 100) / 100,
+      htmlScrollTop: Math.round(htmlScrollTop * 100) / 100,
+      windowScrollY: Math.round(windowScrollY * 100) / 100,
     };
   }
 };
@@ -112,6 +123,9 @@ const initializePullToRefresh = () => {
           scrollHeight,
           clientHeight,
           mainScrollTop: 0, // This will be updated by scroll listener
+          bodyScrollTop: 0,
+          htmlScrollTop: 0,
+          windowScrollY: 0,
         };
 
         // Debug logging - only log when someone tries to pull
@@ -253,15 +267,14 @@ const getParallaxStyle = (hasLibrary: boolean) => {
       class="fixed top-20 right-2 z-50 bg-red-500 text-white p-2 rounded text-xs max-w-xs"
     >
       <div><strong>PTR Debug</strong></div>
-      <div>Container ScrollTop: {{ debugInfo.scrollTop }}</div>
-      <div>Main ScrollTop: {{ debugInfo.mainScrollTop }}</div>
-      <div>ScrollHeight: {{ debugInfo.scrollHeight }}</div>
-      <div>ClientHeight: {{ debugInfo.clientHeight }}</div>
+      <div>Container: {{ debugInfo.scrollTop }}</div>
+      <div>Main: {{ debugInfo.mainScrollTop }}</div>
+      <div>Body: {{ debugInfo.bodyScrollTop }}</div>
+      <div>HTML: {{ debugInfo.htmlScrollTop }}</div>
+      <div>Window: {{ debugInfo.windowScrollY }}</div>
       <div>At Top: {{ debugInfo.isAtTop }}</div>
-      <div>Drawer Closed: {{ debugInfo.drawerClosed }}</div>
-      <div>Not Refreshing: {{ debugInfo.notRefreshing }}</div>
       <div>Allowed: {{ debugInfo.allowed }}</div>
-      <div>Last Check: {{ debugInfo.lastCheck }}</div>
+      <div>Last: {{ debugInfo.lastCheck }}</div>
     </div>
 
     <!-- Scrollable Content Container - PullToRefresh library will handle the pull indicator -->
