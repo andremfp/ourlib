@@ -3,16 +3,19 @@ import { ref, onMounted, onUnmounted } from "vue";
 import LibraryDrawer from "./LibraryDrawer.vue";
 import AddLibraryComponent from "@/components/modals/AddLibrary.vue";
 import { ANIMATION, EVENTS } from "@/constants/constants";
-import { usePullToRefresh } from "./composables/usePullToRefresh";
 import { useLibrarySort } from "./composables/useLibrarySort";
 import { useLibraryList } from "./composables/useLibraryList";
 import { useLibraryDrawer } from "./composables/useLibraryDrawer";
+import PullToRefresh from "pulltorefreshjs";
 
 // ============= State =============
 // Component-specific UI state
 const isAddLibraryModalOpen = ref(false);
 const mainContainer = ref<HTMLElement | null>(null); // Ref for main container
 const scrollContainer = ref<HTMLElement | null>(null); // Ref for scrollable container
+
+// Pull-to-refresh instance
+let pullToRefreshInstance: any = null;
 
 // ============= Composables =============
 // Handles fetching libraries based on auth state
@@ -29,19 +32,34 @@ const {
   handleLibraryDrawerProgress,
 } = useLibraryDrawer();
 
-// Handles pull-to-refresh gesture and calls refreshLibraries
-const {
-  pullIndicatorHeight,
-  refreshTriggerHeight,
-  onTouchStart,
-  onTouchMove,
-  onTouchEnd,
-} = usePullToRefresh(
-  scrollContainer,
-  isDrawerOpen, // Disable pull-to-refresh when drawer is open
-  isRefreshing,
-  refreshLibraries,
-);
+// Initialize pull-to-refresh
+const initializePullToRefresh = () => {
+  if (scrollContainer.value && !pullToRefreshInstance) {
+    pullToRefreshInstance = PullToRefresh.init({
+      mainElement: scrollContainer.value,
+      onRefresh() {
+        return refreshLibraries();
+      },
+      shouldPullToRefresh() {
+        return !isDrawerOpen.value && !isRefreshing.value;
+      },
+      distThreshold: 60,
+      distMax: 80,
+      distReload: 50,
+      instructionsPullToRefresh: "Pull down to refresh",
+      instructionsReleaseToRefresh: "Release to refresh",
+      instructionsRefreshing: "Refreshing...",
+    });
+  }
+};
+
+// Destroy pull-to-refresh instance
+const destroyPullToRefresh = () => {
+  if (pullToRefreshInstance) {
+    PullToRefresh.destroyAll();
+    pullToRefreshInstance = null;
+  }
+};
 
 // Handles sorting logic based on libraries and drawer state
 const { handleSortChange, sortLibraries } = useLibrarySort(
@@ -104,9 +122,16 @@ const setupEventListeners = () => {
 // ============= Lifecycle =============
 onMounted(() => {
   setupEventListeners();
+  // Initialize pull-to-refresh after the DOM is ready
+  setTimeout(() => {
+    initializePullToRefresh();
+  }, 100);
 });
 
 onUnmounted(() => {
+  // Clean up pull-to-refresh
+  destroyPullToRefresh();
+
   // Clean up the global listeners when the component is destroyed
   window.removeEventListener(
     EVENTS.MODAL.OPEN_ADD_LIBRARY,
@@ -139,55 +164,11 @@ const getParallaxStyle = (hasLibrary: boolean) => {
 
 <template>
   <div
-    class="bg-light-bg dark:bg-dark-bg w-full h-full flex flex-col relative"
+    class="bg-light-bg dark:bg-dark-bg w-full h-full flex flex-col"
     ref="mainContainer"
   >
-    <!-- Pull indicator shown when pulling -->
-    <div
-      class="flex items-center justify-center bg-light-bg dark:bg-dark-bg border-b border-light-border/20 dark:border-dark-border/20"
-      :style="{
-        height: `${pullIndicatorHeight}px`,
-        transition: pullIndicatorHeight > 0 ? 'none' : 'height 0.3s ease-out',
-        minHeight: pullIndicatorHeight > 0 ? '1px' : '0px',
-      }"
-    >
-      <div v-if="pullIndicatorHeight > 0" class="flex items-center px-4 py-2">
-        <svg
-          class="h-6 w-6 mr-2 text-light-secondary-text dark:text-dark-secondary-text"
-          :class="{ 'animate-spin': isRefreshing }"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-          />
-        </svg>
-        <span class="text-light-secondary-text dark:text-dark-secondary-text">
-          {{
-            isRefreshing
-              ? "Refreshing..."
-              : pullIndicatorHeight > refreshTriggerHeight
-                ? "Release to refresh"
-                : "Pull to refresh"
-          }}
-        </span>
-      </div>
-    </div>
-
-    <!-- Scrollable Content Container -->
-    <div
-      class="flex-1 overflow-auto overscroll-none"
-      ref="scrollContainer"
-      @touchstart.passive="onTouchStart"
-      @touchmove="onTouchMove"
-      @touchend="onTouchEnd"
-      @wheel.stop
-    >
+    <!-- Scrollable Content Container - PullToRefresh library will handle the pull indicator -->
+    <div class="flex-1 overflow-auto" ref="scrollContainer">
       <!-- Initial loading state -->
       <div
         v-if="isLoading && libraries.length === 0"

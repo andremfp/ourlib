@@ -1,3 +1,81 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Existing styles... */
+
+/* PullToRefresh.js styling */
+.ptr {
+  position: relative;
+  overflow: hidden;
+}
+
+.ptr--dragging .ptr__content {
+  pointer-events: none;
+}
+
+.ptr__pull-down,
+.ptr__release {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--light-bg);
+  color: var(--light-secondary-text);
+  font-size: 14px;
+  z-index: 1000;
+  transform: translateY(-100%);
+  transition: transform 0.2s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  .ptr__pull-down,
+  .ptr__release {
+    background: var(--dark-bg);
+    color: var(--dark-secondary-text);
+  }
+}
+
+.ptr--pull-down .ptr__pull-down {
+  transform: translateY(-50%);
+}
+
+.ptr--release .ptr__release {
+  transform: translateY(-50%);
+}
+
+.ptr--refreshing .ptr__release {
+  transform: translateY(0);
+}
+
+.ptr__icon {
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+  opacity: 0.6;
+}
+
+.ptr--refreshing .ptr__icon {
+  animation: ptr-spin 1s linear infinite;
+}
+
+@keyframes ptr-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* CSS Variables for theming */
+:root {
+  --light-bg: theme("colors.light-bg");
+  --light-secondary-text: theme("colors.light-secondary-text");
+  --dark-bg: theme("colors.dark-bg");
+  --dark-secondary-text: theme("colors.dark-secondary-text");
+}
