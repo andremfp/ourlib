@@ -37,11 +37,18 @@ const initializePullToRefresh = () => {
   if (scrollContainer.value && !pullToRefreshInstance) {
     pullToRefreshInstance = PullToRefresh.init({
       mainElement: scrollContainer.value,
+      triggerElement: scrollContainer.value,
       onRefresh() {
         return refreshLibraries();
       },
       shouldPullToRefresh() {
-        return !isDrawerOpen.value && !isRefreshing.value;
+        // Only allow pull-to-refresh when:
+        // 1. Drawer is not open
+        // 2. Not currently refreshing
+        // 3. Scroll container is at the very top
+        const container = scrollContainer.value;
+        const isAtTop = container ? container.scrollTop <= 0 : false;
+        return !isDrawerOpen.value && !isRefreshing.value && isAtTop;
       },
       distThreshold: 60,
       distMax: 80,

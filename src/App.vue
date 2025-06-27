@@ -46,30 +46,15 @@ const mainScrollClass = computed(() => {
     activeView.value === "Main" && activeTab.value === "My Libraries";
   return isMyLibrariesTab ? "overflow-hidden" : "overflow-auto";
 });
-
-// Check if we're on MyLibraries tab to prevent touch events on navbar/footer
-const isMyLibrariesTab = computed(() => {
-  return activeView.value === "Main" && activeTab.value === "My Libraries";
-});
-
-// Prevent touch events from propagating on navbar/footer when on MyLibraries
-const preventTouch = (e: TouchEvent) => {
-  e.stopPropagation();
-  e.preventDefault();
-};
 </script>
 
 <template>
   <div
     id="app"
-    class="grid grid-rows-[auto_1fr_auto] min-h-screen bg-light-bg dark:bg-dark-bg"
+    class="grid grid-rows-[auto_1fr_auto] min-h-screen bg-light-bg dark:bg-dark-bg relative"
   >
     <!-- Navbar Component -->
-    <NavbarComponent
-      @touchstart="isMyLibrariesTab ? preventTouch : undefined"
-      @touchmove="isMyLibrariesTab ? preventTouch : undefined"
-      @touchend="isMyLibrariesTab ? preventTouch : undefined"
-    />
+    <NavbarComponent />
 
     <!-- Main Content (Conditionally Scrollable) -->
     <main :class="mainScrollClass">
@@ -77,13 +62,7 @@ const preventTouch = (e: TouchEvent) => {
     </main>
 
     <!-- Fixed Footer -->
-    <footer
-      class="sticky bottom-0 z-50 bg-light-bg"
-      :class="footerDarkBgClass"
-      @touchstart="isMyLibrariesTab ? preventTouch : undefined"
-      @touchmove="isMyLibrariesTab ? preventTouch : undefined"
-      @touchend="isMyLibrariesTab ? preventTouch : undefined"
-    >
+    <footer class="sticky bottom-0 z-50 bg-light-bg" :class="footerDarkBgClass">
       <TabsComponent v-if="showTabs" class="w-full" />
       <div v-else class="mx-auto p-6 flex justify-center">
         <a
@@ -105,5 +84,24 @@ const preventTouch = (e: TouchEvent) => {
       </div>
       <div :class="['w-full pb-footer-padding', paddingDivBgClass]"></div>
     </footer>
+
+    <!-- Touch blocking overlays for MyLibraries tab -->
+    <template v-if="activeView === 'Main' && activeTab === 'My Libraries'">
+      <!-- Navbar overlay -->
+      <div
+        class="absolute top-0 left-0 right-0 h-16 z-50 pointer-events-auto"
+        @touchstart.prevent.stop
+        @touchmove.prevent.stop
+        @touchend.prevent.stop
+      ></div>
+
+      <!-- Footer overlay -->
+      <div
+        class="absolute bottom-0 left-0 right-0 h-24 z-50 pointer-events-auto"
+        @touchstart.prevent.stop
+        @touchmove.prevent.stop
+        @touchend.prevent.stop
+      ></div>
+    </template>
   </div>
 </template>
