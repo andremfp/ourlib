@@ -1,9 +1,12 @@
 import { ref, watch, type Ref } from "vue";
 import { getLibraryBooks } from "@/apis/bookAPI";
 import { getLibrary, updateLibrary, deleteLibrary } from "@/apis/libraryAPI";
-import type { Book, Library } from "@/apis/types";
+import type { Book, Library } from "@/schema";
 import { EVENTS } from "@/constants/constants";
 import logger from "@/utils/logger";
+import { firestore } from "@/firebase";
+import { doc, DocumentReference } from "firebase/firestore";
+import { COLLECTION_NAMES } from "@/constants";
 
 /**
  * Fetches and manages the data and actions for the currently active library.
@@ -36,10 +39,15 @@ export function useActiveLibrary(libraryIdRef: Ref<string>) {
     logger.info(`[useActiveLibrary] Fetching data for library ID: ${id}`);
 
     try {
+      const libraryRef = doc(
+        firestore,
+        COLLECTION_NAMES.LIBRARIES,
+        id,
+      ) as DocumentReference<Library>;
       // Fetch library data and books concurrently
       const [fetchedBooks, fetchedLibrary] = await Promise.all([
-        getLibraryBooks(id),
-        getLibrary(id),
+        getLibraryBooks(libraryRef),
+        getLibrary(libraryRef),
       ]);
 
       books.value = fetchedBooks;

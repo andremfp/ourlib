@@ -9,26 +9,28 @@ import {
   getDocs,
   query,
   where,
+  DocumentReference,
 } from "firebase/firestore";
-import type { Book } from "./types";
-
-const booksCollection = "books";
+import type { Book, Library } from "../schema";
+import { COLLECTION_NAMES } from "../constants";
 
 export const createBook = async (book: Book) => {
-  const bookDoc = doc(collection(firestore, booksCollection));
+  const bookDoc = doc(collection(firestore, COLLECTION_NAMES.BOOKS));
   await setDoc(bookDoc, book);
 };
 
 export const getBook = async (bookId: string): Promise<Book | null> => {
-  const docSnap = await getDoc(doc(firestore, booksCollection, bookId));
+  const docSnap = await getDoc(doc(firestore, COLLECTION_NAMES.BOOKS, bookId));
   return docSnap.exists() ? (docSnap.data() as Book) : null;
 };
 
-export const getLibraryBooks = async (libraryId: string): Promise<Book[]> => {
+export const getLibraryBooks = async (
+  libraryRef: DocumentReference<Library>,
+): Promise<Book[]> => {
   const querySnapshot = await getDocs(
     query(
-      collection(firestore, booksCollection),
-      where("library", "==", libraryId),
+      collection(firestore, COLLECTION_NAMES.BOOKS),
+      where("library", "==", libraryRef),
     ),
   );
   return querySnapshot.docs.map(
@@ -37,19 +39,19 @@ export const getLibraryBooks = async (libraryId: string): Promise<Book[]> => {
 };
 
 export const lendBook = async (bookId: string, userId: string) => {
-  await updateDoc(doc(firestore, booksCollection, bookId), {
+  await updateDoc(doc(firestore, COLLECTION_NAMES.BOOKS, bookId), {
     lentTo: userId,
     lentAt: new Date().toISOString(),
   });
 };
 
 export const markAsReturned = async (bookId: string) => {
-  await updateDoc(doc(firestore, booksCollection, bookId), {
+  await updateDoc(doc(firestore, COLLECTION_NAMES.BOOKS, bookId), {
     lentTo: null,
     lentAt: null,
   });
 };
 
 export const deleteBook = async (bookId: string) => {
-  await deleteDoc(doc(firestore, booksCollection, bookId));
+  await deleteDoc(doc(firestore, COLLECTION_NAMES.BOOKS, bookId));
 };

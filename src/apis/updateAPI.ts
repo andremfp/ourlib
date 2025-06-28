@@ -8,7 +8,7 @@ import {
   orderBy,
   Timestamp,
 } from "firebase/firestore";
-import type { Update } from "./types";
+import type { Update } from "../schema";
 
 // Collection name
 const updatesCollection = "updates";

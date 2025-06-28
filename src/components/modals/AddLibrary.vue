@@ -2,8 +2,12 @@
 import { ref, watch } from "vue";
 import { getAuth } from "firebase/auth";
 import { createLibrary } from "@/apis/libraryAPI";
-import type { Library } from "@/apis/types";
+import type { Library } from "@/schema";
 import { UI_LIMITS } from "@/constants/constants";
+import { firestore } from "@/firebase";
+import { doc, DocumentReference } from "firebase/firestore";
+import { COLLECTION_NAMES } from "@/constants";
+import type { User } from "@/schema";
 
 // ============= PROPS & EMITS =============
 const props = defineProps<{
@@ -88,10 +92,16 @@ async function handleSubmit() {
     isSubmitting.value = true;
     errorMessage.value = "";
 
+    const userRef = doc(
+      firestore,
+      COLLECTION_NAMES.USERS,
+      userId,
+    ) as DocumentReference<User>;
+
     // Create the library
     const newLibrary = await createLibrary({
       name: trimmedName,
-      ownerId: userId,
+      owner: userRef,
       booksCount: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

@@ -8,7 +8,7 @@ import {
   arrayRemove,
   deleteDoc,
 } from "firebase/firestore";
-import type { User } from "./types";
+import type { User } from "../schema";
 
 const usersCollection = "users";
 

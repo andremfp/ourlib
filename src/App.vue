@@ -2,14 +2,19 @@
 import { computed } from "vue";
 import { useRoute } from "vue-router"; // Keep useRoute for not-found check
 import { useViewStore } from "@/stores/viewStore"; // Import the view store
+import { useTabStore } from "@/stores/tabStore"; // Import the tab store
 import TabsComponent from "@/components/Tabs.vue";
 import NavbarComponent from "@/components/Navbar/Navbar.vue";
 
 const route = useRoute(); // Get route access
 const viewStore = useViewStore(); // Get view store access
+const tabStore = useTabStore(); // Get tab store access
 
 // Compute active view from store
 const activeView = computed(() => viewStore.activeView);
+
+// Compute active tab from store
+const activeTab = computed(() => tabStore.activeTab);
 
 // Determine if the current route is the not-found route
 const isNotFoundRoute = computed(() => route.name === "not-found");
@@ -34,23 +39,36 @@ const paddingDivBgClass = computed(() => {
   // Only apply special background if Tabs are shown (Main view and not NotFound)
   return showTabs.value ? "bg-white dark:bg-dark-bg" : "";
 });
+
+// Main should always be scrollable - let pull-to-refresh handle the scrolling
+const mainScrollClass = computed(() => "overflow-auto");
 </script>
 
 <template>
   <div
     id="app"
-    class="grid grid-rows-[auto_1fr_auto] min-h-screen bg-light-bg dark:bg-dark-bg"
+    class="grid grid-rows-[auto_1fr_auto] min-h-screen bg-light-bg dark:bg-dark-bg relative"
   >
     <!-- Navbar Component -->
-    <NavbarComponent />
+    <NavbarComponent
+      @touchmove.prevent.stop="
+        activeView === 'Main' && activeTab === 'My Libraries'
+      "
+    />
 
-    <!-- Main Content (Scrollable) -->
-    <main class="overflow-auto">
+    <!-- Main Content (Conditionally Scrollable) -->
+    <main :class="mainScrollClass">
       <router-view />
     </main>
 
     <!-- Fixed Footer -->
-    <footer class="sticky bottom-0 z-50 bg-light-bg" :class="footerDarkBgClass">
+    <footer
+      class="sticky bottom-0 z-50 bg-light-bg"
+      :class="footerDarkBgClass"
+      @touchmove.prevent.stop="
+        activeView === 'Main' && activeTab === 'My Libraries'
+      "
+    >
       <TabsComponent v-if="showTabs" class="w-full" />
       <div v-else class="mx-auto p-6 flex justify-center">
         <a

@@ -1,3 +1,24 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* CSS Custom Properties for PullToRefresh theming */
+:root {
+  --ptr-bg: theme("colors.light-bg");
+  --ptr-text: theme("colors.light-secondary-text");
+  --ptr-border: theme("colors.light-border");
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ptr-bg: theme("colors.dark-bg");
+    --ptr-text: theme("colors.dark-secondary-text");
+    --ptr-border: theme("colors.dark-border");
+  }
+}
+
+.dark {
+  --ptr-bg: theme("colors.dark-bg");
+  --ptr-text: theme("colors.dark-secondary-text");
+  --ptr-border: theme("colors.dark-border");
+}

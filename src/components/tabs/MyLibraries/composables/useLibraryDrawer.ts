@@ -1,5 +1,5 @@
 import { ref, computed, onMounted, onUnmounted } from "vue";
-import type { Library } from "@/apis/types";
+import type { Library } from "@/schema";
 import { UI_STATE, ANIMATION, EVENTS } from "@/constants/constants";
 import logger from "@/utils/logger";
 
