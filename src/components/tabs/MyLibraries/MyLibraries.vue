@@ -375,36 +375,37 @@ const getParallaxStyle = (hasLibrary: boolean) => {
 
 <style>
 /* PullToRefresh styling using CSS custom properties from global theme */
+/* !important needed to override library's default styles */
 
 /* Main PTR container */
 .ptr {
-  background-color: var(--ptr-bg);
-  border-bottom: 1px solid var(--ptr-border);
+  background-color: var(--ptr-bg) !important;
+  border-bottom: 1px solid var(--ptr-border) !important;
 }
 
 /* Content box */
 .ptr--box {
-  background-color: var(--ptr-bg);
-  color: var(--ptr-text);
-  font-weight: 500;
+  background-color: var(--ptr-bg) !important;
+  color: var(--ptr-text) !important;
+  font-weight: 500 !important;
 }
 
 /* Text styling */
 .ptr--text {
-  color: var(--ptr-text);
-  font-size: 14px;
-  font-weight: 500;
+  color: var(--ptr-text) !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
 }
 
 /* Icon styling */
 .ptr--icon {
-  color: var(--ptr-text);
-  opacity: 0.7;
-  transition: transform 0.3s ease;
+  color: var(--ptr-text) !important;
+  opacity: 0.7 !important;
+  transition: transform 0.3s ease !important;
 }
 
 /* Release state (when ready to refresh) */
 .ptr--release .ptr--icon {
-  transform: rotate(180deg);
+  transform: rotate(180deg) !important;
 }
 </style>
