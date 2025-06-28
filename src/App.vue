@@ -50,7 +50,11 @@ const mainScrollClass = computed(() => "overflow-auto");
     class="grid grid-rows-[auto_1fr_auto] min-h-screen bg-light-bg dark:bg-dark-bg relative"
   >
     <!-- Navbar Component -->
-    <NavbarComponent />
+    <NavbarComponent
+      @touchmove.prevent.stop="
+        activeView === 'Main' && activeTab === 'My Libraries'
+      "
+    />
 
     <!-- Main Content (Conditionally Scrollable) -->
     <main :class="mainScrollClass">
@@ -58,7 +62,13 @@ const mainScrollClass = computed(() => "overflow-auto");
     </main>
 
     <!-- Fixed Footer -->
-    <footer class="sticky bottom-0 z-50 bg-light-bg" :class="footerDarkBgClass">
+    <footer
+      class="sticky bottom-0 z-50 bg-light-bg"
+      :class="footerDarkBgClass"
+      @touchmove.prevent.stop="
+        activeView === 'Main' && activeTab === 'My Libraries'
+      "
+    >
       <TabsComponent v-if="showTabs" class="w-full" />
       <div v-else class="mx-auto p-6 flex justify-center">
         <a
@@ -80,26 +90,5 @@ const mainScrollClass = computed(() => "overflow-auto");
       </div>
       <div :class="['w-full pb-footer-padding', paddingDivBgClass]"></div>
     </footer>
-
-    <!-- Touch blocking overlays for MyLibraries tab -->
-    <template v-if="activeView === 'Main' && activeTab === 'My Libraries'">
-      <!-- Navbar overlay - cover the entire navbar area -->
-      <div
-        class="fixed top-0 left-0 right-0 z-50 pointer-events-auto bg-red-500 bg-opacity-20"
-        style="height: 120px"
-        @touchstart.prevent.stop="console.log('Navbar overlay touched')"
-        @touchmove.prevent.stop
-        @touchend.prevent.stop
-      ></div>
-
-      <!-- Footer overlay - cover the tabs and safe area -->
-      <div
-        class="fixed bottom-0 left-0 right-0 z-50 pointer-events-auto bg-blue-500 bg-opacity-20"
-        style="height: 100px"
-        @touchstart.prevent.stop="console.log('Footer overlay touched')"
-        @touchmove.prevent.stop
-        @touchend.prevent.stop
-      ></div>
-    </template>
   </div>
 </template>

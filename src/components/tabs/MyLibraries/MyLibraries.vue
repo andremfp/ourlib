@@ -17,23 +17,6 @@ const scrollContainer = ref<HTMLElement | null>(null); // Ref for scrollable con
 // Pull-to-refresh instance
 let pullToRefreshInstance: any = null;
 
-// Debug state for mobile testing
-const debugInfo = ref({
-  scrollTop: 0,
-  isAtTop: false,
-  drawerClosed: true,
-  notRefreshing: true,
-  allowed: false,
-  lastCheck: "",
-  scrollHeight: 0,
-  clientHeight: 0,
-  mainScrollTop: 0,
-  bodyScrollTop: 0,
-  htmlScrollTop: 0,
-  windowScrollY: 0,
-  callCount: 0,
-});
-
 // ============= Composables =============
 // Handles fetching libraries based on auth state
 const { libraries, isLoading, isRefreshing, error, refreshLibraries } =
@@ -49,61 +32,13 @@ const {
   handleLibraryDrawerProgress,
 } = useLibraryDrawer();
 
-// Update debug info on scroll
-const updateDebugInfo = () => {
-  const container = scrollContainer.value;
-  const mainElement = document.querySelector("main");
-  const bodyElement = document.body;
-  const htmlElement = document.documentElement;
-
-  // Get all scroll values
-  const containerScrollTop = container?.scrollTop || 0;
-  const mainScrollTop = mainElement?.scrollTop || 0;
-  const bodyScrollTop = bodyElement.scrollTop;
-  const htmlScrollTop = htmlElement.scrollTop;
-  const windowScrollY = window.scrollY;
-
-  // Find which element actually has scroll values > 0
-  const actualScrollTop = Math.max(
-    containerScrollTop,
-    mainScrollTop,
-    bodyScrollTop,
-    htmlScrollTop,
-    windowScrollY,
-  );
-  const isAtTop = actualScrollTop <= 1;
-
-  debugInfo.value = {
-    ...debugInfo.value,
-    scrollTop: Math.round(containerScrollTop * 100) / 100,
-    isAtTop,
-    scrollHeight: container?.scrollHeight || 0,
-    clientHeight: container?.clientHeight || 0,
-    lastCheck: new Date().toLocaleTimeString(),
-    mainScrollTop: Math.round(mainScrollTop * 100) / 100,
-    bodyScrollTop: Math.round(bodyScrollTop * 100) / 100,
-    htmlScrollTop: Math.round(htmlScrollTop * 100) / 100,
-    windowScrollY: Math.round(windowScrollY * 100) / 100,
-    callCount: debugInfo.value.callCount + 1,
-  };
-
-  console.log(
-    `Scroll Update: actual=${actualScrollTop}, isAtTop=${isAtTop}, main=${mainScrollTop}, html=${htmlScrollTop}, window=${windowScrollY}`,
-  );
-};
-
 // Initialize pull-to-refresh
 const initializePullToRefresh = () => {
   const mainElement = document.querySelector("main");
   if (mainElement && !pullToRefreshInstance) {
-    console.log("Setting up pull-to-refresh on main element...");
-
-    // Add scroll listener for debug updates
-    mainElement.addEventListener("scroll", updateDebugInfo);
-
     pullToRefreshInstance = PullToRefresh.init({
-      mainElement: mainElement,
-      triggerElement: mainElement,
+      mainElement: "main",
+      triggerElement: "main",
       onRefresh() {
         return refreshLibraries();
       },
@@ -130,30 +65,34 @@ const initializePullToRefresh = () => {
         );
         const isAtTop = actualScrollTop <= 1;
 
-        const allowed = drawerClosed && notRefreshing && isAtTop;
-
-        console.log(
-          `PTR Check: actualScroll=${actualScrollTop}, main=${mainScrollTop}, html=${htmlScrollTop}, window=${windowScrollY}, drawerClosed=${drawerClosed}, notRefreshing=${notRefreshing}, isAtTop=${isAtTop}, allowed=${allowed}`,
-        );
-
-        return allowed;
+        return drawerClosed && notRefreshing && isAtTop;
       },
       distThreshold: 60,
-      distMax: 80,
-      distReload: 50,
+      distMax: 100,
+      distReload: 70,
       instructionsPullToRefresh: "Pull down to refresh",
       instructionsReleaseToRefresh: "Release to refresh",
       instructionsRefreshing: "Refreshing...",
     });
+
+    // DEBUG: Let's see what the library actually creates
+    setTimeout(() => {
+      console.log("=== PullToRefresh DOM Debug ===");
+      const ptrElements = document.querySelectorAll('[class*="ptr"]');
+      ptrElements.forEach((el, index) => {
+        console.log(`Element ${index}:`, {
+          tagName: el.tagName,
+          className: el.className,
+          innerHTML: el.innerHTML,
+          computedStyles: window.getComputedStyle(el),
+        });
+      });
+    }, 1000);
   }
 };
 
 // Destroy pull-to-refresh instance
 const destroyPullToRefresh = () => {
-  const mainElement = document.querySelector("main");
-  if (mainElement) {
-    mainElement.removeEventListener("scroll", updateDebugInfo);
-  }
   if (pullToRefreshInstance) {
     PullToRefresh.destroyAll();
     pullToRefreshInstance = null;
@@ -266,21 +205,6 @@ const getParallaxStyle = (hasLibrary: boolean) => {
     class="bg-light-bg dark:bg-dark-bg w-full h-full flex flex-col"
     ref="mainContainer"
   >
-    <!-- Debug Panel for Mobile Testing -->
-    <div
-      class="fixed top-20 right-2 z-50 bg-red-500 text-white p-2 rounded text-xs max-w-xs"
-    >
-      <div><strong>PTR Debug</strong></div>
-      <div>Calls: {{ debugInfo.callCount }}</div>
-      <div>Container: {{ debugInfo.scrollTop }}</div>
-      <div>Main: {{ debugInfo.mainScrollTop }}</div>
-      <div>Body: {{ debugInfo.bodyScrollTop }}</div>
-      <div>HTML: {{ debugInfo.htmlScrollTop }}</div>
-      <div>Window: {{ debugInfo.windowScrollY }}</div>
-      <div>At Top: {{ debugInfo.isAtTop }}</div>
-      <div>Allowed: {{ debugInfo.allowed }}</div>
-    </div>
-
     <!-- Scrollable Content Container - PullToRefresh library will handle the pull indicator -->
     <div class="flex-1 overflow-auto" ref="scrollContainer">
       <!-- Initial loading state -->
@@ -448,3 +372,39 @@ const getParallaxStyle = (hasLibrary: boolean) => {
     />
   </div>
 </template>
+
+<style>
+/* PullToRefresh styling using CSS custom properties from global theme */
+
+/* Main PTR container */
+.ptr {
+  background-color: var(--ptr-bg);
+  border-bottom: 1px solid var(--ptr-border);
+}
+
+/* Content box */
+.ptr--box {
+  background-color: var(--ptr-bg);
+  color: var(--ptr-text);
+  font-weight: 500;
+}
+
+/* Text styling */
+.ptr--text {
+  color: var(--ptr-text);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Icon styling */
+.ptr--icon {
+  color: var(--ptr-text);
+  opacity: 0.7;
+  transition: transform 0.3s ease;
+}
+
+/* Release state (when ready to refresh) */
+.ptr--release .ptr--icon {
+  transform: rotate(180deg);
+}
+</style>
