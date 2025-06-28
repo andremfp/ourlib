@@ -27,10 +27,10 @@ export type Book = {
   lentAt?: string;
   title: string;
   authors: string[];
-  language: string;
-  pages: number;
-  publisher: string;
-  publishDate: string;
+  language?: string;
+  pages?: number;
+  publisher?: string;
+  publishDate?: string;
   thumbnailUrl: string;
 };
 

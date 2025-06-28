@@ -14,6 +14,7 @@ import logger from "@/utils/logger";
 
 // Child Components
 import LibrariesNavbar from "./LibrariesNavbar.vue";
+import AddBookNavbar from "./AddBookNavbar.vue";
 import SortControls from "./SortControls.vue";
 
 // Composables for state management and logic
@@ -66,6 +67,7 @@ const {
 const searchQuery = ref("");
 const activeTab = computed(() => tabStore.activeTab);
 const activeView = computed(() => viewStore.activeView);
+const addBookMode = ref("selection");
 
 // --- Computed Properties ---
 /** Determines if the Navbar should be hidden based on the active view. */
@@ -77,12 +79,33 @@ const isNavbarHidden = computed(() =>
 const searchPlaceholder = computed(() => SEARCH.PLACEHOLDERS.DEFAULT);
 
 // --- Methods ---
-/** Handles the 'go back' action from LibrariesNavbar, synchronizing drawer closing and sort state restoration. */
+/** Generic handler for all 'go back' actions, determines context and takes appropriate action. */
 const handleGoBack = () => {
-  logger.debug("[Navbar] Handling goBack action.");
-  // goBackToLibraries handles clearing the name after animation
-  // exitLibraryView restores the sort state
-  goBackToLibraries(() => exitLibraryView());
+  logger.debug("[Navbar] Handling goBack action for tab:", activeTab.value);
+
+  if (activeTab.value === "My Libraries" && currentLibraryName.value) {
+    // Libraries navigation - close drawer and restore sort state
+    goBackToLibraries(() => exitLibraryView());
+  } else if (
+    activeTab.value === "Add Book" &&
+    addBookMode.value !== "selection"
+  ) {
+    // AddBook navigation - go back in AddBook flow
+    window.dispatchEvent(new Event("addbook-go-back"));
+  } else {
+    logger.warn("[Navbar] No back action defined for current context:", {
+      tab: activeTab.value,
+      libraryName: currentLibraryName.value,
+      addBookMode: addBookMode.value,
+    });
+  }
+};
+
+/** Event listener for AddBook mode changes. */
+const handleAddBookModeChange = (event: Event) => {
+  const mode = (event as CustomEvent).detail.mode;
+  logger.debug(`[Navbar] AddBook mode changed to: ${mode}`);
+  addBookMode.value = mode;
 };
 
 // --- Watchers ---
@@ -115,12 +138,14 @@ onMounted(() => {
   logger.debug("[Navbar] Component mounted, setting up listeners.");
   setupDrawerListeners();
   setupNavigationListeners();
+  window.addEventListener("addbook-mode-changed", handleAddBookModeChange);
 });
 
 onUnmounted(() => {
   logger.debug("[Navbar] Component unmounted, cleaning up listeners.");
   cleanupDrawerListeners();
   cleanupNavigationListeners();
+  window.removeEventListener("addbook-mode-changed", handleAddBookModeChange);
 });
 </script>
 
@@ -180,6 +205,14 @@ onUnmounted(() => {
         @go-back="handleGoBack"
         @add-library="openAddLibraryModal"
         @toggle-options="toggleOptionsMenu"
+      />
+
+      <!-- Add Book Specific Header -->
+      <AddBookNavbar
+        v-else-if="activeTab === 'Add Book'"
+        :active-tab="activeTab"
+        :add-book-mode="addBookMode"
+        @go-back="handleGoBack"
       />
 
       <!-- Simple Title Header (for tabs without search/special controls) -->
