@@ -142,12 +142,13 @@ describe("Firebase Tests", () => {
 
     describe("Libraries Collection", () => {
       it("should deny unauthenticated users - all actions", async () => {
+        const ownerRef = doc(unauthedFirestore, "users", "user1");
         const libraryRef = doc(unauthedFirestore, "libraries", "lib1");
         await assertFails(
           setDoc(libraryRef, {
             id: "lib1",
             name: "My Library",
-            owner: "user1",
+            owner: ownerRef,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             subscribers: [],
@@ -158,7 +159,7 @@ describe("Firebase Tests", () => {
         await setDoc(authedLibraryRef, {
           id: "lib1",
           name: "My Library",
-          owner: "user1",
+          owner: `/databases/${PROJECT_ID}/documents/users/user1`,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           subscribers: [],
@@ -181,12 +182,13 @@ describe("Firebase Tests", () => {
       });
 
       it("should allow authenticated user to create a library", async () => {
+        const ownerRef = doc(authedUser1Firestore, "users", "user1");
         const libraryRef = doc(authedUser1Firestore, "libraries", "lib1");
         await assertSucceeds(
           setDoc(libraryRef, {
             id: "lib1",
             name: "My Library",
-            owner: "user1",
+            owner: ownerRef,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             subscribers: [],
@@ -208,7 +210,7 @@ describe("Firebase Tests", () => {
         await setDoc(libraryRef, {
           id: "lib1",
           name: "My Library",
-          owner: "user1",
+          owner: ownerRef,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           subscribers: [],
@@ -231,11 +233,12 @@ describe("Firebase Tests", () => {
       });
 
       it("should allow subscribers to read subscribed libraries, unsubscribe, but not update other fields", async () => {
+        const ownerRef = doc(authedUser1Firestore, "users", "user1");
         const libraryRef = doc(authedUser1Firestore, "libraries", "lib1");
         await setDoc(libraryRef, {
           id: "lib1",
           name: "My Library",
-          owner: "user1",
+          owner: ownerRef,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           subscribers: ["user2"],
@@ -262,11 +265,12 @@ describe("Firebase Tests", () => {
       });
 
       it("should deny non-friends/non-owners/non-subscribers from reading or updating a user's libraries", async () => {
+        const ownerRef = doc(authedUser1Firestore, "users", "user1");
         const libraryRef = doc(authedUser1Firestore, "libraries", "lib1");
         await setDoc(libraryRef, {
           id: "lib1",
           name: "My Library",
-          owner: "user1",
+          owner: ownerRef,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           subscribers: [],
@@ -287,11 +291,12 @@ describe("Firebase Tests", () => {
       });
 
       it("should allow the owner to read, update and delete her library", async () => {
+        const ownerRef = doc(authedUser1Firestore, "users", "user1");
         const libraryRef = doc(authedUser1Firestore, "libraries", "lib1");
         await setDoc(libraryRef, {
           id: "lib1",
           name: "My Library",
-          owner: "user1",
+          owner: ownerRef,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           subscribers: [],
@@ -304,11 +309,12 @@ describe("Firebase Tests", () => {
       });
 
       it("should deny non-owners from deleting a library", async () => {
+        const ownerRef = doc(authedUser1Firestore, "users", "user1");
         const libraryRef = doc(authedUser1Firestore, "libraries", "lib1");
         await setDoc(libraryRef, {
           id: "lib1",
           name: "My Library",
-          owner: "user1",
+          owner: ownerRef,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           subscribers: [],
@@ -325,11 +331,12 @@ describe("Firebase Tests", () => {
 
     describe("Books Collection", () => {
       it("should deny unauthenticated users - all actions", async () => {
+        const ownerRef = doc(authedUser1Firestore, "users", "user1");
         const authedlibraryRef = doc(authedUser1Firestore, "libraries", "lib1");
         setDoc(authedlibraryRef, {
           id: "lib1",
           name: "My Library",
-          owner: "user1",
+          owner: ownerRef,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           subscribers: [],
@@ -339,14 +346,14 @@ describe("Firebase Tests", () => {
         await setDoc(authedBookRef, {
           title: "Book 1",
           author: "Author 1",
-          library: "lib1",
+          library: authedlibraryRef,
         });
 
         await assertFails(
           setDoc(doc(unauthedFirestore, "books", "book2"), {
             title: "Book 2",
             author: "Author 2",
-            library: "lib1",
+            library: authedlibraryRef,
           }),
         );
 
@@ -361,10 +368,11 @@ describe("Firebase Tests", () => {
         await assertFails(deleteDoc(doc(unauthedFirestore, "books", "book1")));
       });
 
-      it("should deny authenticated users from creating, reading, updating or deleting a book in a library they don’t own", async () => {
+      it("should deny authenticated users from creating, reading, updating or deleting a book in a library they don't own", async () => {
+        const ownerRef = doc(authedUser1Firestore, "users", "user1");
         const libraryRef = doc(authedUser1Firestore, "libraries", "lib1");
         await setDoc(libraryRef, {
-          owner: "user1",
+          owner: ownerRef,
           subscribers: [],
         });
 
@@ -373,14 +381,14 @@ describe("Firebase Tests", () => {
         await setDoc(bookRef, {
           title: "Book 1",
           author: "Author 1",
-          library: "lib1",
+          library: libraryRef,
         });
 
         await assertFails(
           setDoc(doc(authedUser2Firestore, "books", "book2"), {
             title: "Book 2",
             author: "Author 2",
-            library: "lib1",
+            library: libraryRef,
           }),
         );
 
@@ -394,10 +402,11 @@ describe("Firebase Tests", () => {
       });
 
       it("should allow library owners to create, read and update a book in their library", async () => {
+        const ownerRef = doc(authedUser1Firestore, "users", "user1");
         const libraryRef = doc(authedUser1Firestore, "libraries", "lib1");
         await setDoc(libraryRef, {
           id: "lib1",
-          owner: "user1",
+          owner: ownerRef,
           subscribers: [],
         });
         const bookRef = doc(authedUser1Firestore, "books", "book1");
@@ -405,7 +414,7 @@ describe("Firebase Tests", () => {
           setDoc(bookRef, {
             title: "Book 1",
             author: "Author 1",
-            library: "lib1",
+            library: libraryRef,
             lentTo: null,
           }),
         );
@@ -418,9 +427,10 @@ describe("Firebase Tests", () => {
       });
 
       it("should allow users to read books in libraries they are subscribed to", async () => {
+        const ownerRef = doc(authedUser1Firestore, "users", "user1");
         const libraryRef = doc(authedUser1Firestore, "libraries", "lib1");
         await setDoc(libraryRef, {
-          owner: "user1",
+          owner: ownerRef,
           subscribers: ["user2"],
         });
 
@@ -428,7 +438,7 @@ describe("Firebase Tests", () => {
         await setDoc(bookRef, {
           title: "Book 1",
           author: "Author 1",
-          library: "lib1",
+          library: libraryRef,
         });
 
         await assertSucceeds(
@@ -437,17 +447,19 @@ describe("Firebase Tests", () => {
       });
 
       it("should allow borrowers to return a book if it is lent to them, and they are subscribed", async () => {
+        const ownerRef = doc(authedUser1Firestore, "users", "user1");
+        const borrowerRef = doc(authedUser1Firestore, "users", "user2");
         const libraryRef = doc(authedUser1Firestore, "libraries", "lib1");
         await setDoc(libraryRef, {
-          owner: "user1",
+          owner: ownerRef,
           subscribers: ["user2"],
         });
         const bookRef = doc(collection(authedUser1Firestore, "books"), "book1");
         await setDoc(bookRef, {
           title: "Book 1",
           author: "Author 1",
-          library: "lib1",
-          lentTo: "user2",
+          library: libraryRef,
+          lentTo: borrowerRef,
         });
 
         await assertSucceeds(
@@ -458,48 +470,52 @@ describe("Firebase Tests", () => {
       });
 
       it("should allow library owners to delete books if not lent out", async () => {
+        const ownerRef = doc(authedUser1Firestore, "users", "user1");
         const libraryRef = doc(authedUser1Firestore, "libraries", "lib1");
         await setDoc(libraryRef, {
-          owner: "user1",
+          owner: ownerRef,
           subscribers: [],
         });
         const bookRef = doc(authedUser1Firestore, "books", "book1");
         await setDoc(bookRef, {
           title: "Book 1",
           author: "Author 1",
-          library: "lib1",
+          library: libraryRef,
           lentTo: null,
         });
         await assertSucceeds(deleteDoc(bookRef));
       });
 
       it("should deny library owners from deleting books that are lent out", async () => {
+        const ownerRef = doc(authedUser1Firestore, "users", "user1");
+        const borrowerRef = doc(authedUser1Firestore, "users", "user2");
         const libraryRef = doc(authedUser1Firestore, "libraries", "lib1");
         await setDoc(libraryRef, {
-          owner: "user1",
+          owner: ownerRef,
           subscribers: [],
         });
         const bookRef = doc(collection(authedUser1Firestore, "books"), "book1");
         await setDoc(bookRef, {
           title: "Book 1",
           author: "Author 1",
-          library: "lib1",
-          lentTo: "user2",
+          library: libraryRef,
+          lentTo: borrowerRef,
         });
         await assertFails(deleteDoc(bookRef));
       });
 
       it("should deny users from reading and updating books from a library they are not subscribed to", async () => {
+        const ownerRef = doc(authedUser1Firestore, "users", "user1");
         const libraryRef = doc(authedUser1Firestore, "libraries", "lib1");
         await setDoc(libraryRef, {
-          owner: "user1",
+          owner: ownerRef,
           subscribers: [],
         });
         const bookRef = doc(authedUser1Firestore, "books", "book1");
         await setDoc(bookRef, {
           title: "Book 1",
           author: "Author 1",
-          library: "lib1",
+          library: libraryRef,
         });
 
         await assertFails(getDoc(doc(authedUser2Firestore, "books", "book1")));
