@@ -6,7 +6,7 @@
           tab="my-libraries"
           @click="() => handleTabClick('My Libraries')"
         >
-          <ion-icon :icon="libraryOutline" />
+          <ion-icon ref="libraryIcon" :icon="libraryOutline" />
           <ion-label>My Libraries</ion-label>
         </ion-tab-button>
 

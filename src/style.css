@@ -14,7 +14,7 @@
   /* Tab bar */
   --ion-tab-bar-background: theme("colors.light-bg");
   --ion-tab-bar-color: theme("colors.light-secondary-text");
-  --ion-tab-bar-color-selected: theme("colors.menu-blue");
+  --ion-tab-bar-color-selected: theme("colors.light-primary-text");
 
   /* Item background (for list items) */
   --ion-item-background: theme("colors.light-bg");
@@ -35,7 +35,7 @@ body.dark {
   /* Tab bar */
   --ion-tab-bar-background: theme("colors.dark-nav");
   --ion-tab-bar-color: theme("colors.dark-secondary-text");
-  --ion-tab-bar-color-selected: theme("colors.menu-blue");
+  --ion-tab-bar-color-selected: theme("colors.dark-primary-text");
 
   /* Item background (for list items) */
   --ion-item-background: theme("colors.dark-bg");

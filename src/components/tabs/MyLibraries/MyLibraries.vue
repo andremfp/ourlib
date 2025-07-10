@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from "vue";
+import { ref, watch } from "vue";
 import {
   IonPage,
   IonHeader,
@@ -26,7 +26,6 @@ import { add, trash } from "ionicons/icons";
 import AddLibraryComponent from "@/components/modals/AddLibrary.vue";
 import { useLibraryList } from "./composables/useLibraryList";
 import { useActiveLibrary } from "./composables/useActiveLibrary";
-// Note: The custom drawer, parallax, and some event listeners will be removed or replaced.
 
 // ============= State =============
 const selectedLibraryId = ref<string | null>(null);
@@ -35,7 +34,6 @@ const selectedLibraryId = ref<string | null>(null);
 const { libraries, isLoading, isRefreshing, error, refreshLibraries } =
   useLibraryList();
 
-// This composable now needs the selected library ID to fetch the correct data
 const {
   books,
   libraryName,
@@ -79,24 +77,6 @@ watch(selectedLibraryId, (newId) => {
     fetchLibraryData(newId);
   }
 });
-
-// ============= Event Handlers =============
-// Simplified event listeners. Direct bindings are preferred in Ionic/Vue.
-
-// ============= Lifecycle =============
-onMounted(() => {
-  // Setup simplified listeners.
-  // window.addEventListener(EVENTS.LIBRARY.UPDATED, onLibraryUpdated);
-  // window.addEventListener(EVENTS.LIBRARY.DELETED, onLibraryDeleted);
-  // window.addEventListener(EVENTS.LIBRARY.SORT_CHANGED, handleSortChange);
-});
-
-onUnmounted(() => {
-  // Cleanup simplified listeners
-  // window.removeEventListener(EVENTS.LIBRARY.UPDATED, onLibraryUpdated);
-  // window.removeEventListener(EVENTS.LIBRARY.DELETED, onLibraryDeleted);
-  // window.removeEventListener(EVENTS.LIBRARY.SORT_CHANGED, handleSortChange);
-});
 </script>
 
 <template>
@@ -111,7 +91,7 @@ onUnmounted(() => {
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
-    <ion-content>
+    <ion-content :scroll-y="false">
       <div v-if="isLoadingActiveLibrary" class="ion-text-center ion-padding">
         <ion-spinner></ion-spinner>
       </div>
@@ -145,7 +125,7 @@ onUnmounted(() => {
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
-    <ion-content :fullscreen="true">
+    <ion-content :fullscreen="true" :scroll-y="false">
       <ion-refresher slot="fixed" @ionRefresh="handleRefresh($event)">
         <ion-refresher-content></ion-refresher-content>
       </ion-refresher>

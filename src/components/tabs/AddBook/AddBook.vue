@@ -70,7 +70,7 @@ const handleContinue = () => {
       </ion-toolbar>
     </ion-header>
 
-    <ion-content :fullscreen="true" class="ion-padding">
+    <ion-content :fullscreen="true" :scroll-y="false" class="ion-padding">
       <!-- Main Add Book View -->
       <div
         v-if="mode === 'selection'"

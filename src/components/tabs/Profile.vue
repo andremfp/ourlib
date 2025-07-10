@@ -129,7 +129,7 @@ const handleLogout = async () => {
         <ion-title>Profile</ion-title>
       </ion-toolbar>
     </ion-header>
-    <ion-content :fullscreen="true">
+    <ion-content :fullscreen="true" :scroll-y="false">
       <div class="ion-padding flex flex-col items-center pb-4">
         <ion-icon
           :icon="personCircleOutline"
