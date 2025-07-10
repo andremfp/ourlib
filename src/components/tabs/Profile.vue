@@ -31,6 +31,7 @@ import {
 import { getUser, removeUser } from "@/apis/userAPI";
 import logger from "@/utils/logger";
 import ChangePasswordForm from "@/components/modals/ChangePassword.vue";
+import { useTabStore } from "@/stores/tabStore";
 
 const auth = getAuth();
 const router = useRouter();
@@ -97,7 +98,7 @@ const deleteAccount = async () => {
   if (!user) return;
 
   try {
-    await removeUser(user.uid); // Your API call to delete user data from Firestore
+    await removeUser(user.uid); // API call to delete user data from Firestore
     await deleteUser(user); // Firebase auth call to delete the user
     router.push("/login"); // Redirect to login after deletion
   } catch (error: any) {
@@ -106,10 +107,14 @@ const deleteAccount = async () => {
   }
 };
 
-const logout = async () => {
+const handleLogout = async () => {
+  const auth = getAuth();
+  const tabStore = useTabStore();
   try {
     await signOut(auth);
-    logger.info("User logged out, redirecting to login");
+    logger.debug("[Profile.vue] Calling tabStore.resetActiveTab()");
+    tabStore.resetActiveTab();
+    logger.info("User logged out successfully");
     router.push("/login");
   } catch (error: any) {
     logger.error("Logout error:", error.message);
@@ -148,7 +153,7 @@ const logout = async () => {
       </ion-list>
 
       <div class="ion-padding">
-        <ion-button @click="logout" expand="block">
+        <ion-button @click="handleLogout" expand="block">
           <ion-icon :icon="logOutOutline" slot="start"></ion-icon>
           Sign Out
         </ion-button>

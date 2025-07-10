@@ -3,8 +3,6 @@ import {
   IonPage,
   IonHeader,
   IonToolbar,
-  IonButtons,
-  IonBackButton,
   IonTitle,
   IonContent,
   IonFooter,
@@ -39,9 +37,6 @@ const handleContinue = () => {
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-buttons slot="start">
-          <ion-back-button default-href="/tabs/add-book"></ion-back-button>
-        </ion-buttons>
         <ion-title>Manual Entry</ion-title>
       </ion-toolbar>
     </ion-header>

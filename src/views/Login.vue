@@ -56,7 +56,7 @@ const handleLogin = async () => {
     );
 
     logger.info("User logged in successfully");
-    router.push("/tabs/my-libraries");
+    router.push("/");
   } catch (error: any) {
     logger.error("Login error:", error.message);
 
@@ -106,50 +106,52 @@ const goToRegister = () => {
       </ion-toolbar>
     </ion-header>
     <ion-content class="ion-padding">
-      <ion-list>
-        <ion-item>
-          <ion-input
-            label="Username"
-            label-placement="floating"
-            type="text"
-            v-model="username"
-            :disabled="isLoading"
-            autocomplete="username"
-            placeholder="Enter your username"
-            required
-          ></ion-input>
-        </ion-item>
-        <ion-item>
-          <ion-input
-            label="Password"
-            label-placement="floating"
-            type="password"
-            v-model="password"
-            :disabled="isLoading"
-            autocomplete="current-password"
-            placeholder="Enter your password"
-            required
-          ></ion-input>
-        </ion-item>
-      </ion-list>
+      <form @submit.prevent="handleLogin">
+        <ion-list>
+          <ion-item>
+            <ion-input
+              label="Username"
+              label-placement="floating"
+              type="text"
+              v-model="username"
+              :disabled="isLoading"
+              autocomplete="username"
+              placeholder="Enter your username"
+              required
+            ></ion-input>
+          </ion-item>
+          <ion-item>
+            <ion-input
+              label="Password"
+              label-placement="floating"
+              type="password"
+              v-model="password"
+              :disabled="isLoading"
+              autocomplete="current-password"
+              placeholder="Enter your password"
+              required
+            ></ion-input>
+          </ion-item>
+        </ion-list>
 
-      <div v-if="errorMessage" class="ion-padding text-red-500 text-sm mt-2">
-        {{ errorMessage }}
-      </div>
+        <div v-if="errorMessage" class="ion-padding text-red-500 text-sm mt-2">
+          {{ errorMessage }}
+        </div>
 
-      <ion-button
-        expand="block"
-        @click="handleLogin"
-        class="ion-margin-top"
-        :disabled="isLoading"
-      >
-        <ion-spinner
-          v-if="isLoading"
-          name="crescent"
-          class="ion-margin-end"
-        ></ion-spinner>
-        {{ isLoading ? "Signing in..." : "Login" }}
-      </ion-button>
+        <ion-button
+          type="submit"
+          expand="block"
+          class="ion-margin-top"
+          :disabled="isLoading"
+        >
+          <ion-spinner
+            v-if="isLoading"
+            name="crescent"
+            class="ion-margin-end"
+          ></ion-spinner>
+          {{ isLoading ? "Signing in..." : "Login" }}
+        </ion-button>
+      </form>
 
       <ion-button
         expand="block"
