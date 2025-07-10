@@ -1,16 +1,66 @@
-import { createRouter, createWebHistory } from "vue-router";
+import { createRouter, createWebHistory } from "@ionic/vue-router";
 import type { RouteRecordRaw } from "vue-router";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import HomeView from "@/views/HomeView.vue";
+import LoginView from "@/views/Login.vue";
+import RegisterView from "@/views/Register.vue";
+import TabsPage from "@/views/Tabs.vue"; // This will be the new container for tabs
+import MyLibraries from "@/components/tabs/MyLibraries/MyLibraries.vue";
+import AddBook from "@/components/tabs/AddBook/AddBook.vue";
+import ScanMode from "@/components/tabs/AddBook/ScanMode.vue";
+import ManualMode from "@/components/tabs/AddBook/ManualMode.vue";
+import Profile from "@/components/tabs/Profile.vue";
 import NotFound from "@/views/NotFound.vue";
 import logger from "@/utils/logger";
-import { useViewStore } from "@/stores/viewStore";
 
 const routes: Array<RouteRecordRaw> = [
   {
     path: "/",
-    name: "home",
-    component: HomeView,
+    redirect: "/tabs",
+  },
+  {
+    path: "/login",
+    name: "login",
+    component: LoginView,
+  },
+  {
+    path: "/register",
+    name: "register",
+    component: RegisterView,
+  },
+  {
+    path: "/tabs/",
+    component: TabsPage,
+    children: [
+      {
+        path: "",
+        redirect: "/tabs/my-libraries",
+      },
+      {
+        path: "my-libraries",
+        name: "my-libraries",
+        component: MyLibraries,
+      },
+      {
+        path: "add-book",
+        name: "add-book",
+        component: AddBook,
+      },
+      {
+        path: "add-book/scan",
+        name: "add-book-scan",
+        component: ScanMode,
+      },
+      {
+        path: "add-book/manual",
+        name: "add-book-manual",
+        component: ManualMode,
+      },
+      {
+        path: "profile",
+        name: "profile",
+        component: Profile,
+      },
+    ],
   },
   {
     path: "/:catchAll(.*)",
@@ -37,23 +87,30 @@ const getCurrentUser = (): Promise<unknown> => {
   });
 };
 
-router.beforeEach(async (to, _, next) => {
-  const viewStore = useViewStore();
+router.beforeEach(async (to, from, next) => {
   const user = await getCurrentUser();
 
+  // Define routes that do not require authentication
+  const publicPages = ["/login", "/register"];
+  const authRequired = !publicPages.includes(to.path);
+
   if (to.name === "not-found") {
-    next();
-    return;
+    return next();
   }
 
-  if (user) {
-    logger.info("User is authenticated, setting view to Main");
-    viewStore.setView("Main");
-  } else {
-    logger.info("User is not authenticated, setting view to Login");
-    viewStore.setView("Login");
+  if (authRequired && !user) {
+    logger.info(
+      `Authentication required for ${to.path}. User not logged in. Redirecting to /login.`,
+    );
+    return next("/login");
   }
 
+  if (!authRequired && user) {
+    logger.info(`User is logged in. Redirecting from ${to.path} to /tabs.`);
+    return next("/tabs");
+  }
+
+  // If we've made it this far, allow navigation
   next();
 });
 

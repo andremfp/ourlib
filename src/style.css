@@ -2,6 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Ionic CSS Variables */
+:root {
+  /* App-wide background and text color */
+  --ion-background-color: theme("colors.light-bg");
+  --ion-text-color: theme("colors.light-primary-text");
+
+  /* Toolbar background */
+  --ion-toolbar-background: theme("colors.light-bg");
+
+  /* Tab bar */
+  --ion-tab-bar-background: theme("colors.light-bg");
+  --ion-tab-bar-color: theme("colors.light-secondary-text");
+  --ion-tab-bar-color-selected: theme("colors.menu-blue");
+
+  /* Item background (for list items) */
+  --ion-item-background: theme("colors.light-bg");
+
+  /* Primary color (used for buttons, spinners, etc.) */
+  --ion-color-primary: theme("colors.menu-blue");
+  --ion-color-primary-contrast: #ffffff;
+}
+
+body.dark {
+  /* App-wide background and text color */
+  --ion-background-color: theme("colors.dark-bg");
+  --ion-text-color: theme("colors.dark-primary-text");
+
+  /* Toolbar background */
+  --ion-toolbar-background: theme("colors.dark-nav");
+
+  /* Tab bar */
+  --ion-tab-bar-background: theme("colors.dark-nav");
+  --ion-tab-bar-color: theme("colors.dark-secondary-text");
+  --ion-tab-bar-color-selected: theme("colors.menu-blue");
+
+  /* Item background (for list items) */
+  --ion-item-background: theme("colors.dark-bg");
+}
+
 /* CSS Custom Properties for PullToRefresh theming */
 :root {
   --ptr-bg: theme("colors.light-bg");
