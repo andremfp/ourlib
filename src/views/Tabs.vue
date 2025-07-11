@@ -5,21 +5,27 @@
         <ion-tab-button
           tab="my-libraries"
           @click="() => handleTabClick('My Libraries')"
+          :class="{ 'active-tab': tabStore.activeTab === 'My Libraries' }"
         >
-          <ion-icon ref="libraryIcon" :icon="libraryOutline" />
+          <ion-icon :icon="libraryIcon" />
           <ion-label>My Libraries</ion-label>
         </ion-tab-button>
 
         <ion-tab-button
           tab="add-book"
           @click="() => handleTabClick('Add Book')"
+          :class="{ 'active-tab': tabStore.activeTab === 'Add Book' }"
         >
-          <ion-icon :icon="addCircleOutline" />
+          <ion-icon :icon="addIcon" />
           <ion-label>Add Book</ion-label>
         </ion-tab-button>
 
-        <ion-tab-button tab="profile" @click="() => handleTabClick('Profile')">
-          <ion-icon :icon="personCircleOutline" />
+        <ion-tab-button
+          tab="profile"
+          @click="() => handleTabClick('Profile')"
+          :class="{ 'active-tab': tabStore.activeTab === 'Profile' }"
+        >
+          <ion-icon :icon="profileIcon" />
           <ion-label>Profile</ion-label>
         </ion-tab-button>
       </ion-tab-bar>
@@ -40,7 +46,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import {
   IonPage,
   IonTabs,
@@ -52,8 +58,11 @@ import {
 } from "@ionic/vue";
 import {
   libraryOutline,
-  addCircleOutline,
+  library,
+  addOutline,
+  add,
   personCircleOutline,
+  personCircle,
 } from "ionicons/icons";
 import { useTabStore } from "@/stores/tabStore";
 import MyLibraries from "@/components/tabs/MyLibraries/MyLibraries.vue";
@@ -63,6 +72,19 @@ import logger from "@/utils/logger";
 
 const tabStore = useTabStore();
 const tabsKey = ref(0);
+
+// Computed properties for dynamic icon switching
+const libraryIcon = computed(() => {
+  return tabStore.activeTab === "My Libraries" ? library : libraryOutline;
+});
+
+const addIcon = computed(() => {
+  return tabStore.activeTab === "Add Book" ? add : addOutline;
+});
+
+const profileIcon = computed(() => {
+  return tabStore.activeTab === "Profile" ? personCircle : personCircleOutline;
+});
 
 // Watch for the active tab to be reset to "My Libraries".
 // This indicates a logout/login cycle, so we force a re-render
@@ -92,5 +114,9 @@ const handleTabClick = (tabName: string) => {
 .tab-content {
   flex: 1;
   overflow: hidden;
+}
+
+.active-tab {
+  border-top: 2px solid var(--ion-tab-bar-color-selected);
 }
 </style>
