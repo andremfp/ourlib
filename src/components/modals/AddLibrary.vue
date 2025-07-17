@@ -1,21 +1,9 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import {
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-  IonList,
-  IonItem,
-  IonInput,
-  IonButton,
-  IonButtons,
-  modalController,
-} from "@ionic/vue";
+import { ref, onMounted } from "vue";
+import { IonInput, IonButton, modalController } from "@ionic/vue";
 import { getAuth } from "firebase/auth";
 import { createLibrary } from "@/apis/libraryAPI";
 import type { Library } from "@/schema";
-import { UI_LIMITS } from "@/constants/constants";
 import { firestore } from "@/firebase";
 import { doc, DocumentReference } from "firebase/firestore";
 import { COLLECTION_NAMES } from "@/constants";
@@ -24,20 +12,13 @@ import type { User } from "@/schema";
 const libraryName = ref("");
 const errorMessage = ref("");
 const isSubmitting = ref(false);
+const libraryInput = ref<InstanceType<typeof IonInput> | null>(null);
 
 async function handleSubmit() {
   const trimmedName = libraryName.value.trim();
 
   if (!trimmedName) {
     errorMessage.value = "Library name is required";
-    return;
-  }
-  if (trimmedName.length < UI_LIMITS.LIBRARY.NAME_MIN_LENGTH) {
-    errorMessage.value = `Library name must be at least ${UI_LIMITS.LIBRARY.NAME_MIN_LENGTH} characters`;
-    return;
-  }
-  if (trimmedName.length > UI_LIMITS.LIBRARY.NAME_MAX_LENGTH) {
-    errorMessage.value = `Library name cannot exceed ${UI_LIMITS.LIBRARY.NAME_MAX_LENGTH} characters`;
     return;
   }
 
@@ -79,45 +60,117 @@ async function handleSubmit() {
 function cancel() {
   modalController.dismiss(null, "cancel");
 }
+
+// Focus management for accessibility
+onMounted(() => {
+  // Add keyboard event listener for Escape key
+  const handleKeydown = (event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+      cancel();
+    }
+  };
+
+  document.addEventListener("keydown", handleKeydown);
+
+  // Focus the input after a short delay to allow for the modal transition.
+  // This prevents an accessibility warning about focus being on a hidden element.
+  setTimeout(() => {
+    libraryInput.value?.$el.setFocus();
+  }, 300);
+
+  // Cleanup on unmount
+  return () => {
+    document.removeEventListener("keydown", handleKeydown);
+  };
+});
 </script>
 
 <template>
-  <ion-header>
-    <ion-toolbar>
-      <ion-title>Create New Library</ion-title>
-      <ion-buttons slot="end">
-        <ion-button @click="cancel()">Cancel</ion-button>
-      </ion-buttons>
-    </ion-toolbar>
-  </ion-header>
-  <ion-content class="ion-padding">
-    <ion-list>
-      <ion-item>
-        <ion-input
-          label="Library Name"
-          label-placement="floating"
-          v-model="libraryName"
-          placeholder="Enter library name"
-          @keyup.enter="handleSubmit"
-        ></ion-input>
-      </ion-item>
-    </ion-list>
+  <div class="wrapper">
+    <h1>Create New Library</h1>
+
+    <ion-input
+      ref="libraryInput"
+      :clear-input="true"
+      v-model="libraryName"
+      placeholder="Library name"
+      @keyup.enter="handleSubmit"
+      aria-describedby="library-name-error"
+      fill="outline"
+      mode="md"
+      :maxlength="25"
+    ></ion-input>
 
     <p
       v-if="errorMessage"
-      class="mt-2 text-sm text-red-600 dark:text-red-400 ion-padding-horizontal"
+      id="library-name-error"
+      class="error-message"
+      role="alert"
     >
       {{ errorMessage }}
     </p>
 
-    <ion-button
-      class="ion-margin-top"
-      expand="block"
-      :disabled="isSubmitting"
-      @click="handleSubmit"
-    >
-      <span v-if="isSubmitting">Creating...</span>
-      <span v-else>Create Library</span>
-    </ion-button>
-  </ion-content>
+    <div class="dialog-actions">
+      <ion-button fill="clear" @click="cancel" :disabled="isSubmitting">
+        Cancel
+      </ion-button>
+      <ion-button
+        @click="handleSubmit"
+        :disabled="isSubmitting || !libraryName.trim()"
+      >
+        <span v-if="isSubmitting">Creating...</span>
+        <span v-else>Create</span>
+      </ion-button>
+    </div>
+  </div>
 </template>
+
+<style scoped>
+.wrapper {
+  padding: 16px;
+}
+
+.wrapper h1 {
+  margin: 0 0 16px;
+  font-size: theme("fontSize.modal-title");
+  font-weight: theme("fontWeight.bold");
+}
+
+.wrapper ion-input {
+  --border-radius: 12px;
+  padding-left: 0px;
+}
+
+.error-message {
+  margin: 0;
+  padding: 0 4px;
+  font-size: theme("fontSize.modal-text");
+  color: theme("colors.danger-red");
+  min-height: 28px; /* Reserve space to prevent layout shift */
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.dialog-actions ion-button {
+  margin: 0;
+  height: 44px; /* Standard iOS tap size */
+  --border-radius: 8px;
+  font-weight: 500;
+  min-width: 90px;
+  text-transform: none; /* iOS buttons don't use all-caps */
+}
+</style>
+
+<style>
+ion-modal.add-library-modal {
+  --width: 90%;
+  --height: fit-content;
+  --border-radius: 12px;
+  --box-shadow: 0 28px 48px rgba(0, 0, 0, 0.4);
+}
+</style>

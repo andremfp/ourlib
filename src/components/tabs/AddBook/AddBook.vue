@@ -18,6 +18,7 @@ import ScanMode from "./ScanMode.vue";
 import ManualMode from "./ManualMode.vue";
 import BookForm from "./BookForm.vue";
 import { useAddBook } from "./composables/useAddBook";
+import { useTabStore } from "@/stores/tabStore";
 
 const {
   mode,
@@ -32,6 +33,8 @@ const {
   handleISBN,
   proceedToLibrarySelection,
 } = useAddBook();
+
+const tabStore = useTabStore();
 
 const go_to_scan = () => {
   startScanning();
@@ -58,7 +61,9 @@ const handleContinue = () => {
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-title v-if="mode === 'selection'">Add Book</ion-title>
+        <ion-title v-if="mode === 'selection'">{{
+          tabStore.activeTab
+        }}</ion-title>
         <ion-title v-else-if="mode === 'scan'">Scan Barcode</ion-title>
         <ion-title v-else-if="mode === 'manual'">Manual Entry</ion-title>
         <ion-title v-else-if="mode === 'form'">Book Details</ion-title>

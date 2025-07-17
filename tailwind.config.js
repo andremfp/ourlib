@@ -7,7 +7,6 @@ export default {
   theme: {
     extend: {
       fontSize: {
-        xxs: "0.65rem",
         nav: "1.1rem",
         "nav-subtext": "0.8rem",
         "modal-title": "1.2rem",
@@ -43,7 +42,7 @@ export default {
         "dark-primary-text": "#E5E7EB",
         "dark-secondary-text": "#9CA3AF",
         "menu-blue": "#007AFF",
-        "warning-red": "#FF3B30",
+        "danger-red": "#FF3B30",
 
         // UI Element colors
         "light-border": "#f9fafb",

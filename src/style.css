@@ -10,6 +10,7 @@
 
   /* Toolbar background */
   --ion-toolbar-background: theme("colors.light-bg");
+  --ion-toolbar-color: theme("colors.light-secondary-text");
 
   /* Tab bar */
   --ion-tab-bar-background: theme("colors.light-bg");
@@ -18,6 +19,7 @@
 
   /* Item background (for list items) */
   --ion-item-background: theme("colors.light-bg");
+  --ion-item-border-color: theme("colors.light-border");
 
   /* Primary color (used for buttons, spinners, etc.) */
   --ion-color-primary: theme("colors.menu-blue");
@@ -31,6 +33,7 @@ body.dark {
 
   /* Toolbar background */
   --ion-toolbar-background: theme("colors.dark-nav");
+  --ion-toolbar-color: theme("colors.dark-secondary-text");
 
   /* Tab bar */
   --ion-tab-bar-background: theme("colors.dark-nav");
@@ -39,6 +42,14 @@ body.dark {
 
   /* Item background (for list items) */
   --ion-item-background: theme("colors.dark-bg");
+  --ion-item-border-color: theme("colors.dark-border");
+
+  /* Input */
+  --ion-input-highlight-color-focused: theme("colors.danger-red");
+}
+
+ion-title {
+  font-weight: 400;
 }
 
 /* CSS Custom Properties for PullToRefresh theming */
@@ -60,4 +71,14 @@ body.dark {
   --ptr-bg: theme("colors.dark-bg");
   --ptr-text: theme("colors.dark-secondary-text");
   --ptr-border: theme("colors.dark-border");
+}
+
+ion-input:not(.dark) {
+  /* Light mode */
+  --highlight-color-focused: theme("colors.light-primary-text");
+}
+
+.dark ion-input {
+  /* Dark mode */
+  --highlight-color-focused: theme("colors.dark-primary-text");
 }

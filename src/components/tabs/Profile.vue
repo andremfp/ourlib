@@ -37,6 +37,7 @@ const auth = getAuth();
 const router = useRouter();
 const username = ref<string | null>(null);
 const loading = ref(true);
+const tabStore = useTabStore();
 
 const fetchUser = async (uid: string) => {
   try {
@@ -126,7 +127,7 @@ const handleLogout = async () => {
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-title>Profile</ion-title>
+        <ion-title>{{ tabStore.activeTab }}</ion-title>
       </ion-toolbar>
     </ion-header>
     <ion-content :fullscreen="true" :scroll-y="false">
