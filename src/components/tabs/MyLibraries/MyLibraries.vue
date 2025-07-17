@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, watch, nextTick } from "vue";
 import {
   IonPage,
   IonHeader,
@@ -31,6 +31,8 @@ import AddLibraryComponent from "@/components/modals/AddLibrary.vue";
 // ============= State =============
 const selectedLibraryId = ref<string | null>(null);
 const libraryListEl = ref<any>(null);
+const hasSlidingItemOpen = ref(false);
+const isClosingSlidingItem = ref(false);
 
 // ============= Composables =============
 const { libraries, isLoading, isRefreshing, error, refreshLibraries } =
@@ -48,15 +50,26 @@ const tabStore = useTabStore();
 
 // ============= Methods =============
 const getOpenItem = async (): Promise<any | null> => {
-  if (!libraryListEl.value || !libraryListEl.value.querySelectorAll) {
+  if (!libraryListEl.value) {
+    const element = document.querySelector("#main-content ion-list");
+    if (element) {
+      const items = element.querySelectorAll("ion-item-sliding");
+      for (const item of items) {
+        const openAmount = await item.getOpenAmount();
+        if (openAmount > 0) {
+          return item;
+        }
+      }
+    }
     return null;
   }
 
-  const items = libraryListEl.value.querySelectorAll("ion-item-sliding");
-  if (!items) return null;
+  const domElement = libraryListEl.value.$el || libraryListEl.value;
+  const items = domElement.querySelectorAll("ion-item-sliding");
 
   for (const item of items) {
-    if ((await item.getOpenAmount()) > 0) {
+    const openAmount = await item.getOpenAmount();
+    if (openAmount > 0) {
       return item;
     }
   }
@@ -64,17 +77,55 @@ const getOpenItem = async (): Promise<any | null> => {
 };
 
 const closeAllSlidingItems = async () => {
-  if (!libraryListEl.value || !libraryListEl.value.querySelectorAll) {
-    console.log("libraryListEl not ready yet");
-    return;
+  let items: any = null;
+
+  if (libraryListEl.value) {
+    const domElement = libraryListEl.value.$el || libraryListEl.value;
+    if (domElement && domElement.querySelectorAll) {
+      items = domElement.querySelectorAll("ion-item-sliding");
+    }
   }
 
-  const items = libraryListEl.value.querySelectorAll("ion-item-sliding");
+  if (!items) {
+    const element = document.querySelector("#main-content ion-list");
+    if (element) {
+      items = element.querySelectorAll("ion-item-sliding");
+    }
+  }
+
   if (!items) return;
 
   for (const item of items) {
     await item.close();
   }
+  hasSlidingItemOpen.value = false;
+};
+
+// Check if any sliding item is open by looking for visible options
+const hasOpenSlidingItem = (): boolean => {
+  if (!libraryListEl.value) {
+    const element = document.querySelector("#main-content ion-list");
+    if (element) {
+      const options = element.querySelectorAll("ion-item-options");
+      for (const option of options) {
+        const style = window.getComputedStyle(option);
+        if (style.display !== "none" && style.visibility !== "hidden") {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  const domElement = libraryListEl.value.$el || libraryListEl.value;
+  const options = domElement.querySelectorAll("ion-item-options");
+  for (const option of options) {
+    const style = window.getComputedStyle(option);
+    if (style.display !== "none" && style.visibility !== "hidden") {
+      return true;
+    }
+  }
+  return false;
 };
 
 const handleRefresh = async (event: CustomEvent) => {
@@ -83,33 +134,131 @@ const handleRefresh = async (event: CustomEvent) => {
 };
 
 const handleDelete = (libraryId: string) => {
-  // NOTE: You'll need to add your API call to delete the library from the database here.
-  console.log("Deleting library with ID:", libraryId);
   libraries.value = libraries.value.filter((lib) => lib.id !== libraryId);
+  hasSlidingItemOpen.value = false;
 };
 
-const selectLibrary = async (libraryId: string, event: Event) => {
-  console.log("selectLibrary called", libraryId);
-
-  // Check if any sliding item is open
-  const openItem = await getOpenItem();
-  if (openItem) {
-    console.log("sliding item is open, closing it");
-    // If a sliding item is open, just close it and don't select the library
-    await openItem.close();
+const handleItemClick = async (libraryId: string, event: Event) => {
+  // Check if we're currently closing a sliding item
+  if (isClosingSlidingItem.value) {
     event.preventDefault();
+    event.stopPropagation();
     event.stopImmediatePropagation();
     return;
   }
 
-  console.log("opening library menu");
+  // Check our reactive state
+  if (hasSlidingItemOpen.value) {
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    return;
+  }
+
+  // Check if any sliding item is open by looking for visible options
+  if (hasOpenSlidingItem()) {
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    return;
+  }
+
+  // Check if any sliding item is open (async check)
+  const openItem = await getOpenItem();
+  if (openItem) {
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    return;
+  }
+
+  // If no sliding item is open, proceed with library selection
+  selectLibrary(libraryId, event);
+};
+
+const selectLibrary = async (libraryId: string, event: Event) => {
+  // Check if we're currently closing a sliding item
+  if (isClosingSlidingItem.value) {
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    return;
+  }
+
+  // Check our reactive state
+  if (hasSlidingItemOpen.value) {
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    return;
+  }
+
+  // Wait for DOM to be ready
+  await nextTick();
+
+  // Check if any sliding item is open
+  const openItem = await getOpenItem();
+  if (openItem) {
+    isClosingSlidingItem.value = true;
+    await openItem.close();
+    hasSlidingItemOpen.value = false;
+    setTimeout(() => {
+      isClosingSlidingItem.value = false;
+    }, 500);
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    return;
+  }
+
   // Only proceed with library selection if no sliding item is open
   selectedLibraryId.value = libraryId;
   menuController.open("library-menu");
 };
 
+const handleContentClick = async (event: Event) => {
+  // Wait for DOM to be ready
+  await nextTick();
+
+  // Check if any sliding item is open
+  const openItem = await getOpenItem();
+  if (openItem) {
+    isClosingSlidingItem.value = true;
+    hasSlidingItemOpen.value = true;
+    await openItem.close();
+    hasSlidingItemOpen.value = false;
+    setTimeout(() => {
+      isClosingSlidingItem.value = false;
+    }, 500);
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    return;
+  }
+
+  // Also check our reactive state
+  if (hasSlidingItemOpen.value) {
+    isClosingSlidingItem.value = true;
+    await closeAllSlidingItems();
+    setTimeout(() => {
+      isClosingSlidingItem.value = false;
+    }, 500);
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    return;
+  }
+};
+
+const handleItemSliding = async (event: CustomEvent) => {
+  const target = event.target as any;
+  if (target && typeof target.getOpenAmount === "function") {
+    const openAmount = await target.getOpenAmount();
+    hasSlidingItemOpen.value = openAmount > 0;
+  }
+};
+
 const presentAddLibraryModal = async (event: MouseEvent) => {
-  // Blur the button that triggered the modal to prevent accessibility issues.
   if (event.currentTarget) {
     (event.currentTarget as HTMLElement).blur();
   }
@@ -186,7 +335,7 @@ defineExpose({
     <ion-content
       :fullscreen="true"
       :scroll-y="false"
-      @click="closeAllSlidingItems"
+      @click="handleContentClick"
     >
       <ion-refresher slot="fixed" @ionRefresh="handleRefresh($event)">
         <ion-refresher-content></ion-refresher-content>
@@ -217,9 +366,14 @@ defineExpose({
       </div>
 
       <!-- Libraries List -->
-      <ion-list v-else ref="libraryListEl">
-        <ion-item-sliding v-for="library in libraries" :key="library.id">
-          <ion-item button @click="selectLibrary(library.id, $event)">
+      <ion-list v-else ref="libraryListEl" @click="handleContentClick">
+        <ion-item-sliding
+          v-for="library in libraries"
+          :key="library.id"
+          @ionItemSliding="handleItemSliding"
+          @click="handleContentClick"
+        >
+          <ion-item button @click.stop="handleItemClick(library.id, $event)">
             <ion-label class="library-item-label">
               <h2>{{ library.name }}</h2>
               <p>{{ library.booksCount || 0 }} books</p>
