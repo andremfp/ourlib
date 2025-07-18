@@ -42,11 +42,6 @@
     <!-- Books List -->
     <ion-list v-else>
       <ion-item v-for="book in books" :key="book.id" class="book-item">
-        <ion-icon
-          :icon="bookOutline"
-          slot="start"
-          class="text-primary"
-        ></ion-icon>
         <ion-label>
           <h2>{{ book.title }}</h2>
           <p>{{ book.authors?.join(", ") || "Unknown Author" }}</p>

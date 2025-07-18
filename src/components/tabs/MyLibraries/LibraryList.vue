@@ -1,6 +1,11 @@
 <template>
   <ion-header>
     <ion-toolbar>
+      <ion-buttons slot="start">
+        <ion-button @click="presentAddLibraryModal">
+          <ion-icon :icon="add"></ion-icon>
+        </ion-button>
+      </ion-buttons>
       <ion-title>My Libraries</ion-title>
     </ion-toolbar>
   </ion-header>
@@ -38,10 +43,6 @@
       <p class="text-gray-500 text-center mb-4">
         Create your first library to start organizing your books
       </p>
-      <ion-button>
-        <ion-icon :icon="add" slot="start"></ion-icon>
-        Create Library
-      </ion-button>
     </div>
 
     <!-- Libraries List -->
@@ -52,17 +53,8 @@
         @ionItemSliding="handleItemSliding"
         @click="handleContentClick"
       >
-        <ion-item
-          button
-          @click="handleItemClick(lib.id, $event)"
-          class="library-item"
-        >
-          <ion-icon
-            :icon="library"
-            slot="start"
-            class="text-primary"
-          ></ion-icon>
-          <ion-label>
+        <ion-item button @click="handleItemClick(lib.id, $event)">
+          <ion-label class="library-item-label">
             <h2>{{ lib.name }}</h2>
             <p>{{ lib.booksCount || 0 }} books</p>
           </ion-label>
@@ -70,23 +62,11 @@
 
         <ion-item-options slot="end">
           <ion-item-option @click="handleDelete(lib.id)">
-            <ion-label class="delete-label">Delete</ion-label>
+            <ion-label>Delete</ion-label>
           </ion-item-option>
         </ion-item-options>
       </ion-item-sliding>
     </ion-list>
-
-    <!-- FAB for adding new library -->
-    <ion-fab
-      v-if="hasLibraries"
-      slot="fixed"
-      vertical="bottom"
-      horizontal="end"
-    >
-      <ion-fab-button>
-        <ion-icon :icon="add"></ion-icon>
-      </ion-fab-button>
-    </ion-fab>
   </ion-content>
 </template>
 
@@ -105,17 +85,17 @@ import {
   IonSpinner,
   IonRefresher,
   IonRefresherContent,
-  IonFab,
-  IonFabButton,
   IonItemSliding,
   IonItemOptions,
   IonItemOption,
+  IonButtons,
+  modalController,
 } from "@ionic/vue";
 import { add, library } from "ionicons/icons";
 import { useLibraryList } from "./composables/useLibraryList";
-
 import { markRaw } from "vue";
 import LibraryDetail from "./LibraryDetail.vue";
+import AddLibraryComponent from "@/components/modals/AddLibrary.vue";
 
 // ============= State =============
 const libraryListEl = ref<any>(null);
@@ -298,18 +278,24 @@ const handleDelete = (libraryId: string) => {
   libraries.value = libraries.value.filter((lib) => lib.id !== libraryId);
   hasSlidingItemOpen.value = false;
 };
+
+// ============= Modal Management =============
+const presentAddLibraryModal = async () => {
+  const modal = await modalController.create({
+    component: AddLibraryComponent,
+    cssClass: "add-library-modal",
+  });
+  await modal.present();
+  const { role } = await modal.onDidDismiss();
+  if (role === "created") {
+    await refreshLibraries();
+  }
+};
 </script>
 
 <style scoped>
-.library-item {
-  --padding-start: 16px;
-  --padding-end: 16px;
-  --min-height: 72px;
-}
-
-.library-item ion-icon {
-  font-size: 24px;
-  margin-right: 16px;
+ion-item {
+  --padding-start: 0;
 }
 
 ion-item-option {
@@ -317,7 +303,7 @@ ion-item-option {
   background-color: theme("colors.danger-red");
 }
 
-.delete-label {
-  color: white;
+.library-item-label {
+  padding-left: 12px;
 }
 </style>
