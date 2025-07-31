@@ -35,6 +35,8 @@ export default {
         // Background colors
         "light-bg": "#f2f4f8",
         "dark-bg": "#18181B",
+        "light-bg-secondary": "#e5e7eb", // slightly darker than light-bg
+        "dark-bg-secondary": "#23272f", // TODO tweak these colors
 
         // Text colors
         "light-primary-text": "#1F2937",

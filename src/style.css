@@ -7,6 +7,7 @@
   /* App-wide background and text color */
   --ion-background-color: theme("colors.light-bg");
   --ion-text-color: theme("colors.light-primary-text");
+  --ion-background-color-secondary: theme("colors.light-bg-secondary");
 
   /* Toolbar background */
   --ion-toolbar-background: theme("colors.light-bg");
@@ -30,6 +31,7 @@ body.dark {
   /* App-wide background and text color */
   --ion-background-color: theme("colors.dark-bg");
   --ion-text-color: theme("colors.dark-primary-text");
+  --ion-background-color-secondary: theme("colors.dark-bg-secondary");
 
   /* Toolbar background */
   --ion-toolbar-background: theme("colors.dark-nav");
@@ -81,4 +83,8 @@ ion-input:not(.dark) {
 .dark ion-input {
   /* Dark mode */
   --highlight-color-focused: theme("colors.dark-primary-text");
+}
+
+.ion-page {
+  background: var(--ion-background-color-secondary) !important;
 }

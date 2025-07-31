@@ -9,9 +9,19 @@
       <ion-title>My Libraries</ion-title>
     </ion-toolbar>
   </ion-header>
-  <ion-content @click="handleContentClick">
-    <ion-refresher slot="fixed" @ionrefresh="handleRefresh">
-      <ion-refresher-content></ion-refresher-content>
+  <ion-content
+    style="--background: var(--ion-background-color)"
+    @click="handleContentClick"
+  >
+    <ion-refresher slot="fixed" @ion-refresh="handleRefresh">
+      <ion-refresher-content
+        :pulling-icon="arrowDownOutline"
+        pulling-text="Pull to refresh"
+        refreshing-text="Refreshing..."
+        refreshing-spinner="circular"
+        release-to-refresh-text="Release to refresh"
+      >
+      </ion-refresher-content>
     </ion-refresher>
 
     <!-- Loading State -->
@@ -91,7 +101,7 @@ import {
   IonButtons,
   modalController,
 } from "@ionic/vue";
-import { add, library } from "ionicons/icons";
+import { add, library, arrowDownOutline } from "ionicons/icons";
 import { useLibraryList } from "./composables/useLibraryList";
 import { markRaw } from "vue";
 import LibraryDetail from "./LibraryDetail.vue";
