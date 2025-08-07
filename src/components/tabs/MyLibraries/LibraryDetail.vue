@@ -2,7 +2,9 @@
   <ion-header>
     <ion-toolbar>
       <ion-buttons slot="start">
-        <ion-back-button></ion-back-button>
+        <ion-button>
+          <ion-back-button text=""></ion-back-button>
+        </ion-button>
       </ion-buttons>
       <ion-title>{{ libraryName }}</ion-title>
     </ion-toolbar>
