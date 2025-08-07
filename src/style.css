@@ -84,7 +84,3 @@ ion-input:not(.dark) {
   /* Dark mode */
   --highlight-color-focused: theme("colors.dark-primary-text");
 }
-
-.ion-page {
-  background: var(--ion-background-color-secondary) !important;
-}
