@@ -54,7 +54,7 @@ const props = defineProps<{
 
 // ============= Emits =============
 const emit = defineEmits<{
-  sortChanged: [sortBy: string, sortReverse: boolean];
+  "sort-changed": [sortBy: string, sortReverse: boolean];
 }>();
 
 // ============= State =============
@@ -99,7 +99,7 @@ function resetSortDirection() {
 }
 
 function emitSortChange() {
-  emit("sortChanged", sortBy.value, sortReverse.value);
+  emit("sort-changed", sortBy.value, sortReverse.value);
 }
 
 function cycleSortOption() {

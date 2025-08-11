@@ -68,7 +68,7 @@
     <!-- Libraries List -->
     <ion-list v-else ref="libraryListEl" @click="handleContentClick">
       <ion-item-sliding
-        v-for="lib in sortedLibraries"
+        v-for="lib in libraries"
         :key="lib.id"
         @ionItemSliding="handleItemSliding"
         @click="handleContentClick"
@@ -155,9 +155,6 @@ const handleSortControlsChange = (
 // ============= Computed Properties =============
 const hasLibraries = computed(() => libraries.value.length > 0);
 const showEmptyState = computed(() => !isLoading.value && !hasLibraries.value);
-const sortedLibraries = computed(() => {
-  return [...libraries.value].sort((a, b) => a.name.localeCompare(b.name));
-});
 
 // ============= Navigation Setup =============
 const libraryComponent = markRaw(LibraryDetail);
