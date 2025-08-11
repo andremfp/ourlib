@@ -84,3 +84,25 @@ ion-input:not(.dark) {
   /* Dark mode */
   --highlight-color-focused: theme("colors.dark-primary-text");
 }
+
+/* Global fade transition for sort controls */
+.fade-enter-active,
+.fade-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fade-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.fade-enter-to,
+.fade-leave-from {
+  opacity: 1;
+  transform: translateY(0);
+}

@@ -9,7 +9,16 @@
       <ion-title>{{ libraryName }}</ion-title>
     </ion-toolbar>
   </ion-header>
-  <ion-content class="ion-padding">
+
+  <ion-content>
+    <!-- Sort Controls -->
+    <SortControls
+      type="books"
+      :initial-sort-by="sortBy"
+      :initial-sort-reverse="sortReverse"
+      @sort-changed="handleSortControlsChange"
+    />
+
     <!-- Loading State -->
     <div v-if="isLoading" class="flex items-center justify-center h-full">
       <ion-spinner name="crescent"></ion-spinner>
@@ -25,7 +34,7 @@
     <!-- Empty State -->
     <div
       v-else-if="books.length === 0"
-      class="flex flex-col items-center justify-center h-full"
+      class="flex flex-col items-center justify-center h-full p-4"
     >
       <ion-icon
         :icon="bookOutline"
@@ -54,7 +63,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import {
   IonHeader,
   IonTitle,
@@ -71,6 +80,9 @@ import {
 } from "@ionic/vue";
 import { bookOutline, add } from "ionicons/icons";
 import { useActiveLibrary } from "./composables/useActiveLibrary";
+import { useBookSort } from "./composables/useBookSort";
+import SortControls from "@/components/SortControls.vue";
+import { SORT } from "@/constants/constants";
 
 // ============= Props =============
 const props = defineProps<{
@@ -83,6 +95,28 @@ const libraryId = computed(() => props.libraryId);
 // ============= Composables =============
 const { books, libraryName, isLoading, error, fetchLibraryData } =
   useActiveLibrary(libraryId);
+
+// Book sorting
+const { handleSortChange } = useBookSort(books);
+
+// Local sort state for the SortControls component
+const sortBy = ref(SORT.BY.TITLE);
+const sortReverse = ref(SORT.DIRECTION.ASC);
+
+// Handle sort changes from SortControls component
+const handleSortControlsChange = (
+  newSortBy: string,
+  newSortReverse: boolean,
+) => {
+  // Create a custom event that matches what useBookSort expects
+  const customEvent = new CustomEvent("sortChange", {
+    detail: {
+      sortBy: newSortBy,
+      sortReverse: newSortReverse,
+    },
+  });
+  handleSortChange(customEvent);
+};
 </script>
 
 <style scoped>

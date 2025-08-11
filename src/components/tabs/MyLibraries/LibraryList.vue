@@ -9,6 +9,7 @@
       <ion-title>My Libraries</ion-title>
     </ion-toolbar>
   </ion-header>
+
   <ion-content
     style="--background: var(--ion-background-color)"
     @click="handleContentClick"
@@ -23,6 +24,15 @@
       >
       </ion-refresher-content>
     </ion-refresher>
+
+    <!-- Sort Controls -->
+
+    <SortControls
+      type="libraries"
+      :initial-sort-by="sortBy"
+      :initial-sort-reverse="sortReverse"
+      @sort-changed="handleSortControlsChange"
+    />
 
     <!-- Loading State -->
     <div v-if="isLoading" class="flex items-center justify-center h-full">
@@ -103,9 +113,12 @@ import {
 } from "@ionic/vue";
 import { add, library, arrowDownOutline } from "ionicons/icons";
 import { useLibraryList } from "./composables/useLibraryList";
+import { useLibrarySort } from "./composables/useLibrarySort";
 import { markRaw } from "vue";
 import LibraryDetail from "./LibraryDetail.vue";
 import AddLibraryComponent from "@/components/modals/AddLibrary.vue";
+import SortControls from "@/components/SortControls.vue";
+import { SORT } from "@/constants/constants";
 
 // ============= State =============
 const libraryListEl = ref<any>(null);
@@ -115,6 +128,29 @@ const isClosingSlidingItem = ref(false);
 // ============= Composables =============
 const { libraries, isLoading, isRefreshing, error, refreshLibraries } =
   useLibraryList();
+
+// Create a ref for drawer state (we'll set it to false since we're not using the drawer in this view)
+const isDrawerOpen = ref(false);
+const { handleSortChange } = useLibrarySort(libraries, isDrawerOpen);
+
+// Local sort state for the SortControls component
+const sortBy = ref(SORT.BY.NAME);
+const sortReverse = ref(SORT.DIRECTION.ASC);
+
+// Handle sort changes from SortControls component
+const handleSortControlsChange = (
+  newSortBy: string,
+  newSortReverse: boolean,
+) => {
+  // Create a custom event that matches what useLibrarySort expects
+  const customEvent = new CustomEvent("sortChange", {
+    detail: {
+      sortBy: newSortBy,
+      sortReverse: newSortReverse,
+    },
+  });
+  handleSortChange(customEvent);
+};
 
 // ============= Computed Properties =============
 const hasLibraries = computed(() => libraries.value.length > 0);

@@ -27,8 +27,10 @@ export default {
         // Navigation colors
         "light-nav": "#7ea6ff",
         "light-nav-text": "#1F2937",
+        "light-nav-secondary": "#f2f4f8",
         "dark-nav": "#27272A",
         "dark-nav-text": "#9CA3AF",
+        "dark-nav-secondary": "#3a3a3e",
         "light-nav-sort-controls": "#a1bdff",
         "dark-nav-sort-controls": "#414145",
 
