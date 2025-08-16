@@ -1,11 +1,11 @@
 <template>
   <div
-    class="sort-controls bg-light-nav-secondary dark:bg-dark-nav-secondary py-1 px-4"
+    class="sort-controls bg-light-nav-secondary dark:bg-dark-nav-secondary px-3"
   >
     <div class="flex items-center justify-between">
-      <div class="flex items-center space-x-3">
+      <div class="flex items-center space-x-2">
         <span
-          class="text-nav-subtext font-medium text-light-nav-text dark:text-dark-nav-text uppercase tracking-wide"
+          class="text-sort-controls font-medium text-light-nav-text dark:text-dark-nav-text uppercase tracking-wide"
         >
           Sorted by:
         </span>
@@ -30,7 +30,7 @@
             :icon="sortReverse ? arrowUp : arrowDown"
             class="mr-1"
           ></ion-icon>
-          <span class="text-nav-subtext font-medium uppercase tracking-wide">
+          <span class="text-sort-controls font-medium uppercase tracking-wide">
             {{ sortReverse ? "Reverse" : "Reverse" }}
           </span>
         </ion-button>
@@ -140,19 +140,16 @@ watch(
 
 <style scoped>
 .sort-controls {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background-color: theme("colors.light-nav-secondary");
+  background-color: theme("colors.light-sort-controls");
 }
 
 body.dark .sort-controls {
-  background-color: theme("colors.dark-nav-secondary");
+  background-color: theme("colors.dark-sort-controls");
 }
 
 .sort-direction-btn {
   --color: theme("colors.light-nav-text");
-  font-size: theme("fontSize.nav-subtext");
+  font-size: theme("fontSize.sort-controls");
   transition: all theme("transitionDuration.backdrop")
     theme("transitionTimingFunction.smooth");
   min-height: auto;
@@ -164,7 +161,7 @@ body.dark .sort-direction-btn {
 
 .sort-option-btn {
   --color: theme("colors.light-nav-text");
-  font-size: theme("fontSize.nav-subtext");
+  font-size: theme("fontSize.sort-controls");
   font-weight: 500;
   transition: all theme("transitionDuration.backdrop")
     theme("transitionTimingFunction.smooth");

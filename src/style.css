@@ -10,11 +10,11 @@
   --ion-background-color-secondary: theme("colors.light-bg-secondary");
 
   /* Toolbar background */
-  --ion-toolbar-background: theme("colors.light-bg");
-  --ion-toolbar-color: theme("colors.light-secondary-text");
+  --ion-toolbar-background: theme("colors.light-nav");
+  --ion-toolbar-color: theme("colors.light-nav-text");
 
   /* Tab bar */
-  --ion-tab-bar-background: theme("colors.light-bg");
+  --ion-tab-bar-background: theme("colors.light-tab-bar");
   --ion-tab-bar-color: theme("colors.light-secondary-text");
   --ion-tab-bar-color-selected: theme("colors.light-primary-text");
 
@@ -27,18 +27,22 @@
   --ion-color-primary-contrast: #ffffff;
 }
 
+ion-app {
+  background-color: var(--ion-background-color-secondary);
+}
+
 body.dark {
   /* App-wide background and text color */
   --ion-background-color: theme("colors.dark-bg");
-  --ion-text-color: theme("colors.dark-primary-text");
+  --ion-text-color: theme("colors.dark-nav-text");
   --ion-background-color-secondary: theme("colors.dark-bg-secondary");
 
   /* Toolbar background */
   --ion-toolbar-background: theme("colors.dark-nav");
-  --ion-toolbar-color: theme("colors.dark-secondary-text");
+  --ion-toolbar-color: theme("colors.dark-nav-text");
 
   /* Tab bar */
-  --ion-tab-bar-background: theme("colors.dark-nav");
+  --ion-tab-bar-background: theme("colors.dark-tab-bar");
   --ion-tab-bar-color: theme("colors.dark-secondary-text");
   --ion-tab-bar-color-selected: theme("colors.dark-primary-text");
 

@@ -10,6 +10,14 @@
     </ion-toolbar>
   </ion-header>
 
+  <!-- Sort Controls -->
+  <SortControls
+    type="libraries"
+    :initial-sort-by="sortBy"
+    :initial-sort-reverse="sortReverse"
+    @sort-changed="handleSortControlsChange"
+  />
+
   <ion-content
     style="--background: var(--ion-background-color)"
     @click="handleContentClick"
@@ -24,15 +32,6 @@
       >
       </ion-refresher-content>
     </ion-refresher>
-
-    <!-- Sort Controls -->
-
-    <SortControls
-      type="libraries"
-      :initial-sort-by="sortBy"
-      :initial-sort-reverse="sortReverse"
-      @sort-changed="handleSortControlsChange"
-    />
 
     <!-- Loading State -->
     <div v-if="isLoading" class="flex items-center justify-center h-full">

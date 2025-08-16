@@ -8,7 +8,7 @@ export default {
     extend: {
       fontSize: {
         nav: "1.1rem",
-        "nav-subtext": "0.8rem",
+        "sort-controls": "0.7rem",
         "modal-title": "1.2rem",
         "modal-text": "1rem",
         "modal-button": "1rem",
@@ -28,17 +28,23 @@ export default {
         "light-nav": "#7ea6ff",
         "light-nav-text": "#1F2937",
         "light-nav-secondary": "#f2f4f8",
-        "dark-nav": "#27272A",
+        "dark-nav": "#18181B",
         "dark-nav-text": "#9CA3AF",
         "dark-nav-secondary": "#3a3a3e",
-        "light-nav-sort-controls": "#a1bdff",
-        "dark-nav-sort-controls": "#414145",
+
+        // Sort controls colors
+        "light-sort-controls": "#a1bdff",
+        "dark-sort-controls": "#414145",
 
         // Background colors
         "light-bg": "#f2f4f8",
-        "dark-bg": "#18181B",
-        "light-bg-secondary": "#e5e7eb", // slightly darker than light-bg
-        "dark-bg-secondary": "#23272f", // TODO tweak these colors
+        "dark-bg": "#1F1F1F",
+        "light-bg-secondary": "#7ea6ff", // slightly darker than light-bg
+        "dark-bg-secondary": "#27272A", // TODO tweak these colors
+
+        // Tab bar colors
+        "light-tab-bar": "#FFFFFF",
+        "dark-tab-bar": "#18181B",
 
         // Text colors
         "light-primary-text": "#1F2937",
