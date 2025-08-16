@@ -45,7 +45,7 @@
       <p class="text-gray-500 text-center mb-4">
         This library is empty. Add some books to get started!
       </p>
-      <ion-button>
+      <ion-button @click="goToAddBook">
         <ion-icon :icon="add" slot="start"></ion-icon>
         Add Book
       </ion-button>
@@ -65,6 +65,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import { useRouter } from "vue-router";
 import {
   IonHeader,
   IonTitle,
@@ -84,6 +85,7 @@ import { useActiveLibrary } from "./composables/useActiveLibrary";
 import { useBookSort } from "./composables/useBookSort";
 import SortControls from "@/components/SortControls.vue";
 import { SORT } from "@/constants/constants";
+import { useTabStore } from "@/stores/tabStore";
 
 // ============= Props =============
 const props = defineProps<{
@@ -94,6 +96,8 @@ const props = defineProps<{
 const libraryId = computed(() => props.libraryId);
 
 // ============= Composables =============
+const router = useRouter();
+const tabStore = useTabStore();
 const { books, libraryName, isLoading, error, fetchLibraryData } =
   useActiveLibrary(libraryId);
 
@@ -117,6 +121,13 @@ const handleSortControlsChange = (
     },
   });
   handleSortChange(customEvent);
+};
+
+const goToAddBook = () => {
+  // Update the store first
+  tabStore.setActiveTab("Add Book");
+  // Then navigate to the tabs page to trigger the tab switch
+  router.push("/");
 };
 </script>
 
