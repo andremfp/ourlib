@@ -1,97 +1,104 @@
 <template>
-  <ion-header>
-    <ion-toolbar>
-      <ion-buttons slot="start">
-        <ion-button @click="presentAddLibraryModal">
-          <ion-icon :icon="add"></ion-icon>
-        </ion-button>
-      </ion-buttons>
-      <ion-title>My Libraries</ion-title>
-    </ion-toolbar>
-  </ion-header>
+  <ion-page>
+    <ion-header>
+      <ion-toolbar>
+        <ion-buttons slot="start">
+          <ion-button @click="presentAddLibraryModal">
+            <ion-icon :icon="add"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+        <ion-title>My Libraries</ion-title>
+      </ion-toolbar>
 
-  <!-- Sort Controls -->
-  <SortControls
-    type="libraries"
-    :initial-sort-by="sortBy"
-    :initial-sort-reverse="sortReverse"
-    @sort-changed="handleSortControlsChange"
-  />
+      <!-- Sort Controls -->
+      <SortControls
+        type="libraries"
+        :initial-sort-by="sortBy"
+        :initial-sort-reverse="sortReverse"
+        class="bg-light-nav-secondary dark:bg-dark-nav-secondary px-3"
+        @sort-changed="handleSortControlsChange"
+      />
+    </ion-header>
 
-  <ion-content
-    style="--background: var(--ion-background-color)"
-    @click="handleContentClick"
-  >
-    <ion-refresher slot="fixed" @ion-refresh="handleRefresh">
-      <ion-refresher-content
-        :pulling-icon="arrowDownOutline"
-        pulling-text="Pull to refresh"
-        refreshing-text="Refreshing..."
-        refreshing-spinner="circular"
-        release-to-refresh-text="Release to refresh"
-      >
-      </ion-refresher-content>
-    </ion-refresher>
-
-    <!-- Loading State -->
-    <div v-if="isLoading" class="flex items-center justify-center h-full">
-      <ion-spinner name="crescent"></ion-spinner>
-      <span class="ml-2">Loading libraries...</span>
-    </div>
-
-    <!-- Error State -->
-    <div v-else-if="error" class="p-4 text-center">
-      <p class="text-red-500 mb-4">{{ error }}</p>
-      <ion-button @click="refreshLibraries" :disabled="isRefreshing">
-        <ion-spinner
-          v-if="isRefreshing"
-          name="crescent"
-          class="mr-2"
-        ></ion-spinner>
-        Try Again
-      </ion-button>
-    </div>
-
-    <!-- Empty State -->
-    <div
-      v-else-if="showEmptyState"
-      class="flex flex-col items-center justify-center h-full p-4"
+    <ion-content
+      style="--background: var(--ion-background-color)"
+      @click="handleContentClick"
     >
-      <ion-icon :icon="library" class="text-6xl text-gray-400 mb-4"></ion-icon>
-      <h2 class="text-xl font-semibold mb-2">No Libraries Yet</h2>
-      <p class="text-gray-500 text-center mb-4">
-        Create your first library to start organizing your books
-      </p>
-    </div>
+      <ion-refresher slot="fixed" @ion-refresh="handleRefresh">
+        <ion-refresher-content
+          :pulling-icon="arrowDownOutline"
+          pulling-text="Pull to refresh"
+          refreshing-text="Refreshing..."
+          refreshing-spinner="circular"
+          release-to-refresh-text="Release to refresh"
+        >
+        </ion-refresher-content>
+      </ion-refresher>
 
-    <!-- Libraries List -->
-    <ion-list v-else ref="libraryListEl" @click="handleContentClick">
-      <ion-item-sliding
-        v-for="lib in libraries"
-        :key="lib.id"
-        @ionItemSliding="handleItemSliding"
-        @click="handleContentClick"
+      <!-- Loading State -->
+      <div v-if="isLoading" class="flex items-center justify-center h-full">
+        <ion-spinner name="crescent"></ion-spinner>
+        <span class="ml-2">Loading libraries...</span>
+      </div>
+
+      <!-- Error State -->
+      <div v-else-if="error" class="p-4 text-center">
+        <p class="text-red-500 mb-4">{{ error }}</p>
+        <ion-button @click="refreshLibraries" :disabled="isRefreshing">
+          <ion-spinner
+            v-if="isRefreshing"
+            name="crescent"
+            class="mr-2"
+          ></ion-spinner>
+          Try Again
+        </ion-button>
+      </div>
+
+      <!-- Empty State -->
+      <div
+        v-else-if="showEmptyState"
+        class="flex flex-col items-center justify-center h-full p-4"
       >
-        <ion-item button @click="handleItemClick(lib.id, $event)">
-          <ion-label class="library-item-label">
-            <h2>{{ lib.name }}</h2>
-            <p>{{ lib.booksCount || 0 }} books</p>
-          </ion-label>
-        </ion-item>
+        <ion-icon
+          :icon="library"
+          class="text-6xl text-gray-400 mb-4"
+        ></ion-icon>
+        <h2 class="text-xl font-semibold mb-2">No Libraries Yet</h2>
+        <p class="text-gray-500 text-center mb-4">
+          Create your first library to start organizing your books
+        </p>
+      </div>
 
-        <ion-item-options slot="end">
-          <ion-item-option @click="handleDelete(lib.id)">
-            <ion-label>Delete</ion-label>
-          </ion-item-option>
-        </ion-item-options>
-      </ion-item-sliding>
-    </ion-list>
-  </ion-content>
+      <!-- Libraries List -->
+      <ion-list v-else ref="libraryListEl" @click="handleContentClick">
+        <ion-item-sliding
+          v-for="lib in libraries"
+          :key="lib.id"
+          @ionItemSliding="handleItemSliding"
+          @click="handleContentClick"
+        >
+          <ion-item button @click="handleItemClick(lib.id, $event)">
+            <ion-label class="library-item-label">
+              <h2>{{ lib.name }}</h2>
+              <p>{{ lib.booksCount || 0 }} books</p>
+            </ion-label>
+          </ion-item>
+
+          <ion-item-options slot="end">
+            <ion-item-option @click="handleDelete(lib.id)">
+              <ion-label>Delete</ion-label>
+            </ion-item-option>
+          </ion-item-options>
+        </ion-item-sliding>
+      </ion-list>
+    </ion-content>
+  </ion-page>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, nextTick } from "vue";
 import {
+  IonPage,
   IonHeader,
   IonTitle,
   IonToolbar,
@@ -118,6 +125,7 @@ import LibraryDetail from "./LibraryDetail.vue";
 import AddLibraryComponent from "@/components/modals/AddLibrary.vue";
 import SortControls from "@/components/SortControls.vue";
 import { SORT } from "@/constants/constants";
+import { deleteLibrary } from "@/apis/libraryAPI";
 
 // ============= State =============
 const libraryListEl = ref<any>(null);
@@ -316,7 +324,8 @@ const handleItemSliding = async (event: CustomEvent) => {
   }
 };
 
-const handleDelete = (libraryId: string) => {
+const handleDelete = async (libraryId: string) => {
+  await deleteLibrary(libraryId);
   libraries.value = libraries.value.filter((lib) => lib.id !== libraryId);
   hasSlidingItemOpen.value = false;
 };

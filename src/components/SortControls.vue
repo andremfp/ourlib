@@ -1,40 +1,36 @@
 <template>
-  <div
-    class="sort-controls bg-light-nav-secondary dark:bg-dark-nav-secondary px-3"
-  >
-    <div class="flex items-center justify-between">
-      <div class="flex items-center space-x-2">
-        <span
-          class="text-sort-controls font-medium text-light-nav-text dark:text-dark-nav-text uppercase tracking-wide"
-        >
-          Sorted by:
-        </span>
-        <ion-button
-          fill="clear"
-          size="small"
-          class="sort-option-btn"
-          @click="cycleSortOption"
-        >
-          {{ getCurrentSortLabel() }}
-        </ion-button>
-      </div>
+  <div class="flex items-center justify-between transparent-bg">
+    <div class="flex items-center space-x-2">
+      <span
+        class="text-sort-controls font-medium text-light-nav-text dark:text-dark-nav-text uppercase tracking-wide"
+      >
+        Sorted by:
+      </span>
+      <ion-button
+        fill="clear"
+        size="small"
+        class="sort-option-btn"
+        @click="cycleSortOption"
+      >
+        {{ getCurrentSortLabel() }}
+      </ion-button>
+    </div>
 
-      <div class="flex items-center space-x-2">
-        <ion-button
-          fill="clear"
-          size="small"
-          @click="toggleSortDirection"
-          class="sort-direction-btn"
-        >
-          <ion-icon
-            :icon="sortReverse ? arrowUp : arrowDown"
-            class="mr-1"
-          ></ion-icon>
-          <span class="text-sort-controls font-medium uppercase tracking-wide">
-            {{ sortReverse ? "Reverse" : "Reverse" }}
-          </span>
-        </ion-button>
-      </div>
+    <div class="flex items-center space-x-2">
+      <ion-button
+        fill="clear"
+        size="small"
+        @click="toggleSortDirection"
+        class="sort-direction-btn"
+      >
+        <ion-icon
+          :icon="sortReverse ? arrowUp : arrowDown"
+          class="mr-1"
+        ></ion-icon>
+        <span class="text-sort-controls font-medium uppercase tracking-wide">
+          {{ sortReverse ? "Reverse" : "Reverse" }}
+        </span>
+      </ion-button>
     </div>
   </div>
 </template>
@@ -139,14 +135,9 @@ watch(
 </script>
 
 <style scoped>
-.sort-controls {
-  background-color: theme("colors.light-sort-controls");
+.transparent-bg {
+  background-color: transparent;
 }
-
-body.dark .sort-controls {
-  background-color: theme("colors.dark-sort-controls");
-}
-
 .sort-direction-btn {
   --color: theme("colors.light-nav-text");
   font-size: theme("fontSize.sort-controls");

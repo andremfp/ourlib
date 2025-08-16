@@ -8,17 +8,18 @@
       </ion-buttons>
       <ion-title>{{ libraryName }}</ion-title>
     </ion-toolbar>
-  </ion-header>
 
-  <ion-content>
     <!-- Sort Controls -->
     <SortControls
       type="books"
       :initial-sort-by="sortBy"
       :initial-sort-reverse="sortReverse"
+      class="bg-light-nav-secondary dark:bg-dark-nav-secondary px-3"
       @sort-changed="handleSortControlsChange"
-    />
+    /><!-- Sort Controls -->
+  </ion-header>
 
+  <ion-content>
     <!-- Loading State -->
     <div v-if="isLoading" class="flex items-center justify-center h-full">
       <ion-spinner name="crescent"></ion-spinner>
