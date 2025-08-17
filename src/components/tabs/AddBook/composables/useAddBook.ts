@@ -33,6 +33,7 @@ export function useAddBook() {
   const isLoadingBookDetails = ref(false);
   const isSaving = ref(false);
   const selectedLibrary = ref<Library | null>(null);
+  const bookNotFound = ref(false);
 
   // Form data for book details
   const formData = reactive<BookFormData>({
@@ -88,6 +89,7 @@ export function useAddBook() {
     formData.pages = undefined;
     formData.publisher = "";
     formData.publishDate = "";
+    bookNotFound.value = false;
 
     emitModeChange("selection");
     logger.debug("AddBook state reset");
@@ -153,10 +155,14 @@ export function useAddBook() {
         formData.pages = bookDetails.value.pageCount || undefined;
         formData.publisher = bookDetails.value.publisher || "";
         formData.publishDate = bookDetails.value.publishedDate || "";
+        bookNotFound.value = false;
+      } else {
+        bookNotFound.value = true;
       }
     } catch (error) {
       logger.error("Error fetching book details:", error);
       bookDetails.value = null;
+      bookNotFound.value = true;
       // Keep form empty for manual input
     } finally {
       isLoadingBookDetails.value = false;
@@ -287,6 +293,7 @@ export function useAddBook() {
     isLoadingBookDetails,
     isSaving,
     selectedLibrary,
+    bookNotFound,
     formData,
     libraries,
     isLoadingLibraries,

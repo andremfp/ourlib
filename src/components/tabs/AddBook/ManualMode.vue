@@ -1,13 +1,5 @@
 <script setup lang="ts">
-import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-  IonFooter,
-  IonButton,
-} from "@ionic/vue";
+import { IonPage, IonContent } from "@ionic/vue";
 import BookForm from "./BookForm.vue";
 import type { BookFormData } from "./composables/useAddBook";
 
@@ -35,32 +27,18 @@ const handleContinue = () => {
 
 <template>
   <ion-page>
-    <ion-header>
-      <ion-toolbar>
-        <ion-title>Manual Entry</ion-title>
-      </ion-toolbar>
-    </ion-header>
-    <ion-content :fullscreen="true">
+    <ion-content>
       <div class="p-6">
         <BookForm
           :form-data="formData"
           :thumbnail-url="thumbnailUrl"
           :is-loading-book-details="false"
+          :is-form-valid="isFormValid"
+          :show-continue-button="true"
           @update:form-data="handleFormDataUpdate"
+          @continue="handleContinue"
         />
       </div>
     </ion-content>
-    <ion-footer>
-      <ion-toolbar>
-        <ion-button
-          @click="handleContinue"
-          :disabled="!isFormValid"
-          expand="block"
-          class="ion-margin"
-        >
-          Continue
-        </ion-button>
-      </ion-toolbar>
-    </ion-footer>
   </ion-page>
 </template>

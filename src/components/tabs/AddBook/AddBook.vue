@@ -16,7 +16,6 @@ import {
 import { cameraOutline, createOutline, arrowBackOutline } from "ionicons/icons";
 import ScanMode from "./ScanMode.vue";
 import ManualMode from "./ManualMode.vue";
-import BookForm from "./BookForm.vue";
 import { useAddBook } from "./composables/useAddBook";
 import { useTabStore } from "@/stores/tabStore";
 
@@ -27,6 +26,7 @@ const {
   formData,
   isFormValid,
   thumbnailUrl,
+  bookNotFound,
   startScanning,
   startManual,
   goBack,
@@ -61,12 +61,8 @@ const handleContinue = () => {
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-title v-if="mode === 'selection'">{{
-          tabStore.activeTab
-        }}</ion-title>
-        <ion-title v-else-if="mode === 'scan'">Scan Barcode</ion-title>
-        <ion-title v-else-if="mode === 'manual'">Manual Entry</ion-title>
-        <ion-title v-else-if="mode === 'form'">Book Details</ion-title>
+        <ion-title>{{ tabStore.activeTab }}</ion-title>
+
         <ion-buttons slot="start" v-if="mode !== 'selection'">
           <ion-button @click="go_back_to_main">
             <ion-icon :icon="arrowBackOutline"></ion-icon>
@@ -75,7 +71,7 @@ const handleContinue = () => {
       </ion-toolbar>
     </ion-header>
 
-    <ion-content :fullscreen="true" :scroll-y="false" class="ion-padding">
+    <ion-content :fullscreen="true" :scroll-y="false">
       <!-- Main Add Book View -->
       <div
         v-if="mode === 'selection'"
@@ -89,7 +85,7 @@ const handleContinue = () => {
           <ion-card-header class="text-center">
             <ion-icon
               :icon="cameraOutline"
-              class="text-6xl text-blue-500"
+              class="text-6xl text-menu-blue mx-auto mt-4"
             ></ion-icon>
             <ion-card-title class="mt-4 text-2xl">Scan Barcode</ion-card-title>
           </ion-card-header>
@@ -101,14 +97,14 @@ const handleContinue = () => {
         <ion-card
           button
           @click="go_to_manual"
-          class="flex-1 flex flex-col justify-center items-center mt-4"
+          class="flex-1 flex flex-col justify-center items-center mt-2"
         >
           <ion-card-header class="text-center">
             <ion-icon
               :icon="createOutline"
-              class="text-6xl text-blue-500"
+              class="text-6xl text-menu-blue mx-auto mt-4"
             ></ion-icon>
-            <ion-card-title class="mt-4 text-2xl">Manual Entry</ion-card-title>
+            <ion-card-title class="text-2xl">Manual Entry</ion-card-title>
           </ion-card-header>
           <ion-card-content class="text-center">
             Enter book details manually
@@ -116,14 +112,15 @@ const handleContinue = () => {
         </ion-card>
       </div>
 
-      <!-- Scan Mode -->
+      <!-- Scan Mode (handles both scanning and form phases) -->
       <ScanMode
-        v-else-if="mode === 'scan'"
+        v-else-if="mode === 'scan' || mode === 'form'"
         :scanned-i-s-b-n="scannedISBN"
         :is-loading-book-details="isLoadingBookDetails"
         :form-data="formData"
         :thumbnail-url="thumbnailUrl"
         :is-form-valid="isFormValid"
+        :book-not-found="bookNotFound"
         @isbn-scanned="handleISBN"
         @update:form-data="handleFormDataUpdate"
         @continue="handleContinue"
@@ -139,27 +136,6 @@ const handleContinue = () => {
         @update:form-data="handleFormDataUpdate"
         @continue="handleContinue"
       />
-
-      <!-- Form Mode (after scanning) -->
-      <div v-else-if="mode === 'form'" class="h-full flex flex-col">
-        <div class="ion-padding-horizontal ion-padding-top text-center">
-          <p
-            class="text-sm text-light-secondary-text dark:text-dark-secondary-text"
-          >
-            ISBN: {{ scannedISBN }}
-          </p>
-        </div>
-
-        <div class="flex-1 overflow-auto p-6">
-          <BookForm
-            :form-data="formData"
-            :thumbnail-url="thumbnailUrl"
-            :is-loading-book-details="isLoadingBookDetails"
-            :scanned-i-s-b-n="scannedISBN"
-            @update:form-data="handleFormDataUpdate"
-          />
-        </div>
-      </div>
     </ion-content>
   </ion-page>
 </template>
