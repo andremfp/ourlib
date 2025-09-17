@@ -1,4 +1,15 @@
 <script setup lang="ts">
+import { onMounted } from "vue";
+import {
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
+  IonButton,
+  IonButtons,
+  modalController,
+} from "@ionic/vue";
+
 // ============= PROPS & EMITS =============
 defineProps<{
   isOpen: boolean;
@@ -9,19 +20,53 @@ const emit = defineEmits<{
   close: [];
   delete: [];
 }>();
+
+// ============= EVENT HANDLERS =============
+/**
+ * Confirm deletion
+ */
+function confirmDelete() {
+  emit("delete");
+  modalController.dismiss(null, "deleted");
+}
+
+/**
+ * Cancel deletion
+ */
+function cancel() {
+  modalController.dismiss(null, "cancel");
+}
+
+// Focus management for accessibility
+onMounted(() => {
+  // Add keyboard event listener for Escape key
+  const handleKeydown = (event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+      cancel();
+    }
+  };
+
+  document.addEventListener("keydown", handleKeydown);
+
+  // Cleanup on unmount
+  return () => {
+    document.removeEventListener("keydown", handleKeydown);
+  };
+});
 </script>
 
 <template>
-  <div class="fixed inset-0 z-[101] flex items-center justify-center p-4">
-    <!-- Modal-->
-    <div class="w-full bg-light-bg dark:bg-dark-nav rounded-xl p-4">
-      <!-- Header -->
-      <h3
-        class="text-modal-title font-semibold text-light-primary-text dark:text-dark-primary-text mb-2"
-      >
-        Delete Library
-      </h3>
+  <ion-header>
+    <ion-toolbar>
+      <ion-title>Delete Library</ion-title>
+      <ion-buttons slot="end">
+        <ion-button @click="cancel">Cancel</ion-button>
+      </ion-buttons>
+    </ion-toolbar>
+  </ion-header>
 
+  <ion-content class="ion-padding">
+    <div class="wrapper">
       <!-- Confirmation message -->
       <p
         class="text-modal-text text-light-secondary-text dark:text-dark-secondary-text mb-4"
@@ -31,20 +76,32 @@ const emit = defineEmits<{
       </p>
 
       <!-- Action buttons -->
-      <div class="flex justify-end space-x-2">
-        <button
-          class="px-4 py-2 text-menu-blue bg-transparent rounded-lg text-modal-button"
-          @click="emit('close')"
-        >
-          Cancel
-        </button>
-        <button
-          class="px-4 py-2 text-white bg-warning-red rounded-lg text-modal-button"
-          @click="emit('delete')"
-        >
-          Delete
-        </button>
+      <div class="dialog-actions">
+        <ion-button fill="clear" @click="cancel"> Cancel </ion-button>
+        <ion-button color="danger" @click="confirmDelete"> Delete </ion-button>
       </div>
     </div>
-  </div>
+  </ion-content>
 </template>
+
+<style scoped>
+.wrapper {
+  padding: 16px;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.dialog-actions ion-button {
+  margin: 0;
+  height: 44px; /* Standard iOS tap size */
+  --border-radius: 8px;
+  font-weight: 500;
+  min-width: 90px;
+  text-transform: none; /* iOS buttons don't use all-caps */
+}
+</style>

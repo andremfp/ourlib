@@ -17,7 +17,7 @@ defineProps<Props>();
 
 const emit = defineEmits<{
   "isbn-scanned": [isbn: string];
-  "update:formData": [formData: BookFormData];
+  "update:form-data": [formData: BookFormData];
   continue: [];
   cancel: [];
 }>();
@@ -27,7 +27,7 @@ const handleISBNScanned = (isbn: string) => {
 };
 
 const handleFormDataUpdate = (newFormData: BookFormData) => {
-  emit("update:formData", newFormData);
+  emit("update:form-data", newFormData);
 };
 
 const handleContinue = () => {

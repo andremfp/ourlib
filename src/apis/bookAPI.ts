@@ -10,6 +10,7 @@ import {
   query,
   where,
   DocumentReference,
+  increment,
 } from "firebase/firestore";
 import type { Book, Library } from "../schema";
 import { COLLECTION_NAMES } from "../constants";
@@ -17,6 +18,11 @@ import { COLLECTION_NAMES } from "../constants";
 export const createBook = async (book: Book) => {
   const bookDoc = doc(collection(firestore, COLLECTION_NAMES.BOOKS));
   await setDoc(bookDoc, book);
+
+  // Update the library books count
+  await updateDoc(doc(firestore, COLLECTION_NAMES.LIBRARIES, book.library.id), {
+    booksCount: increment(1),
+  });
 };
 
 export const getBook = async (bookId: string): Promise<Book | null> => {

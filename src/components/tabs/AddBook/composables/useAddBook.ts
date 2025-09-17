@@ -3,6 +3,8 @@ import { getAuth } from "firebase/auth";
 import { fetchBookDetails } from "@/apis/fetchBook";
 import { createBook } from "@/apis/bookAPI";
 import { useLibraryList } from "@/components/tabs/MyLibraries/composables/useLibraryList";
+import { modalController } from "@ionic/vue";
+import LibrarySelection from "@/components/modals/LibrarySelection.vue";
 import type { BookDetails } from "@/apis/fetchBook";
 import type { Book, Library } from "@/schema";
 import { firestore } from "@/firebase";
@@ -170,14 +172,46 @@ export function useAddBook() {
   };
 
   // Proceed to library selection (modal)
-  const proceedToLibrarySelection = () => {
+  const proceedToLibrarySelection = async () => {
+    console.log("proceedToLibrarySelection called");
+    console.log("isFormValid:", isFormValid.value);
+    console.log("formData:", formData);
+
     if (!isFormValid.value) {
       logger.warn("Cannot proceed: form is invalid");
       return;
     }
 
-    // Note: Modal will be opened by parent component
-    logger.debug("Ready for library selection");
+    try {
+      const modal = await modalController.create({
+        component: LibrarySelection,
+        componentProps: {
+          isOpen: true,
+          libraries: libraries.value,
+          isLoadingLibraries: isLoadingLibraries.value,
+          bookTitle: formData.title,
+        },
+        cssClass: "generic-modal",
+        backdropDismiss: true,
+      });
+
+      await modal.present();
+
+      const { data, role } = await modal.onDidDismiss();
+
+      if (role === "selected" && data) {
+        selectedLibrary.value = data;
+        logger.debug("Library selected from modal:", data.name);
+
+        // Save the book to the selected library
+        const success = await saveBook();
+        if (success) {
+          resetState();
+        }
+      }
+    } catch (error) {
+      logger.error("Error opening library selection modal:", error);
+    }
   };
 
   // Select a library

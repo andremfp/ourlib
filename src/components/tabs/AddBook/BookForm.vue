@@ -16,7 +16,7 @@ interface Props {
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
-  "update:formData": [formData: BookFormData];
+  "update:form-data": [formData: BookFormData];
   continue: [];
 }>();
 
@@ -27,7 +27,7 @@ const updateFormData = <K extends keyof BookFormData>(
 ) => {
   const updatedData = { ...props.formData };
   updatedData[field] = value;
-  emit("update:formData", updatedData);
+  emit("update:form-data", updatedData);
 };
 </script>
 

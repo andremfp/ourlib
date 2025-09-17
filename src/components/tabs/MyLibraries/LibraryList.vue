@@ -334,7 +334,7 @@ const handleDelete = async (libraryId: string) => {
 const presentAddLibraryModal = async () => {
   const modal = await modalController.create({
     component: AddLibraryComponent,
-    cssClass: "add-library-modal",
+    cssClass: "generic-modal",
   });
   await modal.present();
   const { role } = await modal.onDidDismiss();

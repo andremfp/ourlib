@@ -12,12 +12,12 @@ interface Props {
 defineProps<Props>();
 
 const emit = defineEmits<{
-  "update:formData": [formData: BookFormData];
+  "update:form-data": [formData: BookFormData];
   continue: [];
 }>();
 
 const handleFormDataUpdate = (newFormData: BookFormData) => {
-  emit("update:formData", newFormData);
+  emit("update:form-data", newFormData);
 };
 
 const handleContinue = () => {
@@ -35,6 +35,7 @@ const handleContinue = () => {
           :is-loading-book-details="false"
           :is-form-valid="isFormValid"
           :show-continue-button="true"
+          :book-not-found="false"
           @update:form-data="handleFormDataUpdate"
           @continue="handleContinue"
         />

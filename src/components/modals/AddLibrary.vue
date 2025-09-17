@@ -165,12 +165,3 @@ onMounted(() => {
   text-transform: none; /* iOS buttons don't use all-caps */
 }
 </style>
-
-<style>
-ion-modal.add-library-modal {
-  --width: 90%;
-  --height: fit-content;
-  --border-radius: 12px;
-  --box-shadow: 0 28px 48px rgba(0, 0, 0, 0.4);
-}
-</style>

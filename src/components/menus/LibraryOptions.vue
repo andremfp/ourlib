@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, computed } from "vue";
+import { modalController } from "@ionic/vue";
 import RenameLibraryModal from "@/components/modals/RenameLibrary.vue";
 import DeleteLibraryModal from "@/components/modals/DeleteLibrary.vue";
 
@@ -20,21 +21,9 @@ const emit = defineEmits<{
 const localIsOpen = ref(props.isOpen);
 const isMenuClosing = ref(false);
 
-// Modal visibility state
-const showRenameModal = ref(false);
-const showDeleteModal = ref(false);
-const isRenameModalLeaving = ref(false);
-const isDeleteModalLeaving = ref(false);
-
-// Display menu content only when no modals are visible or leaving
+// Display menu content only when not closing
 const showMenuContent = computed(() => {
-  return (
-    !showRenameModal.value &&
-    !showDeleteModal.value &&
-    !isMenuClosing.value &&
-    !isRenameModalLeaving.value &&
-    !isDeleteModalLeaving.value
-  );
+  return !isMenuClosing.value;
 });
 
 // ============= WATCHERS =============
@@ -56,10 +45,6 @@ watch(
 // ============= MENU MANAGEMENT =============
 // Start the closing process for the entire menu
 function startClosingProcess() {
-  // Hide any open modals
-  showRenameModal.value = false;
-  showDeleteModal.value = false;
-
   // Mark menu as closing to trigger animations
   isMenuClosing.value = true;
 }
@@ -69,40 +54,56 @@ function onMenuLeave() {
   // Clean up all state
   localIsOpen.value = false;
   isMenuClosing.value = false;
-  isRenameModalLeaving.value = false;
-  isDeleteModalLeaving.value = false;
 }
 
 // ============= MODAL MANAGEMENT =============
-// Open modals
-function openRenameModal() {
-  showRenameModal.value = true;
+// Open modals using Ionic modal controller
+async function openRenameModal() {
+  try {
+    const modal = await modalController.create({
+      component: RenameLibraryModal,
+      componentProps: {
+        isOpen: true,
+        libraryName: props.libraryName,
+      },
+      cssClass: "generic-modal",
+      backdropDismiss: true,
+    });
+
+    await modal.present();
+
+    const { data, role } = await modal.onDidDismiss();
+
+    if (role === "renamed" && data) {
+      handleRename(data);
+    }
+  } catch (error) {
+    console.error("Error opening rename modal:", error);
+  }
 }
 
-function openDeleteModal() {
-  showDeleteModal.value = true;
-}
+async function openDeleteModal() {
+  try {
+    const modal = await modalController.create({
+      component: DeleteLibraryModal,
+      componentProps: {
+        isOpen: true,
+        libraryName: props.libraryName,
+      },
+      cssClass: "generic-modal",
+      backdropDismiss: true,
+    });
 
-// Close modals with animation
-function closeRenameModal() {
-  isRenameModalLeaving.value = true;
-  showRenameModal.value = false;
-  emit("close");
-}
+    await modal.present();
 
-function closeDeleteModal() {
-  isDeleteModalLeaving.value = true;
-  showDeleteModal.value = false;
-  emit("close");
-}
+    const { role } = await modal.onDidDismiss();
 
-// Modal transition complete handlers
-function onRenameModalLeave() {
-  isRenameModalLeaving.value = false;
-}
-
-function onDeleteModalLeave() {
-  isDeleteModalLeaving.value = false;
+    if (role === "deleted") {
+      handleDelete();
+    }
+  } catch (error) {
+    console.error("Error opening delete modal:", error);
+  }
 }
 
 // ============= EVENT HANDLERS =============
@@ -113,12 +114,10 @@ function handleCancel() {
 
 function handleRename(newName: string) {
   emit("rename", newName);
-  closeRenameModal();
 }
 
 function handleDelete() {
   emit("delete");
-  closeDeleteModal();
 }
 </script>
 
@@ -192,35 +191,10 @@ function handleDelete() {
           </div>
         </Transition>
       </div>
-
-      <!-- Rename modal with transition -->
-      <div v-if="showRenameModal || isRenameModalLeaving">
-        <Transition name="modalAnim" appear @after-leave="onRenameModalLeave">
-          <RenameLibraryModal
-            v-if="showRenameModal"
-            :is-open="showRenameModal"
-            :library-name="libraryName"
-            @close="closeRenameModal"
-            @rename="handleRename"
-          />
-        </Transition>
-      </div>
-
-      <!-- Delete modal with transition -->
-      <div v-if="showDeleteModal || isDeleteModalLeaving">
-        <Transition name="modalAnim" appear @after-leave="onDeleteModalLeave">
-          <DeleteLibraryModal
-            v-if="showDeleteModal"
-            :is-open="showDeleteModal"
-            :library-name="libraryName"
-            @close="closeDeleteModal"
-            @delete="handleDelete"
-          />
-        </Transition>
-      </div>
     </div>
   </teleport>
 </template>
+
 <style>
 /* Fade transition for backdrop */
 .fade-enter-active,
