@@ -117,3 +117,9 @@ ion-modal.generic-modal {
   --border-radius: 12px;
   --box-shadow: 0 28px 48px rgba(0, 0, 0, 0.4);
 }
+
+ion-alert.generic-modal {
+  --background: var(--ion-background-color);
+  --color: var(--ion-text-color);
+  --backdrop-opacity: 0.2;
+}

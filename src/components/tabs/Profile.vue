@@ -77,6 +77,7 @@ const openDeleteAccountModal = async () => {
     header: "Delete Account",
     message:
       "Are you sure you want to delete your account? This action cannot be undone.",
+    cssClass: "generic-modal",
     buttons: [
       {
         text: "Cancel",

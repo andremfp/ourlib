@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from "vue";
-import { modalController } from "@ionic/vue";
+import { modalController, alertController } from "@ionic/vue";
 import RenameLibraryModal from "@/components/modals/RenameLibrary.vue";
-import DeleteLibraryModal from "@/components/modals/DeleteLibrary.vue";
 
 // ============= PROPS & EMITS =============
 const props = defineProps<{
@@ -64,7 +63,7 @@ function onMenuLeave() {
     void presentRenameModal();
   } else if (pendingAction.value === "delete") {
     pendingAction.value = null;
-    void presentDeleteModal();
+    void presentDeleteAlert();
   }
 }
 
@@ -101,27 +100,26 @@ function openRenameModal() {
   emit("close");
 }
 
-async function presentDeleteModal() {
+async function presentDeleteAlert() {
   try {
-    const modal = await modalController.create({
-      component: DeleteLibraryModal,
-      componentProps: {
-        isOpen: true,
-        libraryName: props.libraryName,
-      },
+    const alert = await alertController.create({
+      header: "Delete Library",
+      message: `Are you sure you want to delete "${props.libraryName}"? This action cannot be undone.`,
       cssClass: "generic-modal",
-      backdropDismiss: true,
+      buttons: [
+        { text: "Cancel", role: "cancel" },
+        {
+          text: "Delete",
+          role: "destructive",
+          handler: () => {
+            handleDelete();
+          },
+        },
+      ],
     });
-
-    await modal.present();
-
-    const { role } = await modal.onDidDismiss();
-
-    if (role === "deleted") {
-      handleDelete();
-    }
+    await alert.present();
   } catch (error) {
-    console.error("Error opening delete modal:", error);
+    console.error("Error opening delete alert:", error);
   }
 }
 
