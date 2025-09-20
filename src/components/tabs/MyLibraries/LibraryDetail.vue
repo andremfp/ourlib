@@ -6,6 +6,11 @@
           <ion-back-button text="" defaultHref="/"></ion-back-button>
         </ion-buttons>
         <ion-title>{{ libraryName }}</ion-title>
+        <ion-buttons slot="end">
+          <ion-button @click="openOptions">
+            <ion-icon :icon="ellipsisHorizontal"></ion-icon>
+          </ion-button>
+        </ion-buttons>
       </ion-toolbar>
 
       <!-- Sort Controls -->
@@ -73,6 +78,15 @@
         </ion-item-sliding>
       </ion-list>
     </ion-content>
+    <!-- Options Menu -->
+    <LibraryOptions
+      :isOpen="isOptionsOpen"
+      :libraryName="libraryName"
+      @close="closeOptions"
+      @closed="onOptionsClosed"
+      @rename="handleRename"
+      @delete="handleDeleteLibrary"
+    />
   </ion-page>
 </template>
 
@@ -98,10 +112,11 @@ import {
   IonItemOption,
   onIonViewWillLeave,
 } from "@ionic/vue";
-import { bookOutline, add } from "ionicons/icons";
+import { bookOutline, add, ellipsisHorizontal } from "ionicons/icons";
 import { useActiveLibrary } from "./composables/useActiveLibrary";
 import { useBookSort } from "./composables/useBookSort";
 import SortControls from "@/components/SortControls.vue";
+import LibraryOptions from "@/components/menus/LibraryOptions.vue";
 import { SORT } from "@/constants/constants";
 import { useTabStore } from "@/stores/tabStore";
 import { deleteBook } from "@/apis/bookAPI";
@@ -117,8 +132,15 @@ const libraryId = computed(() => props.libraryId);
 // ============= Composables =============
 const router = useRouter();
 const tabStore = useTabStore();
-const { books, libraryName, isLoading, error, fetchLibraryData } =
-  useActiveLibrary(libraryId);
+const {
+  books,
+  libraryName,
+  isLoading,
+  error,
+  fetchLibraryData,
+  handleLibraryRename,
+  handleLibraryDelete,
+} = useActiveLibrary(libraryId);
 
 // Book sorting
 const { handleSortChange } = useBookSort(books);
@@ -259,6 +281,37 @@ const handleDelete = async (bookId: string) => {
 onIonViewWillLeave(() => {
   window.dispatchEvent(new CustomEvent("ourlib:refreshLibraries"));
 });
+
+// ============= Options Menu Management =============
+const isOptionsOpen = ref(false);
+const openOptions = () => {
+  isOptionsOpen.value = true;
+};
+const closeOptions = () => {
+  // Parent requests close; child will emit `closed` after transition
+};
+
+const onOptionsClosed = () => {
+  isOptionsOpen.value = false;
+};
+
+const handleRename = async (newName: string) => {
+  await handleLibraryRename(newName);
+  closeOptions();
+};
+
+const handleDeleteLibrary = async () => {
+  const deleted = await handleLibraryDelete();
+  closeOptions();
+  if (deleted) {
+    // Ensure list refreshes and navigate back
+    window.dispatchEvent(new CustomEvent("ourlib:refreshLibraries"));
+    const nav = document.querySelector("ion-nav");
+    if (nav && typeof (nav as any).pop === "function") {
+      (nav as any).pop();
+    }
+  }
+};
 </script>
 
 <style scoped>

@@ -1,14 +1,6 @@
 <script setup lang="ts">
 import { onMounted } from "vue";
-import {
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-  IonButton,
-  IonButtons,
-  modalController,
-} from "@ionic/vue";
+import { IonButton, modalController } from "@ionic/vue";
 
 // ============= PROPS & EMITS =============
 defineProps<{
@@ -56,37 +48,34 @@ onMounted(() => {
 </script>
 
 <template>
-  <ion-header>
-    <ion-toolbar>
-      <ion-title>Delete Library</ion-title>
-      <ion-buttons slot="end">
-        <ion-button @click="cancel">Cancel</ion-button>
-      </ion-buttons>
-    </ion-toolbar>
-  </ion-header>
+  <div class="wrapper">
+    <h1>Delete Library</h1>
 
-  <ion-content class="ion-padding">
-    <div class="wrapper">
-      <!-- Confirmation message -->
-      <p
-        class="text-modal-text text-light-secondary-text dark:text-dark-secondary-text mb-4"
-      >
-        Are you sure you want to delete "{{ libraryName }}"? This action cannot
-        be undone.
-      </p>
+    <!-- Confirmation message -->
+    <p
+      class="text-modal-text text-light-secondary-text dark:text-dark-secondary-text mb-4"
+    >
+      Are you sure you want to delete "{{ libraryName }}"? This action cannot be
+      undone.
+    </p>
 
-      <!-- Action buttons -->
-      <div class="dialog-actions">
-        <ion-button fill="clear" @click="cancel"> Cancel </ion-button>
-        <ion-button color="danger" @click="confirmDelete"> Delete </ion-button>
-      </div>
+    <!-- Action buttons -->
+    <div class="dialog-actions">
+      <ion-button fill="clear" @click="cancel">Cancel</ion-button>
+      <ion-button color="danger" @click="confirmDelete">Delete</ion-button>
     </div>
-  </ion-content>
+  </div>
 </template>
 
 <style scoped>
 .wrapper {
   padding: 16px;
+}
+
+.wrapper h1 {
+  margin: 0 0 16px;
+  font-size: theme("fontSize.modal-title");
+  font-weight: theme("fontWeight.bold");
 }
 
 .dialog-actions {

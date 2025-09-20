@@ -111,6 +111,8 @@ export function useActiveLibrary(libraryIdRef: Ref<string | null>) {
       logger.info(
         `[useActiveLibrary] Library ${currentId} renamed successfully in backend.`,
       );
+      // After a successful rename, notify lists to refresh
+      window.dispatchEvent(new CustomEvent("ourlib:refreshLibraries"));
     } catch (err) {
       logger.error(
         "[useActiveLibrary] Failed to rename library in backend:",

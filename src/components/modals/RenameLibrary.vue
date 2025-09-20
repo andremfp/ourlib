@@ -1,15 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from "vue";
-import {
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-  IonInput,
-  IonButton,
-  IonButtons,
-  modalController,
-} from "@ionic/vue";
+import { IonInput, IonButton, modalController } from "@ionic/vue";
 import { UI_LIMITS } from "@/constants/constants";
 
 // ============= PROPS & EMITS =============
@@ -105,57 +96,53 @@ onMounted(() => {
 </script>
 
 <template>
-  <ion-header>
-    <ion-toolbar>
-      <ion-title>Rename Library</ion-title>
-      <ion-buttons slot="end">
-        <ion-button @click="cancel">Cancel</ion-button>
-      </ion-buttons>
-    </ion-toolbar>
-  </ion-header>
+  <div class="wrapper">
+    <h1>Rename Library</h1>
 
-  <ion-content class="ion-padding">
-    <div class="wrapper">
-      <ion-input
-        ref="libraryInput"
-        :clear-input="true"
-        v-model="newLibraryName"
-        placeholder="Library name"
-        @keyup.enter="handleRename"
-        aria-describedby="library-name-error"
-        fill="outline"
-        mode="md"
-        :maxlength="UI_LIMITS.LIBRARY.NAME_MAX_LENGTH"
-      ></ion-input>
+    <ion-input
+      ref="libraryInput"
+      :clear-input="true"
+      v-model="newLibraryName"
+      placeholder="Library name"
+      @keyup.enter="handleRename"
+      aria-describedby="library-name-error"
+      fill="outline"
+      mode="md"
+      :maxlength="UI_LIMITS.LIBRARY.NAME_MAX_LENGTH"
+    ></ion-input>
 
-      <p
-        v-if="errorMessage"
-        id="library-name-error"
-        class="error-message"
-        role="alert"
+    <p
+      v-if="errorMessage"
+      id="library-name-error"
+      class="error-message"
+      role="alert"
+    >
+      {{ errorMessage }}
+    </p>
+
+    <div class="dialog-actions">
+      <ion-button fill="clear" @click="cancel">Cancel</ion-button>
+      <ion-button
+        @click="handleRename"
+        :disabled="
+          !newLibraryName.trim() || newLibraryName.trim() === props.libraryName
+        "
       >
-        {{ errorMessage }}
-      </p>
-
-      <div class="dialog-actions">
-        <ion-button fill="clear" @click="cancel"> Cancel </ion-button>
-        <ion-button
-          @click="handleRename"
-          :disabled="
-            !newLibraryName.trim() ||
-            newLibraryName.trim() === props.libraryName
-          "
-        >
-          Save
-        </ion-button>
-      </div>
+        Save
+      </ion-button>
     </div>
-  </ion-content>
+  </div>
 </template>
 
 <style scoped>
 .wrapper {
   padding: 16px;
+}
+
+.wrapper h1 {
+  margin: 0 0 16px;
+  font-size: theme("fontSize.modal-title");
+  font-weight: theme("fontWeight.bold");
 }
 
 .wrapper ion-input {

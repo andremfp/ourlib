@@ -12,6 +12,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: [];
+  closed: [];
   rename: [newName: string];
   delete: [];
 }>();
@@ -20,6 +21,7 @@ const emit = defineEmits<{
 // Core visibility state
 const localIsOpen = ref(props.isOpen);
 const isMenuClosing = ref(false);
+const pendingAction = ref<"rename" | "delete" | null>(null);
 
 // Display menu content only when not closing
 const showMenuContent = computed(() => {
@@ -54,11 +56,21 @@ function onMenuLeave() {
   // Clean up all state
   localIsOpen.value = false;
   isMenuClosing.value = false;
+  emit("closed");
+
+  // If a follow-up action was requested (e.g., open a modal), run it now
+  if (pendingAction.value === "rename") {
+    pendingAction.value = null;
+    void presentRenameModal();
+  } else if (pendingAction.value === "delete") {
+    pendingAction.value = null;
+    void presentDeleteModal();
+  }
 }
 
 // ============= MODAL MANAGEMENT =============
 // Open modals using Ionic modal controller
-async function openRenameModal() {
+async function presentRenameModal() {
   try {
     const modal = await modalController.create({
       component: RenameLibraryModal,
@@ -82,7 +94,14 @@ async function openRenameModal() {
   }
 }
 
-async function openDeleteModal() {
+function openRenameModal() {
+  // Request menu close; when transition finishes, we present the modal
+  pendingAction.value = "rename";
+  startClosingProcess();
+  emit("close");
+}
+
+async function presentDeleteModal() {
   try {
     const modal = await modalController.create({
       component: DeleteLibraryModal,
@@ -106,9 +125,18 @@ async function openDeleteModal() {
   }
 }
 
+function openDeleteModal() {
+  // Request menu close; when transition finishes, we present the modal
+  pendingAction.value = "delete";
+  startClosingProcess();
+  emit("close");
+}
+
 // ============= EVENT HANDLERS =============
 // Main menu actions
 function handleCancel() {
+  // Start close animation, then notify parent to sync state
+  startClosingProcess();
   emit("close");
 }
 
@@ -142,7 +170,7 @@ function handleDelete() {
             <div class="flex flex-col gap-2">
               <!-- Library options panel -->
               <div
-                class="bg-light-bg/80 dark:bg-dark-nav/80 backdrop-blur-lg rounded-xl w-full overflow-hidden"
+                class="bg-light-bg/80 dark:bg-dark-bg/80 backdrop-blur-lg rounded-xl w-full overflow-hidden"
               >
                 <!-- Library name header -->
                 <div
@@ -168,7 +196,7 @@ function handleDelete() {
                   class="border-t border-hairline border-black/5 dark:border-white/10"
                 >
                   <button
-                    class="w-full py-4 text-center text-warning-red text-menu-title"
+                    class="w-full py-4 text-center text-danger-red text-menu-title"
                     @click="openDeleteModal"
                   >
                     Delete
@@ -178,7 +206,7 @@ function handleDelete() {
 
               <!-- Cancel button -->
               <div
-                class="bg-light-bg dark:bg-dark-nav rounded-xl w-full overflow-hidden"
+                class="bg-light-bg dark:bg-dark-bg rounded-xl w-full overflow-hidden"
               >
                 <button
                   class="w-full py-3 text-center text-menu-title text-menu-blue"
