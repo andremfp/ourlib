@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { IonPage, IonContent } from "@ionic/vue";
+import { IonContent } from "@ionic/vue";
 import BookForm from "./BookForm.vue";
 import type { BookFormData } from "./composables/useAddBook";
 
@@ -26,9 +26,9 @@ const handleContinue = () => {
 </script>
 
 <template>
-  <ion-page>
-    <ion-content>
-      <div class="p-6">
+  <div class="h-full flex flex-col">
+    <ion-content class="flex-1">
+      <div>
         <BookForm
           :form-data="formData"
           :thumbnail-url="thumbnailUrl"
@@ -41,5 +41,5 @@ const handleContinue = () => {
         />
       </div>
     </ion-content>
-  </ion-page>
+  </div>
 </template>
