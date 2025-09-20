@@ -96,7 +96,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, nextTick } from "vue";
+import { computed, ref, nextTick, onMounted, onBeforeUnmount } from "vue";
 import {
   IonPage,
   IonHeader,
@@ -116,6 +116,8 @@ import {
   IonItemOption,
   IonButtons,
   modalController,
+  onIonViewWillEnter,
+  onIonViewDidEnter,
 } from "@ionic/vue";
 import { add, library, arrowDownOutline } from "ionicons/icons";
 import { useLibraryList } from "./composables/useLibraryList";
@@ -342,6 +344,28 @@ const presentAddLibraryModal = async () => {
     await refreshLibraries();
   }
 };
+
+// Refresh libraries whenever this view is (re)entered
+onIonViewWillEnter(async () => {
+  await refreshLibraries(true);
+});
+
+onIonViewDidEnter(async () => {
+  await refreshLibraries(true);
+});
+
+// Also listen to a custom event fired by detail view when leaving
+const handleExternalRefresh = async () => {
+  await refreshLibraries(true);
+};
+
+onMounted(() => {
+  window.addEventListener("ourlib:refreshLibraries", handleExternalRefresh);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("ourlib:refreshLibraries", handleExternalRefresh);
+});
 </script>
 
 <style scoped>

@@ -58,6 +58,11 @@ export const markAsReturned = async (bookId: string) => {
   });
 };
 
-export const deleteBook = async (bookId: string) => {
+export const deleteBook = async (bookId: string, libraryId: string) => {
   await deleteDoc(doc(firestore, COLLECTION_NAMES.BOOKS, bookId));
+
+  // Update the library books count
+  await updateDoc(doc(firestore, COLLECTION_NAMES.LIBRARIES, libraryId), {
+    booksCount: increment(-1),
+  });
 };
