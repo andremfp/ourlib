@@ -180,7 +180,9 @@ const getOpenItem = async (): Promise<any | null> => {
   if (!bookListEl.value) {
     const element = document.querySelector("#main-content ion-list");
     if (element) {
-      const items = element.querySelectorAll("ion-item-sliding");
+      const items = Array.from(
+        element.querySelectorAll("ion-item-sliding"),
+      ) as any[];
       for (const item of items) {
         const openAmount = await (item as any).getOpenAmount();
         if (openAmount > 0) {
@@ -192,10 +194,12 @@ const getOpenItem = async (): Promise<any | null> => {
   }
 
   const domElement = bookListEl.value.$el || bookListEl.value;
-  const items = domElement.querySelectorAll("ion-item-sliding");
+  const items = Array.from(
+    domElement.querySelectorAll("ion-item-sliding"),
+  ) as any[];
 
   for (const item of items) {
-    const openAmount = await item.getOpenAmount();
+    const openAmount = await (item as any).getOpenAmount();
     if (openAmount > 0) {
       return item;
     }
@@ -204,26 +208,28 @@ const getOpenItem = async (): Promise<any | null> => {
 };
 
 const closeAllSlidingItems = async () => {
-  let items: any = null;
+  let items: any[] | null = null;
 
   if (bookListEl.value) {
     const domElement = bookListEl.value.$el || bookListEl.value;
     if (domElement && domElement.querySelectorAll) {
-      items = domElement.querySelectorAll("ion-item-sliding");
+      items = Array.from(
+        domElement.querySelectorAll("ion-item-sliding"),
+      ) as any[];
     }
   }
 
   if (!items) {
     const element = document.querySelector("#main-content ion-list");
     if (element) {
-      items = element.querySelectorAll("ion-item-sliding");
+      items = Array.from(element.querySelectorAll("ion-item-sliding")) as any[];
     }
   }
 
   if (!items) return;
 
   for (const item of items) {
-    await item.close();
+    await (item as any).close();
   }
   hasSlidingItemOpen.value = false;
 };

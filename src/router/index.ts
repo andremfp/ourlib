@@ -48,7 +48,7 @@ const getCurrentUser = (): Promise<unknown> => {
   });
 };
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, _, next) => {
   const user = await getCurrentUser();
 
   // Define routes that do not require authentication
