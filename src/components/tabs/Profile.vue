@@ -68,6 +68,7 @@ onMounted(() => {
 const openChangePasswordModal = async () => {
   const modal = await modalController.create({
     component: ChangePasswordForm,
+    cssClass: "generic-modal",
   });
   modal.present();
 };

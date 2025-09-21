@@ -1,15 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import {
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-  IonList,
-  IonItem,
   IonInput,
   IonButton,
-  IonButtons,
   modalController,
   alertController,
 } from "@ionic/vue";
@@ -148,64 +141,129 @@ const changePassword = async () => {
     modalController.dismiss();
   } catch (error: any) {
     logger.error("Error changing password:", error.message);
-    errorMessage.value =
-      "Failed to change password. Please check your current password and try again.";
+    // Provide specific feedback for common Firebase auth errors
+    if (error?.code === "auth/too-many-requests") {
+      errorMessage.value = "Too many attempts. Please try again later.";
+    } else {
+      errorMessage.value =
+        "Failed to change password. Please check your current password and try again.";
+    }
   }
 };
 </script>
 
 <template>
-  <ion-header>
-    <ion-toolbar>
-      <ion-title>Change Password</ion-title>
-      <ion-buttons slot="end">
-        <ion-button @click="cancel()">Cancel</ion-button>
-      </ion-buttons>
-    </ion-toolbar>
-  </ion-header>
-  <ion-content class="ion-padding">
+  <div class="wrapper">
+    <h1>Change Password</h1>
+
     <form @submit.prevent="changePassword">
-      <ion-list>
-        <ion-item>
-          <ion-input
-            label="Current Password"
-            label-placement="floating"
-            type="password"
-            v-model="currentPassword"
-            autocomplete="current-password"
-            required
-          ></ion-input>
-        </ion-item>
-        <ion-item>
-          <ion-input
-            label="New Password"
-            label-placement="floating"
-            type="password"
-            v-model="newPassword"
-            autocomplete="new-password"
-            required
-          ></ion-input>
-        </ion-item>
-        <ion-item>
-          <ion-input
-            label="Confirm New Password"
-            label-placement="floating"
-            type="password"
-            v-model="confirmNewPassword"
-            autocomplete="new-password"
-            required
-          ></ion-input>
-        </ion-item>
-      </ion-list>
-      <div
-        v-if="errorMessage"
-        class="ion-padding-horizontal mt-2 text-sm text-red-500"
-      >
-        {{ errorMessage }}
+      <!-- Off-screen username for browser password managers/accessibility -->
+      <input
+        aria-hidden="true"
+        autocomplete="username"
+        :value="username || ''"
+        tabindex="-1"
+        style="
+          position: absolute;
+          left: -9999px;
+          width: 1px;
+          height: 1px;
+          opacity: 0;
+        "
+      />
+
+      <div class="form-group">
+        <ion-input
+          :clear-input="false"
+          v-model="currentPassword"
+          placeholder="Current password"
+          type="password"
+          autocomplete="current-password"
+          required
+          fill="outline"
+          mode="md"
+        ></ion-input>
       </div>
-      <ion-button type="submit" expand="block" class="ion-margin-top">
-        Update Password
-      </ion-button>
+
+      <div class="form-group">
+        <ion-input
+          :clear-input="false"
+          v-model="newPassword"
+          placeholder="New password"
+          type="password"
+          autocomplete="new-password"
+          required
+          fill="outline"
+          mode="md"
+        ></ion-input>
+      </div>
+
+      <div class="form-group">
+        <ion-input
+          :clear-input="false"
+          v-model="confirmNewPassword"
+          placeholder="Confirm new password"
+          type="password"
+          autocomplete="new-password"
+          required
+          fill="outline"
+          mode="md"
+        ></ion-input>
+      </div>
+
+      <p v-if="errorMessage" class="error-message" role="alert">
+        {{ errorMessage }}
+      </p>
+
+      <div class="dialog-actions">
+        <ion-button fill="clear" @click="cancel">Cancel</ion-button>
+        <ion-button type="submit">Update</ion-button>
+      </div>
     </form>
-  </ion-content>
+  </div>
 </template>
+
+<style scoped>
+.wrapper {
+  padding: 16px;
+}
+
+.wrapper h1 {
+  margin: 0 0 16px;
+  font-size: theme("fontSize.modal-title");
+  font-weight: theme("fontWeight.bold");
+}
+
+.form-group {
+  margin-bottom: 12px;
+}
+
+.wrapper ion-input {
+  --border-radius: 12px;
+  padding-left: 0px;
+}
+
+.error-message {
+  margin: 0;
+  padding: 0 4px;
+  font-size: theme("fontSize.modal-text");
+  color: theme("colors.danger-red");
+  min-height: 28px;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.dialog-actions ion-button {
+  margin: 0;
+  height: 44px;
+  --border-radius: 8px;
+  font-weight: 500;
+  min-width: 90px;
+  text-transform: none;
+}
+</style>

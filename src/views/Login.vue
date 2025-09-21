@@ -3,12 +3,7 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 import {
   IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
-  IonList,
-  IonItem,
   IonInput,
   IonButton,
   IonSpinner,
@@ -16,6 +11,8 @@ import {
 import { auth } from "@/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import logger from "@/utils/logger";
+import logoLight from "@/assets/ourlib-logo.webp";
+import logoDark from "@/assets/ourlib-logo-dark.webp";
 
 const router = useRouter();
 const username = ref("");
@@ -100,67 +97,80 @@ const goToRegister = () => {
 
 <template>
   <ion-page>
-    <ion-header>
-      <ion-toolbar>
-        <ion-title>Login</ion-title>
-      </ion-toolbar>
-    </ion-header>
-    <ion-content class="ion-padding">
-      <form @submit.prevent="handleLogin">
-        <ion-list>
-          <ion-item>
+    <ion-content :scroll-y="false" class="ion-padding">
+      <div class="min-h-[100dvh] flex items-center justify-center">
+        <div class="w-full max-w-md">
+          <div class="text-center">
+            <img
+              :src="logoLight"
+              alt="OurLib logo"
+              class="h-16 mx-auto block dark:hidden"
+            />
+            <img
+              :src="logoDark"
+              alt="OurLib logo"
+              class="h-16 mx-auto hidden dark:block"
+            />
+            <h1
+              class="text-2xl font-bold mt-4 text-gray-800 dark:text-gray-100"
+            >
+              Login
+            </h1>
+            <p class="mt-2 text-gray-600 dark:text-gray-200">Welcome back</p>
+          </div>
+
+          <form @submit.prevent="handleLogin" class="mt-8 space-y-4">
             <ion-input
-              label="Username"
-              label-placement="floating"
-              type="text"
               v-model="username"
+              type="text"
               :disabled="isLoading"
               autocomplete="username"
-              placeholder="Enter your username"
+              placeholder="Username"
+              fill="outline"
+              mode="md"
               required
             ></ion-input>
-          </ion-item>
-          <ion-item>
+
             <ion-input
-              label="Password"
-              label-placement="floating"
-              type="password"
               v-model="password"
+              type="password"
               :disabled="isLoading"
               autocomplete="current-password"
-              placeholder="Enter your password"
+              placeholder="Password"
+              fill="outline"
+              mode="md"
               required
             ></ion-input>
-          </ion-item>
-        </ion-list>
 
-        <div v-if="errorMessage" class="ion-padding text-red-500 text-sm mt-2">
-          {{ errorMessage }}
+            <div v-if="errorMessage" class="text-red-500 text-sm">
+              {{ errorMessage }}
+            </div>
+
+            <ion-button
+              type="submit"
+              expand="block"
+              class="ion-margin-top"
+              :disabled="isLoading"
+            >
+              <ion-spinner
+                v-if="isLoading"
+                name="crescent"
+                class="ion-margin-end"
+              ></ion-spinner>
+              {{ isLoading ? "Signing in..." : "Login" }}
+            </ion-button>
+          </form>
+
+          <ion-button
+            expand="block"
+            fill="clear"
+            @click="goToRegister"
+            :disabled="isLoading"
+          >
+            Create an account
+          </ion-button>
         </div>
-
-        <ion-button
-          type="submit"
-          expand="block"
-          class="ion-margin-top"
-          :disabled="isLoading"
-        >
-          <ion-spinner
-            v-if="isLoading"
-            name="crescent"
-            class="ion-margin-end"
-          ></ion-spinner>
-          {{ isLoading ? "Signing in..." : "Login" }}
-        </ion-button>
-      </form>
-
-      <ion-button
-        expand="block"
-        fill="clear"
-        @click="goToRegister"
-        :disabled="isLoading"
-      >
-        Create an account
-      </ion-button>
+      </div>
     </ion-content>
   </ion-page>
 </template>

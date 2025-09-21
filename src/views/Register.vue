@@ -1,18 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-  IonList,
-  IonItem,
-  IonInput,
-  IonButton,
-  IonNote,
-} from "@ionic/vue";
+import { IonPage, IonContent, IonInput, IonButton, IonNote } from "@ionic/vue";
 import { auth, firestore } from "../firebase";
 import { createUserWithEmailAndPassword, signOut } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
@@ -142,94 +131,89 @@ const goToLogin = () => {
 
 <template>
   <ion-page>
-    <ion-header>
-      <ion-toolbar>
-        <ion-title>Sign Up</ion-title>
-      </ion-toolbar>
-    </ion-header>
-    <ion-content class="ion-padding">
-      <div class="text-center">
-        <h1 class="text-2xl font-bold mt-4 text-gray-800 dark:text-gray-100">
-          Sign up
-        </h1>
-        <p class="mt-2 text-gray-600 dark:text-gray-200">
-          to start your library
-        </p>
-      </div>
+    <ion-content :scroll-y="false" class="ion-padding">
+      <div class="min-h-[100dvh] flex items-center justify-center">
+        <div class="w-full max-w-md">
+          <div class="text-center">
+            <h1
+              class="text-2xl font-bold mt-4 text-gray-800 dark:text-gray-100"
+            >
+              Sign up
+            </h1>
+            <p class="mt-2 text-gray-600 dark:text-gray-200">
+              to start your library
+            </p>
+          </div>
 
-      <form @submit.prevent="register" class="mt-8 space-y-6">
-        <ion-list>
-          <ion-item>
+          <form @submit.prevent="register" class="mt-8 space-y-4">
             <ion-input
-              label="Username"
-              label-placement="floating"
               v-model="username"
               id="username"
               type="text"
-              placeholder="Enter your username"
+              placeholder="Username"
               autocomplete="username"
+              fill="outline"
+              mode="md"
               required
             ></ion-input>
-          </ion-item>
 
-          <ion-item>
             <ion-input
-              label="Password"
-              label-placement="floating"
               v-model="password"
               id="password"
               type="password"
-              placeholder="Enter your password"
+              placeholder="Password"
               autocomplete="new-password"
+              fill="outline"
+              mode="md"
               required
             ></ion-input>
-          </ion-item>
-          <ion-note class="ion-padding-start">
-            <div class="mt-1 text-xs">
-              Password must be {{ UI_LIMITS.PASSWORD.MIN_LENGTH }}-{{
-                UI_LIMITS.PASSWORD.MAX_LENGTH
-              }}
-              characters and include:
-              <ul class="list-disc ml-5 mt-1">
-                <li v-if="UI_LIMITS.PASSWORD.REQUIRE_UPPERCASE">
-                  Uppercase letter
-                </li>
-                <li v-if="UI_LIMITS.PASSWORD.REQUIRE_LOWERCASE">
-                  Lowercase letter
-                </li>
-                <li v-if="UI_LIMITS.PASSWORD.REQUIRE_NUMBER">Number</li>
-                <li v-if="UI_LIMITS.PASSWORD.REQUIRE_SPECIAL">
-                  Special character
-                </li>
-              </ul>
-            </div>
-          </ion-note>
 
-          <ion-item>
+            <ion-note class="block">
+              <div class="mt-1 text-xs">
+                Password must be {{ UI_LIMITS.PASSWORD.MIN_LENGTH }}-{{
+                  UI_LIMITS.PASSWORD.MAX_LENGTH
+                }}
+                characters and include:
+                <ul class="list-disc ml-5 mt-1">
+                  <li v-if="UI_LIMITS.PASSWORD.REQUIRE_UPPERCASE">
+                    Uppercase letter
+                  </li>
+                  <li v-if="UI_LIMITS.PASSWORD.REQUIRE_LOWERCASE">
+                    Lowercase letter
+                  </li>
+                  <li v-if="UI_LIMITS.PASSWORD.REQUIRE_NUMBER">Number</li>
+                  <li v-if="UI_LIMITS.PASSWORD.REQUIRE_SPECIAL">
+                    Special character
+                  </li>
+                </ul>
+              </div>
+            </ion-note>
+
             <ion-input
-              label="Repeat Password"
-              label-placement="floating"
               v-model="confirmPassword"
               id="confirmPassword"
               type="password"
-              placeholder="Repeat your password"
+              placeholder="Repeat password"
               autocomplete="new-password"
+              fill="outline"
+              mode="md"
               required
             ></ion-input>
-          </ion-item>
-        </ion-list>
 
-        <div v-if="errorMessage" class="ion-padding text-red-500 text-sm mt-2">
-          {{ errorMessage }}
+            <div v-if="errorMessage" class="text-red-500 text-sm">
+              {{ errorMessage }}
+            </div>
+
+            <ion-button type="submit" expand="block" class="ion-margin-top">
+              Create Account
+            </ion-button>
+          </form>
+
+          <ion-button expand="block" fill="clear" @click="goToLogin">
+            Already have an account? Sign in
+          </ion-button>
         </div>
-
-        <ion-button type="submit" expand="block" class="ion-margin-top">
-          Create Account
-        </ion-button>
-      </form>
-      <ion-button expand="block" fill="clear" @click="goToLogin">
-        Already have an account? Sign in
-      </ion-button>
+      </div>
     </ion-content>
   </ion-page>
 </template>
