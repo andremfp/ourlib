@@ -14,8 +14,10 @@ import {
   IonButtons,
 } from "@ionic/vue";
 import { cameraOutline, createOutline, arrowBackOutline } from "ionicons/icons";
-import ScanMode from "./ScanMode.vue";
-import ManualMode from "./ManualMode.vue";
+import { defineAsyncComponent } from "vue";
+// Lazy-load child views
+const ScanMode = defineAsyncComponent(() => import("./ScanMode.vue"));
+const ManualMode = defineAsyncComponent(() => import("./ManualMode.vue"));
 import { useAddBook } from "./composables/useAddBook";
 import { useTabStore } from "@/stores/tabStore";
 

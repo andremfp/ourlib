@@ -4,7 +4,6 @@ import { fetchBookDetails } from "@/apis/fetchBook";
 import { createBook } from "@/apis/bookAPI";
 import { useLibraryList } from "@/components/tabs/MyLibraries/composables/useLibraryList";
 import { modalController } from "@ionic/vue";
-import LibrarySelection from "@/components/modals/LibrarySelection.vue";
 import type { BookDetails } from "@/apis/fetchBook";
 import type { Book, Library } from "@/schema";
 import { firestore } from "@/firebase";
@@ -184,7 +183,8 @@ export function useAddBook() {
 
     try {
       const modal = await modalController.create({
-        component: LibrarySelection,
+        component: (await import("@/components/modals/LibrarySelection.vue"))
+          .default,
         componentProps: {
           isOpen: true,
           libraries: libraries.value,

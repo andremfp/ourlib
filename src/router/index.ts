@@ -1,10 +1,10 @@
 import { createRouter, createWebHistory } from "@ionic/vue-router";
 import type { RouteRecordRaw } from "vue-router";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
-import LoginView from "@/views/Login.vue";
-import RegisterView from "@/views/Register.vue";
-import TabsPage from "@/views/Tabs.vue";
-import NotFound from "@/views/NotFound.vue";
+// Lazy-loaded route components
+const LoginView = () => import("@/views/Login.vue");
+const RegisterView = () => import("@/views/Register.vue");
+const TabsPage = () => import("@/views/Tabs.vue");
+const NotFound = () => import("@/views/NotFound.vue");
 import logger from "@/utils/logger";
 
 const routes: Array<RouteRecordRaw> = [
@@ -35,7 +35,8 @@ const router = createRouter({
   routes,
 });
 
-const getCurrentUser = (): Promise<unknown> => {
+const getCurrentUser = async (): Promise<unknown> => {
+  const { getAuth, onAuthStateChanged } = await import("firebase/auth");
   return new Promise((resolve, reject) => {
     const unsubscribe = onAuthStateChanged(
       getAuth(),

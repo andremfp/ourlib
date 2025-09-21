@@ -1,7 +1,11 @@
 <script setup lang="ts">
+import { defineAsyncComponent } from "vue";
 import { IonContent } from "@ionic/vue";
-import CameraComponent from "@/components/Camera.vue";
-import BookForm from "./BookForm.vue";
+// Lazy-load heavy children
+const CameraComponent = defineAsyncComponent(
+  () => import("@/components/Camera.vue"),
+);
+const BookForm = defineAsyncComponent(() => import("./BookForm.vue"));
 import type { BookFormData } from "./composables/useAddBook";
 
 interface Props {

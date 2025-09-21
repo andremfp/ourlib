@@ -46,7 +46,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, provide, onMounted, nextTick } from "vue";
+import {
+  ref,
+  watch,
+  computed,
+  provide,
+  onMounted,
+  nextTick,
+  defineAsyncComponent,
+} from "vue";
 import {
   IonPage,
   IonTabs,
@@ -65,9 +73,16 @@ import {
   personCircle,
 } from "ionicons/icons";
 import { useTabStore } from "@/stores/tabStore";
-import MyLibraries from "@/components/tabs/MyLibraries/MyLibraries.vue";
-import AddBook from "@/components/tabs/AddBook/AddBook.vue";
-import Profile from "@/components/tabs/Profile.vue";
+// Lazy-loaded tab components
+const MyLibraries = defineAsyncComponent(
+  () => import("@/components/tabs/MyLibraries/MyLibraries.vue"),
+);
+const AddBook = defineAsyncComponent(
+  () => import("@/components/tabs/AddBook/AddBook.vue"),
+);
+const Profile = defineAsyncComponent(
+  () => import("@/components/tabs/Profile.vue"),
+);
 import logger from "@/utils/logger";
 
 const tabStore = useTabStore();
