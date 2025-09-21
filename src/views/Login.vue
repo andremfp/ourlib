@@ -15,14 +15,14 @@ import logoLight from "@/assets/ourlib-logo.webp";
 import logoDark from "@/assets/ourlib-logo-dark.webp";
 
 const router = useRouter();
-const username = ref("");
+const email = ref("");
 const password = ref("");
 const errorMessage = ref("");
 const isLoading = ref(false);
 
 const validateInputs = (): { valid: boolean; message: string } => {
-  if (!username.value.trim()) {
-    return { valid: false, message: "Username is required." };
+  if (!email.value.trim()) {
+    return { valid: false, message: "Email is required." };
   }
 
   if (!password.value.trim()) {
@@ -46,13 +46,12 @@ const handleLogin = async () => {
     isLoading.value = true;
 
     // Login with Firebase
-    await signInWithEmailAndPassword(
-      auth,
-      username.value.trim() + "@dummy.com",
-      password.value,
-    );
+    await signInWithEmailAndPassword(auth, email.value.trim(), password.value);
 
     logger.info("User logged in successfully");
+    // Clear inputs after successful login
+    email.value = "";
+    password.value = "";
     router.push("/");
   } catch (error: any) {
     logger.error("Login error:", error.message);
@@ -72,7 +71,7 @@ const handleLogin = async () => {
         errorMessage.value = "Incorrect password. Please try again.";
         break;
       case "auth/invalid-credential":
-        errorMessage.value = "Invalid email or password.";
+        errorMessage.value = "User does not exist.";
         break;
       case "auth/too-many-requests":
         errorMessage.value =
@@ -121,11 +120,11 @@ const goToRegister = () => {
 
           <form @submit.prevent="handleLogin" class="mt-8 space-y-4">
             <ion-input
-              v-model="username"
+              v-model="email"
               type="text"
               :disabled="isLoading"
-              autocomplete="username"
-              placeholder="Username"
+              autocomplete="email"
+              placeholder="Email"
               fill="outline"
               mode="md"
               required

@@ -103,6 +103,7 @@ const deleteAccount = async () => {
   try {
     await removeUser(user.uid); // API call to delete user data from Firestore
     await deleteUser(user); // Firebase auth call to delete the user
+    tabStore.resetActiveTab();
     router.push("/login"); // Redirect to login after deletion
   } catch (error: any) {
     logger.error("Account deletion error:", error.message);

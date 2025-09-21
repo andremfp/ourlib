@@ -8,7 +8,7 @@ import { doc, setDoc } from "firebase/firestore";
 import logger from "@/utils/logger";
 import { UI_LIMITS } from "@/constants/constants";
 
-const username = ref("");
+const email = ref("");
 const password = ref("");
 const confirmPassword = ref("");
 const errorMessage = ref("");
@@ -86,10 +86,9 @@ const register = async () => {
   }
 
   try {
-    const dummyEmail = username.value + "@dummy.com";
     const userCredential = await createUserWithEmailAndPassword(
       auth,
-      dummyEmail,
+      email.value,
       password.value,
     );
     const user = userCredential.user;
@@ -99,12 +98,17 @@ const register = async () => {
     // Store user information in Firestore
     const userRef = doc(firestore, "users", user.uid);
     await setDoc(userRef, {
-      username: username.value,
+      email: email.value,
+      username: email.value.split("@")[0],
       createdAt: new Date(),
     });
 
     logger.info("User data stored, signing out and redirecting to Login");
     await signOut(auth);
+    // Clear form fields after successful registration
+    email.value = "";
+    password.value = "";
+    confirmPassword.value = "";
     router.push("/login");
   } catch (error: any) {
     logger.error("Registration error:", error.message);
@@ -117,6 +121,9 @@ const register = async () => {
       case "auth/weak-password":
         errorMessage.value =
           "Password should be at least 6 characters. Please try another.";
+        break;
+      case "auth/invalid-email":
+        errorMessage.value = "Invalid email address.";
         break;
       default:
         errorMessage.value = "An error occurred. Please try again.";
@@ -147,11 +154,11 @@ const goToLogin = () => {
 
           <form @submit.prevent="register" class="mt-8 space-y-4">
             <ion-input
-              v-model="username"
-              id="username"
+              v-model="email"
+              id="email"
               type="text"
-              placeholder="Username"
-              autocomplete="username"
+              placeholder="Email"
+              autocomplete="email"
               fill="outline"
               mode="md"
               required
