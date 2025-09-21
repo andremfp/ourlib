@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, watch, onMounted } from "vue";
+import { IonInput, IonButton, modalController } from "@ionic/vue";
 import { UI_LIMITS } from "@/constants/constants";
 
 // ============= PROPS & EMITS =============
@@ -17,6 +18,7 @@ const emit = defineEmits<{
 // Form state
 const newLibraryName = ref(props.libraryName);
 const errorMessage = ref("");
+const libraryInput = ref<InstanceType<typeof IonInput> | null>(null);
 
 // Reset form when modal opens
 watch(
@@ -60,49 +62,115 @@ function handleRename() {
 
   // Submit valid name
   emit("rename", trimmedName);
+  modalController.dismiss(trimmedName, "renamed");
 }
+
+/**
+ * Cancel the rename operation
+ */
+function cancel() {
+  modalController.dismiss(null, "cancel");
+}
+
+// Focus management for accessibility
+onMounted(() => {
+  // Add keyboard event listener for Escape key
+  const handleKeydown = (event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+      cancel();
+    }
+  };
+
+  document.addEventListener("keydown", handleKeydown);
+
+  // Focus the input after a short delay to allow for the modal transition
+  setTimeout(() => {
+    libraryInput.value?.$el.setFocus();
+  }, 300);
+
+  // Cleanup on unmount
+  return () => {
+    document.removeEventListener("keydown", handleKeydown);
+  };
+});
 </script>
 
 <template>
-  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
-    <!-- Modal -->
-    <div class="w-full bg-light-bg dark:bg-dark-nav rounded-xl p-4">
-      <!-- Header -->
-      <h3
-        class="text-modal-title font-semibold text-light-primary-text dark:text-dark-primary-text mb-4"
+  <div class="wrapper">
+    <h1>Rename Library</h1>
+
+    <ion-input
+      ref="libraryInput"
+      :clear-input="true"
+      v-model="newLibraryName"
+      placeholder="Library name"
+      @keyup.enter="handleRename"
+      aria-describedby="library-name-error"
+      fill="outline"
+      mode="md"
+      :maxlength="UI_LIMITS.LIBRARY.NAME_MAX_LENGTH"
+    ></ion-input>
+
+    <p
+      v-if="errorMessage"
+      id="library-name-error"
+      class="error-message"
+      role="alert"
+    >
+      {{ errorMessage }}
+    </p>
+
+    <div class="dialog-actions">
+      <ion-button fill="clear" @click="cancel">Cancel</ion-button>
+      <ion-button
+        @click="handleRename"
+        :disabled="
+          !newLibraryName.trim() || newLibraryName.trim() === props.libraryName
+        "
       >
-        Rename Library
-      </h3>
-
-      <!-- Input field -->
-      <input
-        v-model="newLibraryName"
-        type="text"
-        class="w-full p-2 mb-1 text-modal-text bg-light-card dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-lg text-light-primary-text dark:text-dark-primary-text focus:outline-none"
-        :class="{ 'border-red-500': errorMessage }"
-        @keyup.enter="handleRename"
-      />
-
-      <!-- Error message -->
-      <p v-if="errorMessage" class="text-red-500 text-sm mb-3">
-        {{ errorMessage }}
-      </p>
-
-      <!-- Action buttons -->
-      <div class="flex justify-end space-x-2">
-        <button
-          class="px-4 py-2 text-modal-button text-menu-blue bg-transparent rounded-lg"
-          @click="emit('close')"
-        >
-          Cancel
-        </button>
-        <button
-          class="px-4 py-2 text-white bg-menu-blue rounded-lg text-modal-button"
-          @click="handleRename"
-        >
-          Save
-        </button>
-      </div>
+        Save
+      </ion-button>
     </div>
   </div>
 </template>
+
+<style scoped>
+.wrapper {
+  padding: 16px;
+}
+
+.wrapper h1 {
+  margin: 0 0 16px;
+  font-size: theme("fontSize.modal-title");
+  font-weight: theme("fontWeight.bold");
+}
+
+.wrapper ion-input {
+  --border-radius: 12px;
+  padding-left: 0px;
+}
+
+.error-message {
+  margin: 0;
+  padding: 0 4px;
+  font-size: theme("fontSize.modal-text");
+  color: theme("colors.danger-red");
+  min-height: 28px; /* Reserve space to prevent layout shift */
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.dialog-actions ion-button {
+  margin: 0;
+  height: 44px; /* Standard iOS tap size */
+  --border-radius: 8px;
+  font-weight: 500;
+  min-width: 90px;
+  text-transform: none; /* iOS buttons don't use all-caps */
+}
+</style>

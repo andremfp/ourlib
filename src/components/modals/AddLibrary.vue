@@ -1,82 +1,24 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, onMounted } from "vue";
+import { IonInput, IonButton, modalController } from "@ionic/vue";
 import { getAuth } from "firebase/auth";
 import { createLibrary } from "@/apis/libraryAPI";
 import type { Library } from "@/schema";
-import { UI_LIMITS } from "@/constants/constants";
 import { firestore } from "@/firebase";
 import { doc, DocumentReference } from "firebase/firestore";
 import { COLLECTION_NAMES } from "@/constants";
 import type { User } from "@/schema";
 
-// ============= PROPS & EMITS =============
-const props = defineProps<{
-  isOpen: boolean;
-}>();
-
-const emit = defineEmits(["close", "libraryCreated"]);
-
-// ============= STATE =============
-// Form state
 const libraryName = ref("");
 const errorMessage = ref("");
 const isSubmitting = ref(false);
+const libraryInput = ref<InstanceType<typeof IonInput> | null>(null);
 
-// Animation state
-const localIsOpen = ref(props.isOpen);
-const isModalLeaving = ref(false);
-
-// ============= WATCHERS =============
-// Sync with parent's isOpen prop
-watch(
-  () => props.isOpen,
-  (newVal) => {
-    if (newVal) {
-      // Open the modal
-      localIsOpen.value = true;
-      isModalLeaving.value = false;
-    } else {
-      // Start closing process
-      startClosingProcess();
-    }
-  },
-);
-
-// ============= ANIMATION HANDLING =============
-/**
- * Start the closing process
- */
-function startClosingProcess() {
-  isModalLeaving.value = true;
-}
-
-/**
- * Complete the closing process after animations
- */
-function onModalLeave() {
-  localIsOpen.value = false;
-  isModalLeaving.value = false;
-}
-
-// ============= FORM HANDLING =============
-/**
- * Submit the form to create a new library
- */
 async function handleSubmit() {
   const trimmedName = libraryName.value.trim();
 
   if (!trimmedName) {
     errorMessage.value = "Library name is required";
-    return;
-  }
-
-  if (trimmedName.length < UI_LIMITS.LIBRARY.NAME_MIN_LENGTH) {
-    errorMessage.value = `Library name must be at least ${UI_LIMITS.LIBRARY.NAME_MIN_LENGTH} characters`;
-    return;
-  }
-
-  if (trimmedName.length > UI_LIMITS.LIBRARY.NAME_MAX_LENGTH) {
-    errorMessage.value = `Library name cannot exceed ${UI_LIMITS.LIBRARY.NAME_MAX_LENGTH} characters`;
     return;
   }
 
@@ -98,8 +40,7 @@ async function handleSubmit() {
       userId,
     ) as DocumentReference<User>;
 
-    // Create the library
-    const newLibrary = await createLibrary({
+    await createLibrary({
       name: trimmedName,
       owner: userRef,
       booksCount: 0,
@@ -107,10 +48,7 @@ async function handleSubmit() {
       updatedAt: new Date().toISOString(),
     } as Library);
 
-    // Reset form and emit success event
-    libraryName.value = "";
-    emit("libraryCreated", newLibrary);
-    emit("close");
+    modalController.dismiss(null, "created");
   } catch (error) {
     errorMessage.value = "Failed to create library. Please try again.";
     console.error("Error creating library:", error);
@@ -119,89 +57,111 @@ async function handleSubmit() {
   }
 }
 
-/**
- * Close the modal and reset form state
- */
-function closeModal() {
-  libraryName.value = "";
-  errorMessage.value = "";
-  emit("close");
+function cancel() {
+  modalController.dismiss(null, "cancel");
 }
+
+// Focus management for accessibility
+onMounted(() => {
+  // Add keyboard event listener for Escape key
+  const handleKeydown = (event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+      cancel();
+    }
+  };
+
+  document.addEventListener("keydown", handleKeydown);
+
+  // Focus the input after a short delay to allow for the modal transition.
+  // This prevents an accessibility warning about focus being on a hidden element.
+  setTimeout(() => {
+    libraryInput.value?.$el.setFocus();
+  }, 300);
+
+  // Cleanup on unmount
+  return () => {
+    document.removeEventListener("keydown", handleKeydown);
+  };
+});
 </script>
 
 <template>
-  <teleport to="body">
-    <div
-      v-if="localIsOpen"
-      class="fixed inset-0 z-[50] flex items-center justify-center min-h-screen px-4"
+  <div class="wrapper">
+    <h1>Create New Library</h1>
+
+    <ion-input
+      ref="libraryInput"
+      :clear-input="true"
+      v-model="libraryName"
+      placeholder="Library name"
+      @keyup.enter="handleSubmit"
+      aria-describedby="library-name-error"
+      fill="outline"
+      mode="md"
+      :maxlength="25"
+    ></ion-input>
+
+    <p
+      v-if="errorMessage"
+      id="library-name-error"
+      class="error-message"
+      role="alert"
     >
-      <!-- Backdrop with fade transition -->
-      <Transition name="fade" appear @after-leave="onModalLeave">
-        <div v-if="!isModalLeaving" class="absolute inset-0 bg-black/20"></div>
-      </Transition>
+      {{ errorMessage }}
+    </p>
 
-      <!-- Modal with animation -->
-      <Transition name="modalAnim" appear>
-        <div
-          v-if="!isModalLeaving && props.isOpen"
-          class="relative z-[51] w-full max-w-md bg-light-bg dark:bg-dark-nav rounded-xl p-4"
-        >
-          <!-- Modal header -->
-          <div class="flex justify-between items-center">
-            <h3
-              class="text-modal-title font-semibold text-light-primary-text dark:text-dark-primary-text mb-4"
-            >
-              Create New Library
-            </h3>
-          </div>
-
-          <!-- Library creation inputs -->
-          <div class="mb-4">
-            <label
-              for="libraryName"
-              class="block text-modal-text text-light-secondary-text dark:text-dark-secondary-text mb-1"
-            >
-              Library Name
-            </label>
-            <input
-              id="libraryName"
-              v-model="libraryName"
-              type="text"
-              class="w-full px-3 py-2 text-modal-text bg-light-card dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-lg text-light-primary-text dark:text-dark-primary-text focus:outline-none"
-              placeholder="Enter library name"
-              @keyup.enter="handleSubmit"
-            />
-
-            <!-- Error message -->
-            <p
-              v-if="errorMessage"
-              class="mt-1 text-sm text-red-600 dark:text-red-400"
-            >
-              {{ errorMessage }}
-            </p>
-          </div>
-
-          <!-- Action buttons -->
-          <div class="flex justify-end space-x-3">
-            <button
-              type="button"
-              class="px-4 py-2 text-modal-button text-menu-blue bg-transparent rounded-lg"
-              @click="closeModal"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              :disabled="isSubmitting"
-              class="px-4 py-2 text-white bg-menu-blue rounded-lg text-modal-button"
-              @click="handleSubmit"
-            >
-              <span v-if="isSubmitting">Creating...</span>
-              <span v-else>Create Library</span>
-            </button>
-          </div>
-        </div>
-      </Transition>
+    <div class="dialog-actions">
+      <ion-button fill="clear" @click="cancel" :disabled="isSubmitting">
+        Cancel
+      </ion-button>
+      <ion-button
+        @click="handleSubmit"
+        :disabled="isSubmitting || !libraryName.trim()"
+      >
+        <span v-if="isSubmitting">Creating...</span>
+        <span v-else>Create</span>
+      </ion-button>
     </div>
-  </teleport>
+  </div>
 </template>
+
+<style scoped>
+.wrapper {
+  padding: 16px;
+}
+
+.wrapper h1 {
+  margin: 0 0 16px;
+  font-size: theme("fontSize.modal-title");
+  font-weight: theme("fontWeight.bold");
+}
+
+.wrapper ion-input {
+  --border-radius: 12px;
+  padding-left: 0px;
+}
+
+.error-message {
+  margin: 0;
+  padding: 0 4px;
+  font-size: theme("fontSize.modal-text");
+  color: theme("colors.danger-red");
+  min-height: 28px; /* Reserve space to prevent layout shift */
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.dialog-actions ion-button {
+  margin: 0;
+  height: 44px; /* Standard iOS tap size */
+  --border-radius: 8px;
+  font-weight: 500;
+  min-width: 90px;
+  text-transform: none; /* iOS buttons don't use all-caps */
+}
+</style>

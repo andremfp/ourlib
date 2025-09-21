@@ -47,18 +47,18 @@ export default defineConfig({
     minify: "esbuild",
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ["vue", "vue-router"],
-          firebase: [
-            "firebase/app",
-            "firebase/auth",
-            "firebase/firestore",
-            "firebase/storage",
-            "firebase/functions",
-          ],
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            const parts = id.split("node_modules/")[1].split("/");
+            const pkg = parts[0].startsWith("@")
+              ? parts.slice(0, 2).join("/")
+              : parts[0];
+            return `vendor-${pkg}`;
+          }
         },
       },
     },
+    chunkSizeWarningLimit: 1000,
   },
   server: {
     proxy: {

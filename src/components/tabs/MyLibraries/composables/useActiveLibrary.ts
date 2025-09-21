@@ -14,7 +14,7 @@ import { COLLECTION_NAMES } from "@/constants";
  * @param libraryIdRef Ref<string> - A ref containing the ID of the active library.
  * @returns Reactive state and methods related to the active library.
  */
-export function useActiveLibrary(libraryIdRef: Ref<string>) {
+export function useActiveLibrary(libraryIdRef: Ref<string | null>) {
   const books = ref<Book[]>([]);
   const library = ref<Library | null>(null);
   const libraryName = ref<string>(""); // Holds the library name for display/editing
@@ -111,6 +111,8 @@ export function useActiveLibrary(libraryIdRef: Ref<string>) {
       logger.info(
         `[useActiveLibrary] Library ${currentId} renamed successfully in backend.`,
       );
+      // After a successful rename, notify lists to refresh
+      window.dispatchEvent(new CustomEvent("ourlib:refreshLibraries"));
     } catch (err) {
       logger.error(
         "[useActiveLibrary] Failed to rename library in backend:",
@@ -171,9 +173,18 @@ export function useActiveLibrary(libraryIdRef: Ref<string>) {
   watch(
     libraryIdRef,
     (newId) => {
-      fetchLibraryData(newId);
+      if (newId) {
+        fetchLibraryData(newId);
+      } else {
+        // If the ID becomes null (e.g., drawer closes and selection is cleared), reset the state
+        books.value = [];
+        library.value = null;
+        libraryName.value = "";
+        isLoading.value = false;
+        error.value = null;
+      }
     },
-    { immediate: true }, // Fetch data immediately when the composable is first used
+    { immediate: true },
   );
 
   return {

@@ -1,13 +1,20 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, watch, onMounted } from "vue";
+import {
+  IonButton,
+  IonSelect,
+  IonSelectOption,
+  modalController,
+} from "@ionic/vue";
+// no icons currently used
 import type { Library } from "@/schema";
 
 // ============= PROPS & EMITS =============
 const props = defineProps<{
-  isOpen: boolean;
-  libraries: Library[];
-  isLoadingLibraries: boolean;
-  bookTitle: string;
+  isOpen?: boolean;
+  libraries?: Library[];
+  isLoadingLibraries?: boolean;
+  bookTitle?: string;
 }>();
 
 const emit = defineEmits<{
@@ -16,233 +23,206 @@ const emit = defineEmits<{
 }>();
 
 // ============= STATE =============
-const selectedLibrary = ref<Library | null>(null);
+const selectedLibraryId = ref<string>("");
 
-// Animation state
-const localIsOpen = ref(props.isOpen);
-const isModalLeaving = ref(false);
+// Get props with defaults - these will be set by the modal controller
+const libraries = ref<Library[]>(props.libraries || []);
+const isLoadingLibraries = ref<boolean>(props.isLoadingLibraries || false);
+const bookTitle = ref<string>(props.bookTitle || "");
 
 // ============= WATCHERS =============
-// Sync with parent's isOpen prop
+// Reset selection when modal opens
 watch(
   () => props.isOpen,
   (newVal) => {
     if (newVal) {
-      // Open the modal
-      localIsOpen.value = true;
-      isModalLeaving.value = false;
-      selectedLibrary.value = null; // Reset selection
-    } else {
-      // Start closing process
-      startClosingProcess();
+      selectedLibraryId.value = ""; // Reset selection
     }
   },
 );
 
-// ============= ANIMATION HANDLING =============
-/**
- * Start the closing process
- */
-function startClosingProcess() {
-  isModalLeaving.value = true;
-}
+// Update local state when props change
+watch(
+  () => props.libraries,
+  (newLibraries) => {
+    if (newLibraries) {
+      libraries.value = newLibraries;
+    }
+  },
+  { immediate: true },
+);
 
-/**
- * Complete the closing process after animations
- */
-function onModalLeave() {
-  localIsOpen.value = false;
-  isModalLeaving.value = false;
-}
+watch(
+  () => props.isLoadingLibraries,
+  (newLoading) => {
+    isLoadingLibraries.value = newLoading || false;
+  },
+  { immediate: true },
+);
+
+watch(
+  () => props.bookTitle,
+  (newTitle) => {
+    bookTitle.value = newTitle || "";
+  },
+  { immediate: true },
+);
 
 // ============= LIBRARY SELECTION =============
-/**
- * Select a library
- */
-function selectLibrary(library: Library) {
-  selectedLibrary.value = library;
-}
-
 /**
  * Confirm library selection
  */
 function confirmSelection() {
-  if (selectedLibrary.value) {
-    emit("librarySelected", selectedLibrary.value);
-    emit("close");
-  }
+  const lib = libraries.value.find((l) => l.id === selectedLibraryId.value);
+  if (!lib) return;
+  emit("librarySelected", lib);
+  modalController.dismiss(lib, "selected");
 }
 
 /**
  * Close the modal
  */
 function closeModal() {
-  selectedLibrary.value = null;
-  emit("close");
+  selectedLibraryId.value = "";
+  modalController.dismiss(null, "cancel");
 }
+
+// Initialize data directly from props
+onMounted(() => {
+  console.log("LibrarySelection onMounted - props:", props);
+
+  // Set data directly from props
+  if (props.libraries) {
+    libraries.value = props.libraries;
+  }
+  if (props.isLoadingLibraries !== undefined) {
+    isLoadingLibraries.value = props.isLoadingLibraries;
+  }
+  if (props.bookTitle) {
+    bookTitle.value = props.bookTitle;
+  }
+
+  console.log("Final state:", {
+    libraries: libraries.value,
+    isLoadingLibraries: isLoadingLibraries.value,
+    bookTitle: bookTitle.value,
+  });
+
+  // Add keyboard event listener for Escape key
+  const handleKeydown = (event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+      closeModal();
+    }
+  };
+
+  document.addEventListener("keydown", handleKeydown);
+
+  // Cleanup on unmount
+  return () => {
+    document.removeEventListener("keydown", handleKeydown);
+  };
+});
 </script>
 
 <template>
-  <teleport to="body">
-    <div
-      v-if="localIsOpen"
-      class="fixed inset-0 z-[50] flex items-center justify-center min-h-screen px-4"
-    >
-      <!-- Backdrop with fade transition -->
-      <Transition name="fade" appear @after-leave="onModalLeave">
-        <div v-if="!isModalLeaving" class="absolute inset-0 bg-black/20"></div>
-      </Transition>
+  <div class="wrapper">
+    <h1>Choose Library</h1>
 
-      <!-- Modal with animation -->
-      <Transition name="modalAnim" appear>
-        <div
-          v-if="!isModalLeaving && props.isOpen"
-          class="relative z-[51] w-full max-w-2xl bg-light-bg dark:bg-dark-nav rounded-xl p-6 max-h-[80vh] flex flex-col"
-        >
-          <!-- Modal header -->
-          <div class="flex justify-between items-start mb-6">
-            <div>
-              <h3
-                class="text-modal-title font-semibold text-light-primary-text dark:text-dark-primary-text"
-              >
-                Choose Library
-              </h3>
-              <p
-                class="text-sm text-light-secondary-text dark:text-dark-secondary-text mt-1"
-              >
-                Select which library to add "{{ bookTitle }}" to
-              </p>
-            </div>
-            <button
-              @click="closeModal"
-              class="text-light-secondary-text dark:text-dark-secondary-text hover:text-light-primary-text dark:hover:text-dark-primary-text"
-            >
-              <svg
-                class="w-6 h-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </div>
+    <p class="subtitle">Select which library to add "{{ bookTitle }}" to</p>
 
-          <!-- Content area -->
-          <div class="flex-1 overflow-auto">
-            <!-- Loading Libraries -->
-            <div
-              v-if="isLoadingLibraries"
-              class="flex justify-center items-center py-12"
-            >
-              <div
-                class="animate-spin rounded-full h-12 w-12 border-4 border-menu-blue border-t-transparent"
-              ></div>
-              <span
-                class="ml-3 text-light-secondary-text dark:text-dark-secondary-text"
-              >
-                Loading libraries...
-              </span>
-            </div>
-
-            <!-- Libraries List -->
-            <div v-else-if="libraries.length > 0" class="space-y-3">
-              <button
-                v-for="library in libraries"
-                :key="library.id"
-                @click="selectLibrary(library)"
-                :class="[
-                  'w-full p-4 text-left bg-light-card dark:bg-dark-card rounded-lg border-2 transition-all',
-                  selectedLibrary?.id === library.id
-                    ? 'border-menu-blue bg-blue-50 dark:bg-blue-900/20'
-                    : 'border-transparent hover:border-light-border dark:hover:border-dark-border hover:shadow-md',
-                ]"
-              >
-                <div class="flex items-center justify-between">
-                  <div>
-                    <h3
-                      class="font-semibold text-light-primary-text dark:text-dark-primary-text"
-                    >
-                      {{ library.name }}
-                    </h3>
-                    <p
-                      class="text-sm text-light-secondary-text dark:text-dark-secondary-text"
-                    >
-                      {{ library.booksCount || 0 }}
-                      {{ library.booksCount === 1 ? "book" : "books" }}
-                    </p>
-                  </div>
-                  <svg
-                    v-if="selectedLibrary?.id === library.id"
-                    class="w-6 h-6 text-menu-blue"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fill-rule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                      clip-rule="evenodd"
-                    />
-                  </svg>
-                </div>
-              </button>
-            </div>
-
-            <!-- No Libraries -->
-            <div v-else class="flex flex-col items-center justify-center py-12">
-              <svg
-                class="w-16 h-16 mb-4 text-light-secondary-text dark:text-dark-secondary-text"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="1.5"
-                  d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
-                />
-              </svg>
-              <p
-                class="text-light-primary-text dark:text-dark-primary-text text-lg font-medium mb-2"
-              >
-                No Libraries Found
-              </p>
-              <p
-                class="text-light-secondary-text dark:text-dark-secondary-text text-center"
-              >
-                You need to create a library first before adding books
-              </p>
-            </div>
-          </div>
-
-          <!-- Action buttons -->
-          <div
-            class="flex justify-end space-x-3 mt-6 pt-4 border-t border-light-border dark:border-dark-border"
-          >
-            <button
-              type="button"
-              class="px-6 py-2 text-modal-button text-menu-blue bg-transparent rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20"
-              @click="closeModal"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              :disabled="!selectedLibrary"
-              class="px-6 py-2 text-white bg-green-600 rounded-lg text-modal-button hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              @click="confirmSelection"
-            >
-              Add to Library
-            </button>
-          </div>
-        </div>
-      </Transition>
+    <div v-if="isLoadingLibraries" class="loading">
+      <div class="spinner"></div>
+      <span>Loading libraries...</span>
     </div>
-  </teleport>
+
+    <template v-else>
+      <ion-select
+        v-model="selectedLibraryId"
+        interface="alert"
+        placeholder="Select a library"
+        aria-label="Library"
+        :disabled="!libraries || libraries.length === 0"
+      >
+        <ion-select-option
+          v-for="library in libraries"
+          :key="library.id"
+          :value="library.id"
+        >
+          {{ library.name }}
+        </ion-select-option>
+      </ion-select>
+
+      <p v-if="libraries && libraries.length === 0" class="empty">
+        No libraries found
+      </p>
+
+      <div class="dialog-actions">
+        <ion-button fill="clear" @click="closeModal">Cancel</ion-button>
+        <ion-button :disabled="!selectedLibraryId" @click="confirmSelection">
+          Add to Library
+        </ion-button>
+      </div>
+    </template>
+  </div>
 </template>
+
+<style scoped>
+.wrapper {
+  padding: 16px;
+}
+
+.wrapper h1 {
+  margin: 0 0 16px;
+  font-size: theme("fontSize.modal-title");
+  font-weight: theme("fontWeight.bold");
+}
+
+.subtitle {
+  margin: 0 0 16px;
+  font-size: theme("fontSize.modal-text");
+  color: theme("colors.light-secondary-text");
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 0;
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  border: 4px solid var(--ion-color-primary);
+  border-top-color: transparent;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.empty {
+  margin-top: 12px;
+  color: theme("colors.light-secondary-text");
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.dialog-actions ion-button {
+  margin: 0;
+  height: 44px;
+  --border-radius: 8px;
+  font-weight: 500;
+  min-width: 90px;
+  text-transform: none;
+}
+</style>

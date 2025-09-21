@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { IonButton, IonIcon } from "@ionic/vue";
+import { bookOutline, alertCircleOutline } from "ionicons/icons";
 import type { BookFormData } from "./composables/useAddBook";
 
 interface Props {
@@ -6,12 +8,16 @@ interface Props {
   thumbnailUrl: string;
   isLoadingBookDetails: boolean;
   scannedISBN?: string;
+  isFormValid: boolean;
+  showContinueButton?: boolean;
+  bookNotFound: boolean;
 }
 
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
-  "update:formData": [formData: BookFormData];
+  "update:form-data": [formData: BookFormData];
+  continue: [];
 }>();
 
 // Update form data reactively
@@ -21,29 +27,59 @@ const updateFormData = <K extends keyof BookFormData>(
 ) => {
   const updatedData = { ...props.formData };
   updatedData[field] = value;
-  emit("update:formData", updatedData);
+  emit("update:form-data", updatedData);
 };
 </script>
 
 <template>
-  <div class="max-w-2xl mx-auto space-y-6">
+  <div class="p-4">
     <!-- Loading State for Scanned Books -->
     <div
       v-if="isLoadingBookDetails"
-      class="flex justify-center items-center py-12"
+      class="fixed inset-0 flex justify-center items-center z-50"
     >
-      <div
-        class="animate-spin rounded-full h-12 w-12 border-4 border-menu-blue border-t-transparent"
-      ></div>
-      <span
-        class="ml-3 text-light-secondary-text dark:text-dark-secondary-text"
-      >
-        Fetching book details...
-      </span>
+      <div class="flex items-center">
+        <div
+          class="animate-spin rounded-full h-12 w-12 border-4 border-menu-blue border-t-transparent"
+        ></div>
+        <span
+          class="ml-3 text-light-secondary-text dark:text-dark-secondary-text"
+        >
+          Fetching book details...
+        </span>
+      </div>
+    </div>
+
+    <!-- Book Not Found Message -->
+    <div
+      v-if="bookNotFound && !isLoadingBookDetails"
+      class="fixed inset-0 flex items-center justify-center z-50 px-4"
+    >
+      <div class="text-center">
+        <div class="mb-4">
+          <ion-icon
+            :icon="alertCircleOutline"
+            class="w-16 h-16 text-orange-500 mx-auto"
+          ></ion-icon>
+        </div>
+        <h3
+          class="text-lg font-medium text-light-primary-text dark:text-dark-primary-text mb-2"
+        >
+          Book Not Found
+        </h3>
+        <p class="text-light-secondary-text dark:text-dark-secondary-text mb-4">
+          We couldn't find details for ISBN: {{ scannedISBN }}
+        </p>
+        <p
+          class="text-sm text-light-secondary-text dark:text-dark-secondary-text"
+        >
+          You can still add the book manually by filling out the form below.
+        </p>
+      </div>
     </div>
 
     <!-- Book Form -->
-    <div v-else>
+    <div v-if="!isLoadingBookDetails && !bookNotFound">
       <!-- Book Thumbnail -->
       <div class="flex justify-center mb-6">
         <div
@@ -55,21 +91,20 @@ const updateFormData = <K extends keyof BookFormData>(
             alt="Book Thumbnail"
             class="w-full h-full object-cover"
           />
-          <svg
+          <ion-icon
             v-else
+            :icon="bookOutline"
             class="w-16 h-16 text-light-secondary-text dark:text-dark-secondary-text"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="1.5"
-              d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
-            />
-          </svg>
+          ></ion-icon>
         </div>
+      </div>
+
+      <div class="text-center">
+        <p
+          class="text-sm text-light-secondary-text dark:text-dark-secondary-text"
+        >
+          ISBN: {{ scannedISBN }}
+        </p>
       </div>
 
       <!-- Form Fields -->
@@ -206,6 +241,18 @@ const updateFormData = <K extends keyof BookFormData>(
             placeholder="e.g., 2023 or 2023-03-15"
           />
         </div>
+      </div>
+
+      <!-- Continue Button -->
+      <div class="mt-8 text-center">
+        <ion-button
+          @click="emit('continue')"
+          :disabled="!isFormValid"
+          expand="block"
+          class="ion-margin"
+        >
+          Continue
+        </ion-button>
       </div>
     </div>
   </div>

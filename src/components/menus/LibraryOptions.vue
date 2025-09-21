@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from "vue";
+import { modalController, alertController } from "@ionic/vue";
 import RenameLibraryModal from "@/components/modals/RenameLibrary.vue";
-import DeleteLibraryModal from "@/components/modals/DeleteLibrary.vue";
 
 // ============= PROPS & EMITS =============
 const props = defineProps<{
@@ -11,6 +11,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: [];
+  closed: [];
   rename: [newName: string];
   delete: [];
 }>();
@@ -19,22 +20,11 @@ const emit = defineEmits<{
 // Core visibility state
 const localIsOpen = ref(props.isOpen);
 const isMenuClosing = ref(false);
+const pendingAction = ref<"rename" | "delete" | null>(null);
 
-// Modal visibility state
-const showRenameModal = ref(false);
-const showDeleteModal = ref(false);
-const isRenameModalLeaving = ref(false);
-const isDeleteModalLeaving = ref(false);
-
-// Display menu content only when no modals are visible or leaving
+// Display menu content only when not closing
 const showMenuContent = computed(() => {
-  return (
-    !showRenameModal.value &&
-    !showDeleteModal.value &&
-    !isMenuClosing.value &&
-    !isRenameModalLeaving.value &&
-    !isDeleteModalLeaving.value
-  );
+  return !isMenuClosing.value;
 });
 
 // ============= WATCHERS =============
@@ -56,10 +46,6 @@ watch(
 // ============= MENU MANAGEMENT =============
 // Start the closing process for the entire menu
 function startClosingProcess() {
-  // Hide any open modals
-  showRenameModal.value = false;
-  showDeleteModal.value = false;
-
   // Mark menu as closing to trigger animations
   isMenuClosing.value = true;
 }
@@ -69,56 +55,95 @@ function onMenuLeave() {
   // Clean up all state
   localIsOpen.value = false;
   isMenuClosing.value = false;
-  isRenameModalLeaving.value = false;
-  isDeleteModalLeaving.value = false;
+  emit("closed");
+
+  // If a follow-up action was requested (e.g., open a modal), run it now
+  if (pendingAction.value === "rename") {
+    pendingAction.value = null;
+    void presentRenameModal();
+  } else if (pendingAction.value === "delete") {
+    pendingAction.value = null;
+    void presentDeleteAlert();
+  }
 }
 
 // ============= MODAL MANAGEMENT =============
-// Open modals
+// Open modals using Ionic modal controller
+async function presentRenameModal() {
+  try {
+    const modal = await modalController.create({
+      component: RenameLibraryModal,
+      componentProps: {
+        isOpen: true,
+        libraryName: props.libraryName,
+      },
+      cssClass: "generic-modal",
+      backdropDismiss: true,
+    });
+
+    await modal.present();
+
+    const { data, role } = await modal.onDidDismiss();
+
+    if (role === "renamed" && data) {
+      handleRename(data);
+    }
+  } catch (error) {
+    console.error("Error opening rename modal:", error);
+  }
+}
+
 function openRenameModal() {
-  showRenameModal.value = true;
+  // Request menu close; when transition finishes, we present the modal
+  pendingAction.value = "rename";
+  startClosingProcess();
+  emit("close");
+}
+
+async function presentDeleteAlert() {
+  try {
+    const alert = await alertController.create({
+      header: "Delete Library",
+      message: `Are you sure you want to delete "${props.libraryName}"? This action cannot be undone.`,
+      cssClass: "generic-modal",
+      buttons: [
+        { text: "Cancel", role: "cancel" },
+        {
+          text: "Delete",
+          role: "destructive",
+          handler: () => {
+            handleDelete();
+          },
+        },
+      ],
+    });
+    await alert.present();
+  } catch (error) {
+    console.error("Error opening delete alert:", error);
+  }
 }
 
 function openDeleteModal() {
-  showDeleteModal.value = true;
-}
-
-// Close modals with animation
-function closeRenameModal() {
-  isRenameModalLeaving.value = true;
-  showRenameModal.value = false;
+  // Request menu close; when transition finishes, we present the modal
+  pendingAction.value = "delete";
+  startClosingProcess();
   emit("close");
-}
-
-function closeDeleteModal() {
-  isDeleteModalLeaving.value = true;
-  showDeleteModal.value = false;
-  emit("close");
-}
-
-// Modal transition complete handlers
-function onRenameModalLeave() {
-  isRenameModalLeaving.value = false;
-}
-
-function onDeleteModalLeave() {
-  isDeleteModalLeaving.value = false;
 }
 
 // ============= EVENT HANDLERS =============
 // Main menu actions
 function handleCancel() {
+  // Start close animation, then notify parent to sync state
+  startClosingProcess();
   emit("close");
 }
 
 function handleRename(newName: string) {
   emit("rename", newName);
-  closeRenameModal();
 }
 
 function handleDelete() {
   emit("delete");
-  closeDeleteModal();
 }
 </script>
 
@@ -143,7 +168,7 @@ function handleDelete() {
             <div class="flex flex-col gap-2">
               <!-- Library options panel -->
               <div
-                class="bg-light-bg/80 dark:bg-dark-nav/80 backdrop-blur-lg rounded-xl w-full overflow-hidden"
+                class="bg-light-bg/80 dark:bg-dark-bg/80 backdrop-blur-lg rounded-xl w-full overflow-hidden"
               >
                 <!-- Library name header -->
                 <div
@@ -169,7 +194,7 @@ function handleDelete() {
                   class="border-t border-hairline border-black/5 dark:border-white/10"
                 >
                   <button
-                    class="w-full py-4 text-center text-warning-red text-menu-title"
+                    class="w-full py-4 text-center text-danger-red text-menu-title"
                     @click="openDeleteModal"
                   >
                     Delete
@@ -179,7 +204,7 @@ function handleDelete() {
 
               <!-- Cancel button -->
               <div
-                class="bg-light-bg dark:bg-dark-nav rounded-xl w-full overflow-hidden"
+                class="bg-light-bg dark:bg-dark-bg rounded-xl w-full overflow-hidden"
               >
                 <button
                   class="w-full py-3 text-center text-menu-title text-menu-blue"
@@ -192,35 +217,10 @@ function handleDelete() {
           </div>
         </Transition>
       </div>
-
-      <!-- Rename modal with transition -->
-      <div v-if="showRenameModal || isRenameModalLeaving">
-        <Transition name="modalAnim" appear @after-leave="onRenameModalLeave">
-          <RenameLibraryModal
-            v-if="showRenameModal"
-            :is-open="showRenameModal"
-            :library-name="libraryName"
-            @close="closeRenameModal"
-            @rename="handleRename"
-          />
-        </Transition>
-      </div>
-
-      <!-- Delete modal with transition -->
-      <div v-if="showDeleteModal || isDeleteModalLeaving">
-        <Transition name="modalAnim" appear @after-leave="onDeleteModalLeave">
-          <DeleteLibraryModal
-            v-if="showDeleteModal"
-            :is-open="showDeleteModal"
-            :library-name="libraryName"
-            @close="closeDeleteModal"
-            @delete="handleDelete"
-          />
-        </Transition>
-      </div>
     </div>
   </teleport>
 </template>
+
 <style>
 /* Fade transition for backdrop */
 .fade-enter-active,

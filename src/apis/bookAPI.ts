@@ -10,6 +10,7 @@ import {
   query,
   where,
   DocumentReference,
+  increment,
 } from "firebase/firestore";
 import type { Book, Library } from "../schema";
 import { COLLECTION_NAMES } from "../constants";
@@ -17,6 +18,11 @@ import { COLLECTION_NAMES } from "../constants";
 export const createBook = async (book: Book) => {
   const bookDoc = doc(collection(firestore, COLLECTION_NAMES.BOOKS));
   await setDoc(bookDoc, book);
+
+  // Update the library books count
+  await updateDoc(doc(firestore, COLLECTION_NAMES.LIBRARIES, book.library.id), {
+    booksCount: increment(1),
+  });
 };
 
 export const getBook = async (bookId: string): Promise<Book | null> => {
@@ -52,6 +58,11 @@ export const markAsReturned = async (bookId: string) => {
   });
 };
 
-export const deleteBook = async (bookId: string) => {
+export const deleteBook = async (bookId: string, libraryId: string) => {
   await deleteDoc(doc(firestore, COLLECTION_NAMES.BOOKS, bookId));
+
+  // Update the library books count
+  await updateDoc(doc(firestore, COLLECTION_NAMES.LIBRARIES, libraryId), {
+    booksCount: increment(-1),
+  });
 };

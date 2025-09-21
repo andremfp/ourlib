@@ -121,7 +121,7 @@ export default defineComponent({
       status.value = {
         loading: true,
         error: false,
-        message: "Requesting camera...",
+        message: "Opening camera...",
       };
 
       const config = {
@@ -191,7 +191,7 @@ export default defineComponent({
 
 <template>
   <div
-    class="flex flex-col items-center justify-center bg-light-bg dark:bg-dark-bg p-4 w-full space-y-6"
+    class="flex flex-col items-center justify-center bg-light-bg dark:bg-dark-bg p-4 w-full h-full space-y-6"
   >
     <!-- Error State -->
     <div v-if="status.error" class="flex flex-col items-center space-y-4 py-8">
@@ -347,7 +347,7 @@ export default defineComponent({
     <!-- Loading State -->
     <div
       v-else-if="status.loading"
-      class="flex flex-col items-center space-y-4 py-8"
+      class="flex flex-col items-center space-y-4 py-8 h-full"
     >
       <div class="flex justify-center items-center">
         <svg
@@ -381,9 +381,8 @@ export default defineComponent({
     <!-- Camera Scanner (always present for Html5Qrcode) -->
     <div
       :id="READER_ELEMENT_ID"
-      class="w-full rounded-lg overflow-hidden"
+      class="w-full max-w-md mx-auto rounded-lg overflow-hidden"
       :style="{
-        'min-height': '300px',
         visibility: status.error || status.loading ? 'hidden' : 'visible',
       }"
     ></div>
@@ -393,12 +392,12 @@ export default defineComponent({
       <p class="text-light-secondary-text dark:text-dark-secondary-text">
         Point your camera at a book barcode
       </p>
-      <button
+      <ion-button
         @click="stopAndCancel"
         class="bg-warning-red hover:bg-red-600 text-white font-semibold rounded-lg px-6 py-2 transition-colors"
       >
         Stop Scanning
-      </button>
+      </ion-button>
     </div>
   </div>
 </template>

@@ -111,6 +111,8 @@ export const SEARCH = {
 export const SORT = {
   BY: {
     NAME: "NAME",
+    TITLE: "TITLE",
+    AUTHOR: "AUTHOR",
     DATE: "DATE ADDED",
   },
   DIRECTION: {

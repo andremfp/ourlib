@@ -45,11 +45,14 @@ jobs:
       - name: Build the project
         run: yarn build
 
+      - name: Build functions
+        run: cd functions && yarn build
+
       - name: Cache Functions Build Output
         uses: actions/cache@v4
         with:
           path: functions/lib
-          key: ${{ runner.os }}-functions-lib-${{ github.sha }}
+          key: ${{ runner.os }}-functions-lib-${{ hashFiles('functions/yarn.lock', 'functions/tsconfig.json', 'functions/src/**') }}
           restore-keys: |
             ${{ runner.os }}-functions-lib-
 
@@ -78,7 +81,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: functions/lib
-          key: ${{ runner.os }}-functions-lib-${{ github.sha }}
+          key: ${{ runner.os }}-functions-lib-${{ hashFiles('functions/yarn.lock', 'functions/tsconfig.json', 'functions/src/**') }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -131,7 +134,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: functions/lib
-          key: ${{ runner.os }}-functions-lib-${{ github.sha }}
+          key: ${{ runner.os }}-functions-lib-${{ hashFiles('functions/yarn.lock', 'functions/tsconfig.json', 'functions/src/**') }}
 
       - name: Install Root Dependencies (if not cached)
         run: yarn install

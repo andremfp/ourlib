@@ -2,13 +2,13 @@
 import tailwindTransitions from "./src/plugins/tailwindTransitions";
 
 export default {
+  darkMode: "class",
   content: ["./index.html", "./src/**/*.{vue,js,ts,jsx,tsx}"],
   theme: {
     extend: {
       fontSize: {
-        xxs: "0.65rem",
         nav: "1.1rem",
-        "nav-subtext": "0.8rem",
+        "sort-controls": "0.7rem",
         "modal-title": "1.2rem",
         "modal-text": "1rem",
         "modal-button": "1rem",
@@ -27,14 +27,24 @@ export default {
         // Navigation colors
         "light-nav": "#7ea6ff",
         "light-nav-text": "#1F2937",
-        "dark-nav": "#27272A",
+        "light-nav-secondary": "#f2f4f8",
+        "dark-nav": "#18181B",
         "dark-nav-text": "#9CA3AF",
-        "light-nav-sort-controls": "#a1bdff",
-        "dark-nav-sort-controls": "#414145",
+        "dark-nav-secondary": "#3a3a3e",
+
+        // Sort controls colors
+        "light-sort-controls": "#a1bdff",
+        "dark-sort-controls": "#414145",
 
         // Background colors
         "light-bg": "#f2f4f8",
-        "dark-bg": "#18181B",
+        "dark-bg": "#1F1F1F",
+        "light-bg-secondary": "#7ea6ff", // slightly darker than light-bg
+        "dark-bg-secondary": "#27272A", // TODO tweak these colors
+
+        // Tab bar colors
+        "light-tab-bar": "#FFFFFF",
+        "dark-tab-bar": "#18181B",
 
         // Text colors
         "light-primary-text": "#1F2937",
@@ -42,7 +52,7 @@ export default {
         "dark-primary-text": "#E5E7EB",
         "dark-secondary-text": "#9CA3AF",
         "menu-blue": "#007AFF",
-        "warning-red": "#FF3B30",
+        "danger-red": "#FF3B30",
 
         // UI Element colors
         "light-border": "#f9fafb",

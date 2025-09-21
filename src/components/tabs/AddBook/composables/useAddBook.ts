@@ -3,6 +3,7 @@ import { getAuth } from "firebase/auth";
 import { fetchBookDetails } from "@/apis/fetchBook";
 import { createBook } from "@/apis/bookAPI";
 import { useLibraryList } from "@/components/tabs/MyLibraries/composables/useLibraryList";
+import { modalController } from "@ionic/vue";
 import type { BookDetails } from "@/apis/fetchBook";
 import type { Book, Library } from "@/schema";
 import { firestore } from "@/firebase";
@@ -33,6 +34,7 @@ export function useAddBook() {
   const isLoadingBookDetails = ref(false);
   const isSaving = ref(false);
   const selectedLibrary = ref<Library | null>(null);
+  const bookNotFound = ref(false);
 
   // Form data for book details
   const formData = reactive<BookFormData>({
@@ -88,6 +90,7 @@ export function useAddBook() {
     formData.pages = undefined;
     formData.publisher = "";
     formData.publishDate = "";
+    bookNotFound.value = false;
 
     emitModeChange("selection");
     logger.debug("AddBook state reset");
@@ -153,10 +156,14 @@ export function useAddBook() {
         formData.pages = bookDetails.value.pageCount || undefined;
         formData.publisher = bookDetails.value.publisher || "";
         formData.publishDate = bookDetails.value.publishedDate || "";
+        bookNotFound.value = false;
+      } else {
+        bookNotFound.value = true;
       }
     } catch (error) {
       logger.error("Error fetching book details:", error);
       bookDetails.value = null;
+      bookNotFound.value = true;
       // Keep form empty for manual input
     } finally {
       isLoadingBookDetails.value = false;
@@ -164,14 +171,47 @@ export function useAddBook() {
   };
 
   // Proceed to library selection (modal)
-  const proceedToLibrarySelection = () => {
+  const proceedToLibrarySelection = async () => {
+    console.log("proceedToLibrarySelection called");
+    console.log("isFormValid:", isFormValid.value);
+    console.log("formData:", formData);
+
     if (!isFormValid.value) {
       logger.warn("Cannot proceed: form is invalid");
       return;
     }
 
-    // Note: Modal will be opened by parent component
-    logger.debug("Ready for library selection");
+    try {
+      const modal = await modalController.create({
+        component: (await import("@/components/modals/LibrarySelection.vue"))
+          .default,
+        componentProps: {
+          isOpen: true,
+          libraries: libraries.value,
+          isLoadingLibraries: isLoadingLibraries.value,
+          bookTitle: formData.title,
+        },
+        cssClass: "generic-modal",
+        backdropDismiss: true,
+      });
+
+      await modal.present();
+
+      const { data, role } = await modal.onDidDismiss();
+
+      if (role === "selected" && data) {
+        selectedLibrary.value = data;
+        logger.debug("Library selected from modal:", data.name);
+
+        // Save the book to the selected library
+        const success = await saveBook();
+        if (success) {
+          resetState();
+        }
+      }
+    } catch (error) {
+      logger.error("Error opening library selection modal:", error);
+    }
   };
 
   // Select a library
@@ -287,6 +327,7 @@ export function useAddBook() {
     isLoadingBookDetails,
     isSaving,
     selectedLibrary,
+    bookNotFound,
     formData,
     libraries,
     isLoadingLibraries,

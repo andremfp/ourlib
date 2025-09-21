@@ -1,20 +1,43 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { getAuth, signOut, onAuthStateChanged } from "firebase/auth";
-import { getUser } from "@/apis/userAPI";
+import { useRouter } from "vue-router";
+import {
+  IonPage,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
+  IonList,
+  IonItem,
+  IonLabel,
+  IonIcon,
+  IonSpinner,
+  IonButton,
+  modalController,
+  alertController,
+} from "@ionic/vue";
+import {
+  keyOutline,
+  trashOutline,
+  logOutOutline,
+  personCircleOutline,
+} from "ionicons/icons";
+import {
+  getAuth,
+  signOut,
+  onAuthStateChanged,
+  deleteUser,
+} from "firebase/auth";
+import { getUser, removeUser } from "@/apis/userAPI";
 import logger from "@/utils/logger";
-import { useTabStore } from "@/stores/tabStore";
-import { useViewStore } from "@/stores/viewStore";
 import ChangePasswordForm from "@/components/modals/ChangePassword.vue";
-import DeleteAccount from "@/components/modals/DeleteAccount.vue";
+import { useTabStore } from "@/stores/tabStore";
 
 const auth = getAuth();
-const viewStore = useViewStore();
-const tabStore = useTabStore();
+const router = useRouter();
 const username = ref<string | null>(null);
 const loading = ref(true);
-const showChangePasswordModal = ref(false);
-const showDeleteModal = ref(false);
+const tabStore = useTabStore();
 
 const fetchUser = async (uid: string) => {
   try {
@@ -42,12 +65,61 @@ onMounted(() => {
   });
 });
 
-const logout = async () => {
+const openChangePasswordModal = async () => {
+  const modal = await modalController.create({
+    component: ChangePasswordForm,
+    cssClass: "generic-modal",
+  });
+  modal.present();
+};
+
+const openDeleteAccountModal = async () => {
+  const alert = await alertController.create({
+    header: "Delete Account",
+    message:
+      "Are you sure you want to delete your account? This action cannot be undone.",
+    cssClass: "generic-modal",
+    buttons: [
+      {
+        text: "Cancel",
+        role: "cancel",
+      },
+      {
+        text: "Delete",
+        role: "destructive",
+        handler: () => {
+          deleteAccount();
+        },
+      },
+    ],
+  });
+  await alert.present();
+};
+
+const deleteAccount = async () => {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  try {
+    await removeUser(user.uid); // API call to delete user data from Firestore
+    await deleteUser(user); // Firebase auth call to delete the user
+    tabStore.resetActiveTab();
+    router.push("/login"); // Redirect to login after deletion
+  } catch (error: any) {
+    logger.error("Account deletion error:", error.message);
+    // Optionally, show an error alert here
+  }
+};
+
+const handleLogout = async () => {
+  const auth = getAuth();
+  const tabStore = useTabStore();
   try {
     await signOut(auth);
-    logger.info("User logged out, resetting tab and setting view to Login");
+    logger.debug("[Profile.vue] Calling tabStore.resetActiveTab()");
     tabStore.resetActiveTab();
-    viewStore.setView("Login");
+    logger.info("User logged out successfully");
+    router.push("/login");
   } catch (error: any) {
     logger.error("Logout error:", error.message);
   }
@@ -55,119 +127,41 @@ const logout = async () => {
 </script>
 
 <template>
-  <div class="mx-auto p-6 bg-light-bg dark:bg-dark-bg">
-    <!-- User Info -->
-    <div class="flex flex-col items-center pb-4">
-      <!-- User Avatar -->
-      <div
-        class="w-24 h-24 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center"
-      >
-        <svg
-          class="w-12 h-12 text-gray-500 dark:text-gray-400"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-          ></path>
-        </svg>
+  <ion-page>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>{{ tabStore.activeTab }}</ion-title>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content :fullscreen="true" :scroll-y="false">
+      <div class="ion-padding flex flex-col items-center pb-4">
+        <ion-icon
+          :icon="personCircleOutline"
+          class="w-24 h-24 text-gray-500 dark:text-gray-400"
+        ></ion-icon>
+        <h1 class="mt-4 text-xl font-semibold text-gray-800 dark:text-white">
+          <span v-if="!loading">{{ username }}</span>
+          <ion-spinner v-else name="crescent"></ion-spinner>
+        </h1>
       </div>
-      <!-- Username -->
-      <h1
-        id="username"
-        class="mt-4 text-xl font-semibold text-gray-800 dark:text-white"
-      >
-        <span v-if="!loading">{{ username }}</span>
-        <span
-          v-else
-          id="username-loading-spinner"
-          class="inline-block w-6 h-6 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"
-        ></span>
-      </h1>
-    </div>
 
-    <!-- Options -->
-    <div class="mt-6">
-      <button
-        id="change-password-btn"
-        @click="showChangePasswordModal = true"
-        class="w-full flex items-center text-left text-gray-700 dark:text-gray-300 px-4 py-3 border-b border-gray-300 dark:border-gray-700"
-      >
-        <svg
-          class="w-5 h-5 mr-3 text-gray-500 dark:text-gray-400"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="1"
-            d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-          ></path>
-        </svg>
-        Change Password
-      </button>
-      <button
-        id="delete-account-btn"
-        @click="showDeleteModal = true"
-        class="w-full flex items-center text-left text-red-600 font-bold px-4 py-3 border-b border-gray-300 dark:border-gray-700"
-      >
-        <svg
-          class="w-5 h-5 mr-3 text-red-600"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="1"
-            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-          ></path>
-        </svg>
-        Delete Account
-      </button>
-    </div>
+      <ion-list :inset="true">
+        <ion-item button @click="openChangePasswordModal">
+          <ion-icon :icon="keyOutline" slot="start"></ion-icon>
+          <ion-label>Change Password</ion-label>
+        </ion-item>
+        <ion-item button @click="openDeleteAccountModal">
+          <ion-icon :icon="trashOutline" slot="start" color="danger"></ion-icon>
+          <ion-label color="danger">Delete Account</ion-label>
+        </ion-item>
+      </ion-list>
 
-    <!-- Sign Out -->
-    <div class="mt-8">
-      <button
-        id="sign-out-btn"
-        @click="logout"
-        class="w-full flex items-center justify-center font-bold text-gray-600 dark:text-gray-300 px-4 py-3"
-      >
-        <svg
-          class="w-5 h-5 mr-2 text-gray-500 dark:text-gray-400"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="1"
-            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-          ></path>
-        </svg>
-        Sign Out
-      </button>
-    </div>
-
-    <!-- Modals -->
-    <ChangePasswordForm
-      :isOpen="showChangePasswordModal"
-      @close="showChangePasswordModal = false"
-    />
-
-    <DeleteAccount :isOpen="showDeleteModal" @close="showDeleteModal = false" />
-  </div>
+      <div class="ion-padding">
+        <ion-button @click="handleLogout" expand="block">
+          <ion-icon :icon="logOutOutline" slot="start"></ion-icon>
+          Sign Out
+        </ion-button>
+      </div>
+    </ion-content>
+  </ion-page>
 </template>

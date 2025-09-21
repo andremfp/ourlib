@@ -9,9 +9,28 @@ class Logger {
   private logLevel: LogLevel;
 
   constructor() {
-    // Set default log level to INFO or based on environment variable
-    this.logLevel =
-      import.meta.env.NODE_ENV === "prod" ? LogLevel.INFO : LogLevel.DEBUG;
+    // Determine log level from (in order of precedence):
+    // 1) localStorage override (log_level)
+    // 2) Vite env var VITE_LOG_LEVEL
+    // 3) Build mode (prod => INFO, dev => DEBUG)
+    let override = "";
+    try {
+      override = (localStorage.getItem("log_level") || "").toLowerCase();
+    } catch {
+      // ignore (e.g., SSR or storage unavailable)
+    }
+    const envLevel = (
+      (import.meta.env.VITE_LOG_LEVEL as string | undefined) || ""
+    ).toLowerCase();
+
+    const candidate = override || envLevel;
+    const validLevels = Object.values(LogLevel) as string[];
+
+    if (validLevels.includes(candidate)) {
+      this.logLevel = candidate as LogLevel;
+    } else {
+      this.logLevel = import.meta.env.PROD ? LogLevel.INFO : LogLevel.DEBUG;
+    }
   }
 
   private logMessage(level: LogLevel, message: string, ...args: unknown[]) {

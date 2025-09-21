@@ -1,6 +1,9 @@
 import { ref, onMounted, onUnmounted } from "vue";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { getUserLibraries } from "@/apis/libraryAPI";
+import {
+  getUserLibraries,
+  getUserLibrariesFromServer,
+} from "@/apis/libraryAPI";
 import { COLLECTION_NAMES } from "@/constants";
 import type { Library, User } from "@/schema";
 import logger from "@/utils/logger";
@@ -51,7 +54,7 @@ export function useLibraryList() {
     }
   };
 
-  const refreshLibraries = async () => {
+  const refreshLibraries = async (forceServer = false) => {
     if (isRefreshing.value) {
       // Avoid multiple concurrent refreshes
       return;
@@ -59,7 +62,25 @@ export function useLibraryList() {
     const user = auth.currentUser;
     if (user) {
       logger.info("[useUserLibraries] Refresh triggered.");
-      await fetchLibraries(user.uid, true);
+      if (forceServer) {
+        isRefreshing.value = true;
+        try {
+          const userRef = doc(
+            firestore,
+            COLLECTION_NAMES.USERS,
+            user.uid,
+          ) as DocumentReference<User>;
+          const fetchedLibraries = await getUserLibrariesFromServer(userRef);
+          libraries.value = fetchedLibraries;
+        } catch (err) {
+          logger.error("[useUserLibraries] Server refresh failed:", err);
+          error.value = "Failed to refresh libraries. Please try again.";
+        } finally {
+          isRefreshing.value = false;
+        }
+      } else {
+        await fetchLibraries(user.uid, true);
+      }
     } else {
       logger.warn("[useUserLibraries] Refresh skipped: no user authenticated.");
       // Ensure refreshing stops if user logs out during pull

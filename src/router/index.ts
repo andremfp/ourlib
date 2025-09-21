@@ -1,16 +1,27 @@
-import { createRouter, createWebHistory } from "vue-router";
+import { createRouter, createWebHistory } from "@ionic/vue-router";
 import type { RouteRecordRaw } from "vue-router";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
-import HomeView from "@/views/HomeView.vue";
-import NotFound from "@/views/NotFound.vue";
+// Lazy-loaded route components
+const LoginView = () => import("@/views/Login.vue");
+const RegisterView = () => import("@/views/Register.vue");
+const TabsPage = () => import("@/views/Tabs.vue");
+const NotFound = () => import("@/views/NotFound.vue");
 import logger from "@/utils/logger";
-import { useViewStore } from "@/stores/viewStore";
 
 const routes: Array<RouteRecordRaw> = [
   {
     path: "/",
     name: "home",
-    component: HomeView,
+    component: TabsPage,
+  },
+  {
+    path: "/login",
+    name: "login",
+    component: LoginView,
+  },
+  {
+    path: "/register",
+    name: "register",
+    component: RegisterView,
   },
   {
     path: "/:catchAll(.*)",
@@ -24,7 +35,8 @@ const router = createRouter({
   routes,
 });
 
-const getCurrentUser = (): Promise<unknown> => {
+const getCurrentUser = async (): Promise<unknown> => {
+  const { getAuth, onAuthStateChanged } = await import("firebase/auth");
   return new Promise((resolve, reject) => {
     const unsubscribe = onAuthStateChanged(
       getAuth(),
@@ -38,22 +50,29 @@ const getCurrentUser = (): Promise<unknown> => {
 };
 
 router.beforeEach(async (to, _, next) => {
-  const viewStore = useViewStore();
   const user = await getCurrentUser();
 
+  // Define routes that do not require authentication
+  const publicPages = ["/login", "/register"];
+  const authRequired = !publicPages.includes(to.path);
+
   if (to.name === "not-found") {
-    next();
-    return;
+    return next();
   }
 
-  if (user) {
-    logger.info("User is authenticated, setting view to Main");
-    viewStore.setView("Main");
-  } else {
-    logger.info("User is not authenticated, setting view to Login");
-    viewStore.setView("Login");
+  if (authRequired && !user) {
+    logger.info(
+      `Authentication required for ${to.path}. User not logged in. Redirecting to /login.`,
+    );
+    return next("/login");
   }
 
+  if (!authRequired && user) {
+    logger.info(`User is logged in. Redirecting from ${to.path} to /.`);
+    return next("/");
+  }
+
+  // If we've made it this far, allow navigation
   next();
 });
 

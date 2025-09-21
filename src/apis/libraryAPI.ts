@@ -5,6 +5,7 @@ import {
   setDoc,
   getDoc,
   getDocs,
+  getDocsFromServer,
   updateDoc,
   arrayUnion,
   deleteDoc,
@@ -13,11 +14,10 @@ import {
   DocumentReference,
 } from "firebase/firestore";
 import type { Library, User } from "../schema";
-
-const librariesCollection = "libraries";
+import { COLLECTION_NAMES } from "../constants";
 
 export const createLibrary = async (library: Library) => {
-  const libraryDoc = doc(collection(firestore, librariesCollection));
+  const libraryDoc = doc(collection(firestore, COLLECTION_NAMES.LIBRARIES));
   await setDoc(libraryDoc, library);
 };
 
@@ -25,7 +25,7 @@ export const updateLibrary = async (
   libraryId: string,
   newLibraryName: string,
 ) => {
-  await updateDoc(doc(firestore, librariesCollection, libraryId), {
+  await updateDoc(doc(firestore, COLLECTION_NAMES.LIBRARIES, libraryId), {
     name: newLibraryName,
   });
 };
@@ -42,7 +42,7 @@ export const getUserLibraries = async (
 ): Promise<Library[]> => {
   const querySnapshot = await getDocs(
     query(
-      collection(firestore, librariesCollection),
+      collection(firestore, COLLECTION_NAMES.LIBRARIES),
       where("owner", "==", owner),
     ),
   );
@@ -51,12 +51,25 @@ export const getUserLibraries = async (
   );
 };
 
+export const getUserLibrariesFromServer = async (
+  owner: DocumentReference<User>,
+): Promise<Library[]> => {
+  const queryRef = query(
+    collection(firestore, COLLECTION_NAMES.LIBRARIES),
+    where("owner", "==", owner),
+  );
+  const querySnapshot = await getDocsFromServer(queryRef);
+  return querySnapshot.docs.map(
+    (doc) => ({ id: doc.id, ...doc.data() }) as Library,
+  );
+};
+
 export const subscribeToLibrary = async (libraryId: string, userId: string) => {
-  await updateDoc(doc(firestore, librariesCollection, libraryId), {
+  await updateDoc(doc(firestore, COLLECTION_NAMES.LIBRARIES, libraryId), {
     subscribers: arrayUnion(userId),
   });
 };
 
 export const deleteLibrary = async (libraryId: string) => {
-  await deleteDoc(doc(firestore, librariesCollection, libraryId));
+  await deleteDoc(doc(firestore, COLLECTION_NAMES.LIBRARIES, libraryId));
 };
