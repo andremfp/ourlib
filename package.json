@@ -49,11 +49,9 @@
     "@eslint/js": "^9.18.0",
     "@firebase/rules-unit-testing": "^4.0.1",
     "@testing-library/vue": "^8.1.0",
-    "@types/firebase": "^3.2.3",
     "@types/jest": "^30.0.0",
     "@types/node": "^22.10.2",
     "@types/pulltorefreshjs": "^0.1.7",
-    "@types/vue": "^2.0.0",
     "@typescript-eslint/eslint-plugin": "^8.22.0",
     "@typescript-eslint/parser": "^8.22.0",
     "@vercel/node": "^5.0.2",
@@ -78,11 +76,16 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.20.0",
+    "browserslist": "^4.24.2",
     "vite": "^6.0.3",
     "vitest": "^3.0.6",
     "vue-eslint-parser": "^9.4.3",
     "vue-tsc": "^2.1.10",
     "workbox-build": "^7.3.0",
     "workbox-window": "^7.3.0"
+  },
+  "resolutions": {
+    "glob": "^10.4.2",
+    "sourcemap-codec": "npm:@jridgewell/sourcemap-codec@^1.4.15"
   }
 }

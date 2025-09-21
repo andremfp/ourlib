@@ -6,6 +6,7 @@ const RegisterView = () => import("@/views/Register.vue");
 const TabsPage = () => import("@/views/Tabs.vue");
 const NotFound = () => import("@/views/NotFound.vue");
 import logger from "@/utils/logger";
+import type { Auth } from "firebase/auth";
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -36,10 +37,11 @@ const router = createRouter({
 });
 
 const getCurrentUser = async (): Promise<unknown> => {
-  const { getAuth, onAuthStateChanged } = await import("firebase/auth");
+  const { onAuthStateChanged } = await import("firebase/auth");
+  const { auth } = (await import("@/firebase")) as { auth: Auth };
   return new Promise((resolve, reject) => {
     const unsubscribe = onAuthStateChanged(
-      getAuth(),
+      auth,
       (user) => {
         unsubscribe();
         resolve(user);
