@@ -1,11 +1,11 @@
-import { DocumentReference } from "firebase/firestore";
+import { DocumentReference, Timestamp } from "firebase/firestore";
 
 export type User = {
   id: string;
   username: string;
   email: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
   friends: string[];
 };
 
@@ -14,8 +14,8 @@ export type Library = {
   name: string;
   owner: DocumentReference<User>; // User ID
   booksCount: number;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
   subscribers: string[]; // User IDs
 };
 
@@ -23,13 +23,14 @@ export type Book = {
   id: string;
   library: DocumentReference<Library>; // Library ID
   lentTo?: DocumentReference<User>; // User ID of the borrower
-  createdAt: string;
-  updatedAt: string;
-  lentAt?: string;
+  isbn: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  lentAt?: Timestamp;
   title: string;
   authors: string[];
   language?: string;
-  pages?: number;
+  pages?: number | null;
   publisher?: string;
   publishDate?: string;
   thumbnailUrl: string;
@@ -43,5 +44,5 @@ export type Update = {
   book: DocumentReference<Book>; // ID of the book involved
   relatedUserId?: string; // ID of the related user (borrower/returner) if applicable
   visibleTo: string[]; // Array of user IDs who can view the update
-  timestamp: string; // ISO timestamp of the update
+  timestamp: Timestamp; // ISO timestamp of the update
 };

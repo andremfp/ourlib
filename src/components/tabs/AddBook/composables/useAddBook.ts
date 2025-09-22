@@ -2,12 +2,13 @@ import { ref, computed, reactive } from "vue";
 import { getAuth } from "firebase/auth";
 import { fetchBookDetails } from "@/apis/fetchBook";
 import { createBook } from "@/apis/bookAPI";
+import { uploadThumbnail } from "@/apis/storageAPI";
 import { useLibraryList } from "@/components/tabs/MyLibraries/composables/useLibraryList";
 import { modalController } from "@ionic/vue";
 import type { BookDetails } from "@/apis/fetchBook";
 import type { Book, Library } from "@/schema";
 import { firestore } from "@/firebase";
-import { doc, DocumentReference } from "firebase/firestore";
+import { doc, DocumentReference, Timestamp } from "firebase/firestore";
 import { COLLECTION_NAMES } from "@/constants";
 import logger from "@/utils/logger";
 
@@ -35,6 +36,8 @@ export function useAddBook() {
   const isSaving = ref(false);
   const selectedLibrary = ref<Library | null>(null);
   const bookNotFound = ref(false);
+  const errorState = ref<{ message: string } | null>(null);
+  const thumbnailUrl = ref("");
 
   // Form data for book details
   const formData = reactive<BookFormData>({
@@ -56,14 +59,6 @@ export function useAddBook() {
     );
   });
 
-  // Computed thumbnail URL
-  const thumbnailUrl = computed(() => {
-    if (bookDetails.value?.thumbnail) {
-      return window.URL.createObjectURL(bookDetails.value.thumbnail);
-    }
-    return "";
-  });
-
   // Emit mode change events for Navbar integration
   const emitModeChange = (newMode: AddBookMode) => {
     window.dispatchEvent(
@@ -82,6 +77,9 @@ export function useAddBook() {
     isLoadingBookDetails.value = false;
     isSaving.value = false;
     selectedLibrary.value = null;
+    bookNotFound.value = false;
+    errorState.value = null;
+    thumbnailUrl.value = "";
 
     // Reset form data
     formData.title = "";
@@ -90,7 +88,6 @@ export function useAddBook() {
     formData.pages = undefined;
     formData.publisher = "";
     formData.publishDate = "";
-    bookNotFound.value = false;
 
     emitModeChange("selection");
     logger.debug("AddBook state reset");
@@ -143,10 +140,20 @@ export function useAddBook() {
     logger.info("Scanned ISBN:", isbn);
 
     isLoadingBookDetails.value = true;
+    errorState.value = null; // Reset error on new attempt
 
     try {
       bookDetails.value = await fetchBookDetails(isbn);
       logger.info("Book details fetched successfully:", bookDetails.value);
+
+      // Upload thumbnail if it exists
+      if (bookDetails.value?.thumbnail) {
+        thumbnailUrl.value = await uploadThumbnail(
+          bookDetails.value.thumbnail,
+          scannedISBN.value,
+        );
+        logger.info("Thumbnail uploaded successfully:", thumbnailUrl.value);
+      }
 
       // Populate form with fetched data
       if (bookDetails.value) {
@@ -163,7 +170,17 @@ export function useAddBook() {
     } catch (error) {
       logger.error("Error fetching book details:", error);
       bookDetails.value = null;
-      bookNotFound.value = true;
+      // Differentiate between "not found" and other errors
+      if (
+        error instanceof Error &&
+        error.message.includes("Failed to fetch book details")
+      ) {
+        bookNotFound.value = true;
+      } else {
+        errorState.value = {
+          message: "An unexpected error occurred. Please try again.",
+        };
+      }
       // Keep form empty for manual input
     } finally {
       isLoadingBookDetails.value = false;
@@ -254,21 +271,22 @@ export function useAddBook() {
       ) as DocumentReference<Library>;
 
       // Create the book object (only include fields with actual values)
-      const now = new Date().toISOString();
-      const newBook: Partial<Book> & {
+      const newBook: Omit<Book, "id"> & {
         library: DocumentReference<Library>;
-        createdAt: string;
-        updatedAt: string;
+        createdAt: Timestamp;
+        updatedAt: Timestamp;
         title: string;
         authors: string[];
         thumbnailUrl: string;
+        isbn: string;
       } = {
         library: libraryRef,
-        createdAt: now,
-        updatedAt: now,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
         title: formData.title.trim(),
         authors: getAuthorsArray(),
         thumbnailUrl: thumbnailUrl.value || "",
+        isbn: scannedISBN.value,
       };
 
       // Only add optional fields if they have values
@@ -328,13 +346,14 @@ export function useAddBook() {
     isSaving,
     selectedLibrary,
     bookNotFound,
+    errorState,
     formData,
     libraries,
     isLoadingLibraries,
+    thumbnailUrl,
 
     // Computed
     isFormValid,
-    thumbnailUrl,
 
     // Actions
     startScanning,

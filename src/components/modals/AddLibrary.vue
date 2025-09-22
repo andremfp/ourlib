@@ -5,7 +5,7 @@ import { getAuth } from "firebase/auth";
 import { createLibrary } from "@/apis/libraryAPI";
 import type { Library } from "@/schema";
 import { firestore } from "@/firebase";
-import { doc, DocumentReference } from "firebase/firestore";
+import { doc, DocumentReference, Timestamp } from "firebase/firestore";
 import { COLLECTION_NAMES } from "@/constants";
 import type { User } from "@/schema";
 
@@ -44,8 +44,8 @@ async function handleSubmit() {
       name: trimmedName,
       owner: userRef,
       booksCount: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
     } as Library);
 
     modalController.dismiss(null, "created");

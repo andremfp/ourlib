@@ -1,5 +1,6 @@
 <script lang="ts">
 import { defineComponent, ref, onMounted, onBeforeUnmount } from "vue";
+import { IonButton } from "@ionic/vue";
 import logger from "@/utils/logger";
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import type { QrcodeSuccessCallback } from "html5-qrcode";
@@ -13,6 +14,9 @@ interface CameraStatus {
 
 export default defineComponent({
   name: "CameraFeed",
+  components: {
+    IonButton,
+  },
 
   setup(_, { emit }) {
     const status = ref<CameraStatus>({

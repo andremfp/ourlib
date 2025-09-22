@@ -90,6 +90,9 @@ export const UI_LIMITS = {
     NAME_MAX_LENGTH: 30,
     NAME_MIN_LENGTH: 3,
   },
+  BOOK: {
+    TITLE_MAX_LENGTH: 30,
+  },
   PASSWORD: {
     MIN_LENGTH: 8,
     MAX_LENGTH: 30,

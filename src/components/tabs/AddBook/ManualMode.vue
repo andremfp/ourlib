@@ -7,6 +7,7 @@ interface Props {
   formData: BookFormData;
   thumbnailUrl: string;
   isFormValid: boolean;
+  errorState: { message: string } | null;
 }
 
 defineProps<Props>();
@@ -36,6 +37,7 @@ const handleContinue = () => {
           :is-form-valid="isFormValid"
           :show-continue-button="true"
           :book-not-found="false"
+          :error-state="errorState"
           @update:form-data="handleFormDataUpdate"
           @continue="handleContinue"
         />

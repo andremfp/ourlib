@@ -4,7 +4,7 @@ import { useRouter } from "vue-router";
 import { IonPage, IonContent, IonInput, IonButton, IonNote } from "@ionic/vue";
 import { auth, firestore } from "../firebase";
 import { createUserWithEmailAndPassword, signOut } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, Timestamp } from "firebase/firestore";
 import logger from "@/utils/logger";
 import { UI_LIMITS } from "@/constants/constants";
 
@@ -100,7 +100,8 @@ const register = async () => {
     await setDoc(userRef, {
       email: email.value,
       username: email.value.split("@")[0],
-      createdAt: new Date(),
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
     });
 
     logger.info("User data stored, signing out and redirecting to Login");
