@@ -58,12 +58,16 @@
       <!-- Books List -->
       <ion-list v-else ref="bookListEl" @click="handleContentClick">
         <ion-item-sliding
-          v-for="book in books"
+          v-for="book in sortedBooks"
           :key="book.id"
           @ionItemSliding="handleItemSliding"
           @click="handleContentClick"
         >
-          <ion-item button class="book-item">
+          <ion-item
+            button
+            class="book-item"
+            @click="handleBookClick(book.id, $event)"
+          >
             <ion-label class="book-item-label">
               <h2>{{ book.title }}</h2>
               <p>{{ book.authors?.join(", ") || "Unknown Author" }}</p>
@@ -91,7 +95,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, nextTick } from "vue";
+import { computed, ref, nextTick, markRaw, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import {
   IonPage,
@@ -120,6 +124,7 @@ import LibraryOptions from "@/components/menus/LibraryOptions.vue";
 import { SORT } from "@/constants/constants";
 import { useTabStore } from "@/stores/tabStore";
 import { deleteBook } from "@/apis/bookAPI";
+import BookDetail from "./BookDetail.vue";
 
 // ============= Props =============
 const props = defineProps<{
@@ -143,7 +148,7 @@ const {
 } = useActiveLibrary(libraryId);
 
 // Book sorting
-const { handleSortChange } = useBookSort(books);
+const { sortedBooks, handleSortChange } = useBookSort(books);
 
 // Local sort state for the SortControls component
 const sortBy = ref(SORT.BY.TITLE);
@@ -162,6 +167,60 @@ const handleSortControlsChange = (
     },
   });
   handleSortChange(customEvent);
+};
+
+// ============= Event Handling for Local State Updates =============
+const handleBookDeleted = (event: Event) => {
+  const detail = (event as CustomEvent).detail;
+  if (detail && detail.bookId) {
+    const index = books.value.findIndex((b) => b.id === detail.bookId);
+    if (index > -1) {
+      books.value.splice(index, 1);
+    }
+  }
+};
+
+onMounted(() => {
+  window.addEventListener("ourlib:bookDeleted", handleBookDeleted);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("ourlib:bookDeleted", handleBookDeleted);
+});
+
+// ============= Navigation =============
+const bookComponent = markRaw(BookDetail);
+
+const getNavController = () => {
+  const navElement = document.querySelector("ion-nav");
+  return navElement;
+};
+
+const handleBookClick = async (bookId: string, event: Event) => {
+  // Block navigation if any sliding item is open
+  if (
+    isClosingSlidingItem.value ||
+    hasSlidingItemOpen.value ||
+    (await getOpenItem())
+  ) {
+    event.preventDefault();
+    event.stopPropagation();
+    (event as any).stopImmediatePropagation?.();
+    return;
+  }
+
+  // Navigate to book detail page
+  try {
+    const navController = getNavController();
+    if (navController) {
+      await navController.push(bookComponent, {
+        bookId,
+        libraryId: libraryId.value,
+      });
+    }
+  } catch (error) {
+    console.error("Navigation failed:", error);
+  }
 };
 
 const goToAddBook = () => {

@@ -15,6 +15,7 @@ interface Props {
   thumbnailUrl: string;
   isFormValid: boolean;
   bookNotFound: boolean;
+  errorState: { message: string } | null;
 }
 
 defineProps<Props>();
@@ -63,6 +64,7 @@ const handleCancel = () => {
           :scanned-i-s-b-n="scannedISBN"
           :is-form-valid="isFormValid"
           :book-not-found="bookNotFound"
+          :error-state="errorState"
           @update:form-data="handleFormDataUpdate"
           @continue="handleContinue"
         />

@@ -11,6 +11,7 @@ interface Props {
   isFormValid: boolean;
   showContinueButton?: boolean;
   bookNotFound: boolean;
+  errorState: { message: string } | null;
 }
 
 const props = defineProps<Props>();
@@ -73,13 +74,36 @@ const updateFormData = <K extends keyof BookFormData>(
         <p
           class="text-sm text-light-secondary-text dark:text-dark-secondary-text"
         >
-          You can still add the book manually by filling out the form below.
+          You can still add the book manually my selecting 'Manual Entry '.
+        </p>
+      </div>
+    </div>
+
+    <!-- Generic Error Message -->
+    <div
+      v-if="errorState && !isLoadingBookDetails"
+      class="fixed inset-0 flex items-center justify-center z-50 px-4"
+    >
+      <div class="text-center">
+        <div class="mb-4">
+          <ion-icon
+            :icon="alertCircleOutline"
+            class="w-16 h-16 text-danger-red mx-auto"
+          ></ion-icon>
+        </div>
+        <h3
+          class="text-lg font-medium text-light-primary-text dark:text-dark-primary-text mb-2"
+        >
+          An Error Occurred
+        </h3>
+        <p class="text-light-secondary-text dark:text-dark-secondary-text mb-4">
+          {{ errorState.message }}
         </p>
       </div>
     </div>
 
     <!-- Book Form -->
-    <div v-if="!isLoadingBookDetails && !bookNotFound">
+    <div v-if="!isLoadingBookDetails && !bookNotFound && !errorState">
       <!-- Book Thumbnail -->
       <div class="flex justify-center mb-6">
         <div

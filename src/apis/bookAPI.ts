@@ -11,6 +11,7 @@ import {
   where,
   DocumentReference,
   increment,
+  Timestamp,
 } from "firebase/firestore";
 import type { Book, Library } from "../schema";
 import { COLLECTION_NAMES } from "../constants";
@@ -25,9 +26,18 @@ export const createBook = async (book: Book) => {
   });
 };
 
+export const updateBook = async (bookId: string, book: Partial<Book>) => {
+  await updateDoc(doc(firestore, COLLECTION_NAMES.BOOKS, bookId), {
+    ...book,
+    updatedAt: Timestamp.now(),
+  });
+};
+
 export const getBook = async (bookId: string): Promise<Book | null> => {
   const docSnap = await getDoc(doc(firestore, COLLECTION_NAMES.BOOKS, bookId));
-  return docSnap.exists() ? (docSnap.data() as Book) : null;
+  return docSnap.exists()
+    ? ({ id: docSnap.id, ...docSnap.data() } as Book)
+    : null;
 };
 
 export const getLibraryBooks = async (

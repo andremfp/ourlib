@@ -29,6 +29,7 @@ const {
   isFormValid,
   thumbnailUrl,
   bookNotFound,
+  errorState,
   startScanning,
   startManual,
   goBack,
@@ -123,6 +124,7 @@ const handleContinue = () => {
         :thumbnail-url="thumbnailUrl"
         :is-form-valid="isFormValid"
         :book-not-found="bookNotFound"
+        :error-state="errorState"
         @isbn-scanned="handleISBN"
         @update:form-data="handleFormDataUpdate"
         @continue="handleContinue"
@@ -135,6 +137,7 @@ const handleContinue = () => {
         :form-data="formData"
         :thumbnail-url="thumbnailUrl"
         :is-form-valid="isFormValid"
+        :error-state="errorState"
         @update:form-data="handleFormDataUpdate"
         @continue="handleContinue"
       />

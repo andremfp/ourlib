@@ -35,8 +35,8 @@ export function useLibrarySort(
         const nameB = b.name || "";
         result = nameA.localeCompare(nameB);
       } else if (sortBy.value === SORT.BY.DATE) {
-        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        const timeA = a.createdAt ? a.createdAt.toDate().getTime() : 0;
+        const timeB = b.createdAt ? b.createdAt.toDate().getTime() : 0;
         result = (isNaN(timeA) ? 0 : timeA) - (isNaN(timeB) ? 0 : timeB);
       }
       return sortReverse.value ? -result : result;

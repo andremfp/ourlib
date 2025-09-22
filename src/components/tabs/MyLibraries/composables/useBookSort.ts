@@ -1,4 +1,4 @@
-import { ref, watch, type Ref } from "vue";
+import { ref, type Ref, computed } from "vue";
 import type { Book } from "@/schema";
 import { SORT } from "@/constants/constants";
 import logger from "@/utils/logger";
@@ -6,24 +6,21 @@ import logger from "@/utils/logger";
 /**
  * Composable for managing book sorting state and logic.
  *
- * @param booksRef Ref<Book[]> - The ref containing the array of books to sort.
- * @returns Object containing handleSortChange method and sortBooks function.
+ * @param sourceBooksRef Ref<Book[]> - The ref containing the original array of books to sort.
+ * @returns A computed ref `sortedBooks` and methods to control sorting.
  */
-export function useBookSort(booksRef: Ref<Book[]>) {
+export function useBookSort(sourceBooksRef: Ref<Book[]>) {
   const sortBy = ref<string>(SORT.BY.TITLE);
   const sortReverse = ref<boolean>(SORT.DIRECTION.ASC);
 
-  // Function to sort books based on current settings
-  const sortBooks = () => {
-    // Check if booksRef.value is actually an array and has items
-    if (!Array.isArray(booksRef.value) || booksRef.value.length === 0) {
-      return;
+  const sortedBooks = computed(() => {
+    logger.debug("[useBookSort] Re-computing sorted books.");
+    if (!Array.isArray(sourceBooksRef.value)) {
+      return [];
     }
 
-    const currentOrderIds = booksRef.value.map((book) => book.id);
-
     // Create a shallow copy to sort
-    const sortedBooks = [...booksRef.value].sort((a, b) => {
+    return [...sourceBooksRef.value].sort((a, b) => {
       let result = 0;
 
       if (sortBy.value === SORT.BY.TITLE) {
@@ -35,24 +32,14 @@ export function useBookSort(booksRef: Ref<Book[]>) {
         const authorB = b.authors?.[0] || "";
         result = authorA.localeCompare(authorB);
       } else if (sortBy.value === SORT.BY.DATE) {
-        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        const timeA = a.createdAt ? a.createdAt.toDate().getTime() : 0;
+        const timeB = b.createdAt ? b.createdAt.toDate().getTime() : 0;
         result = (isNaN(timeA) ? 0 : timeA) - (isNaN(timeB) ? 0 : timeB);
       }
 
       return sortReverse.value ? -result : result;
     });
-
-    const newOrderIds = sortedBooks.map((book) => book.id);
-
-    // Only assign back if the order of IDs has actually changed
-    if (JSON.stringify(currentOrderIds) !== JSON.stringify(newOrderIds)) {
-      logger.debug("[useBookSort] Book order changed, updating ref.");
-      booksRef.value = sortedBooks;
-    } else {
-      logger.debug("[useBookSort] Book order unchanged, skipping ref update.");
-    }
-  };
+  });
 
   // Handle sort changes from external events (e.g., sort controls)
   const handleSortChange = (event: Event) => {
@@ -65,7 +52,7 @@ export function useBookSort(booksRef: Ref<Book[]>) {
     ) {
       let stateChanged = false;
 
-      // Check if values actually changed to prevent unnecessary sorts/watcher triggers
+      // Check if values actually changed to prevent unnecessary re-renders
       if (sortBy.value !== detail.sortBy) {
         sortBy.value = detail.sortBy;
         stateChanged = true;
@@ -80,7 +67,6 @@ export function useBookSort(booksRef: Ref<Book[]>) {
           sortBy: sortBy.value,
           sortReverse: sortReverse.value,
         });
-        sortBooks();
       }
     } else {
       logger.warn(
@@ -90,18 +76,9 @@ export function useBookSort(booksRef: Ref<Book[]>) {
     }
   };
 
-  // Watch sort criteria changes OR book list changes to trigger re-sorting
-  watch(
-    [sortBy, sortReverse, booksRef],
-    () => {
-      sortBooks();
-    },
-    { immediate: true }, // Ensure initial sort happens
-  );
-
   return {
+    sortedBooks, // This is the reactive, sorted list to be used in the template
     handleSortChange,
-    sortBooks, // Exposed for explicit calls after data mutation
     sortBy,
     sortReverse,
   };
