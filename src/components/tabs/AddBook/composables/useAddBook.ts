@@ -50,7 +50,11 @@ export function useAddBook() {
   });
 
   // Get user's libraries
-  const { libraries, isLoading: isLoadingLibraries } = useLibraryList();
+  const {
+    libraries,
+    isLoading: isLoadingLibraries,
+    refreshLibraries,
+  } = useLibraryList();
 
   // Form validation
   const isFormValid = computed(() => {
@@ -199,6 +203,9 @@ export function useAddBook() {
     }
 
     try {
+      // Ensure we have the latest libraries before opening the modal
+      await refreshLibraries(true);
+
       const modal = await modalController.create({
         component: (await import("@/components/modals/LibrarySelection.vue"))
           .default,

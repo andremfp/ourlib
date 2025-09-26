@@ -1,5 +1,5 @@
 <template>
-  <div class="flex items-center justify-between transparent-bg">
+  <div class="flex items-center justify-between">
     <div class="flex items-center space-x-2">
       <span
         class="text-sort-controls font-medium text-light-nav-text dark:text-dark-nav-text uppercase tracking-wide"
@@ -135,9 +135,6 @@ watch(
 </script>
 
 <style scoped>
-.transparent-bg {
-  background-color: transparent;
-}
 .sort-direction-btn {
   --color: theme("colors.light-nav-text");
   font-size: theme("fontSize.sort-controls");
