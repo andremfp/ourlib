@@ -123,3 +123,6 @@ ion-alert.generic-modal {
   --color: var(--ion-text-color);
   --backdrop-opacity: 0.2;
 }
+
+/* ion-select with interface="alert" uses an overlay (ion-alert).
+   To style it, pass interfaceOptions: { cssClass: 'generic-modal' } where used. */
