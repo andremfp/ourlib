@@ -137,16 +137,18 @@ onMounted(() => {
 
     <template v-else>
       <ion-select
-        v-model="selectedLibraryId"
-        interface="alert"
+        interface="popover"
+        :interface-options="{ cssClass: 'generic-modal' }"
         placeholder="Select a library"
         aria-label="Library"
+        v-model="selectedLibraryId"
         :disabled="!libraries || libraries.length === 0"
       >
         <ion-select-option
           v-for="library in libraries"
           :key="library.id"
           :value="library.id"
+          class="justify-end"
         >
           {{ library.name }}
         </ion-select-option>

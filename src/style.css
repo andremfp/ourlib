@@ -8,6 +8,8 @@
   --ion-background-color: theme("colors.light-bg");
   --ion-text-color: theme("colors.light-primary-text");
   --ion-background-color-secondary: theme("colors.light-bg-secondary");
+  /* Placeholder backgrounds */
+  --placeholder-bg: theme("colors.light-placeholder-background-color");
 
   /* Toolbar background */
   --ion-toolbar-background: theme("colors.light-nav");
@@ -36,6 +38,8 @@ body.dark {
   --ion-background-color: theme("colors.dark-bg");
   --ion-text-color: theme("colors.dark-nav-text");
   --ion-background-color-secondary: theme("colors.dark-bg-secondary");
+  /* Placeholder backgrounds */
+  --placeholder-bg: theme("colors.dark-placeholder-background-color");
 
   /* Toolbar background */
   --ion-toolbar-background: theme("colors.dark-nav");
@@ -123,3 +127,6 @@ ion-alert.generic-modal {
   --color: var(--ion-text-color);
   --backdrop-opacity: 0.2;
 }
+
+/* ion-select with interface="alert" uses an overlay (ion-alert).
+   To style it, pass interfaceOptions: { cssClass: 'generic-modal' } where used. */

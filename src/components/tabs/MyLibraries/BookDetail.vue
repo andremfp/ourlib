@@ -159,7 +159,6 @@ import {
 import { bookOutline, ellipsisHorizontal } from "ionicons/icons";
 import { getBook, deleteBook, updateBook } from "@/apis/bookAPI";
 import type { Book } from "@/schema";
-import { UI_LIMITS } from "@/constants/constants";
 import BookOptions from "@/components/menus/BookOptions.vue";
 
 // ============= Props =============
@@ -177,11 +176,7 @@ const isOptionsOpen = ref(false);
 // ============= Computed Properties =============
 const truncatedTitle = computed(() => {
   if (!book.value) return "Book Details";
-  const title = book.value.title;
-  if (title.length > UI_LIMITS.BOOK.TITLE_MAX_LENGTH) {
-    return title.substring(0, UI_LIMITS.BOOK.TITLE_MAX_LENGTH) + "...";
-  }
-  return title;
+  return book.value.title;
 });
 
 const formattedDateAdded = computed(() => {
@@ -234,6 +229,12 @@ const handleEdit = async (updatedBook: Book) => {
   try {
     await updateBook(book.value.id, updatedBook);
     book.value = { ...book.value, ...updatedBook };
+    // Inform list view to update item immediately
+    window.dispatchEvent(
+      new CustomEvent("ourlib:bookUpdated", {
+        detail: { bookId: book.value.id, updatedBook },
+      }),
+    );
     closeOptions();
   } catch (e) {
     console.error("Failed to update book:", e);

@@ -6,6 +6,7 @@ import {
 } from "@/apis/libraryAPI";
 import { COLLECTION_NAMES } from "@/constants";
 import type { Library, User } from "@/schema";
+import { getLibraryThumbnails } from "@/apis/bookAPI";
 import logger from "@/utils/logger";
 import { firestore } from "@/firebase";
 import { doc, DocumentReference } from "firebase/firestore";
@@ -17,7 +18,7 @@ import { doc, DocumentReference } from "firebase/firestore";
  */
 export function useLibraryList() {
   const auth = getAuth();
-  const libraries = ref<Library[]>([]);
+  const libraries = ref<(Library & { thumbnails?: string[] })[]>([]);
   const isLoading = ref<boolean>(true); // Start as true until first auth check/fetch
   const isRefreshing = ref<boolean>(false);
   const error = ref<string | null>(null);
@@ -40,7 +41,25 @@ export function useLibraryList() {
         userId,
       ) as DocumentReference<User>;
       const fetchedLibraries = await getUserLibraries(userRef);
-      libraries.value = fetchedLibraries;
+      // Enrich with up to 3 thumbnails per library (best-effort; ignore errors)
+      const enriched = await Promise.all(
+        fetchedLibraries.map(async (lib) => {
+          try {
+            const libRef = doc(
+              firestore,
+              COLLECTION_NAMES.LIBRARIES,
+              lib.id,
+            ) as DocumentReference<Library>;
+            const thumbs = await getLibraryThumbnails(libRef, 3);
+            return { ...lib, thumbnails: thumbs } as Library & {
+              thumbnails?: string[];
+            };
+          } catch {
+            return { ...lib } as Library & { thumbnails?: string[] };
+          }
+        }),
+      );
+      libraries.value = enriched;
       logger.info(
         `[useUserLibraries] Fetched ${fetchedLibraries.length} libraries.`,
       );
@@ -71,7 +90,24 @@ export function useLibraryList() {
             user.uid,
           ) as DocumentReference<User>;
           const fetchedLibraries = await getUserLibrariesFromServer(userRef);
-          libraries.value = fetchedLibraries;
+          const enriched = await Promise.all(
+            fetchedLibraries.map(async (lib) => {
+              try {
+                const libRef = doc(
+                  firestore,
+                  COLLECTION_NAMES.LIBRARIES,
+                  lib.id,
+                ) as DocumentReference<Library>;
+                const thumbs = await getLibraryThumbnails(libRef, 3);
+                return { ...lib, thumbnails: thumbs } as Library & {
+                  thumbnails?: string[];
+                };
+              } catch {
+                return { ...lib } as Library & { thumbnails?: string[] };
+              }
+            }),
+          );
+          libraries.value = enriched;
         } catch (err) {
           logger.error("[useUserLibraries] Server refresh failed:", err);
           error.value = "Failed to refresh libraries. Please try again.";

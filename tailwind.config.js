@@ -41,6 +41,8 @@ export default {
         "dark-bg": "#1F1F1F",
         "light-bg-secondary": "#7ea6ff", // slightly darker than light-bg
         "dark-bg-secondary": "#27272A", // TODO tweak these colors
+        "light-placeholder-background-color": "#f2f4f8",
+        "dark-placeholder-background-color": "#27272A",
 
         // Tab bar colors
         "light-tab-bar": "#FFFFFF",
