@@ -54,6 +54,32 @@ export const getLibraryBooks = async (
   );
 };
 
+export const getLibraryThumbnails = async (
+  libraryRef: DocumentReference<Library>,
+  max: number = 3,
+): Promise<(string | null)[]> => {
+  // Fetch all books for the library; client will randomly pick up to `max`
+  const querySnapshot = await getDocs(
+    query(
+      collection(firestore, COLLECTION_NAMES.BOOKS),
+      where("library", "==", libraryRef),
+    ),
+  );
+  const all = querySnapshot.docs.map((d) => {
+    const data = d.data() as Partial<Book>;
+    const url = data.thumbnailUrl as string | undefined;
+    return url ?? null;
+  });
+  // Shuffle and take up to `max`
+  for (let i = all.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = all[i];
+    all[i] = all[j];
+    all[j] = tmp;
+  }
+  return all.slice(0, max);
+};
+
 export const lendBook = async (bookId: string, userId: string) => {
   await updateDoc(doc(firestore, COLLECTION_NAMES.BOOKS, bookId), {
     lentTo: userId,

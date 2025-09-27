@@ -77,12 +77,48 @@
           @ionItemSliding="handleItemSliding"
           @click="handleContentClick"
         >
-          <ion-item button @click="handleItemClick(lib.id, $event)">
+          <ion-item
+            button
+            class="library-item"
+            @click="handleItemClick(lib.id, $event)"
+          >
+            <ion-thumbnail slot="start" class="library-thumb">
+              <template v-if="lib.thumbnails && lib.thumbnails.length">
+                <div class="library-stack">
+                  <template
+                    v-for="(src, idx) in lib.thumbnails.slice(0, 3)"
+                    :key="idx"
+                  >
+                    <img
+                      v-if="src"
+                      :src="src"
+                      alt="Cover"
+                      class="stack-img"
+                      :class="`pos-${idx}`"
+                    />
+                    <div v-else class="stack-placeholder" :class="`pos-${idx}`">
+                      <ion-icon
+                        :icon="bookOutline"
+                        class="stack-placeholder-icon"
+                      ></ion-icon>
+                    </div>
+                  </template>
+                </div>
+              </template>
+              <template v-else>
+                <div class="library-empty">
+                  <ion-icon :icon="library" class="empty-icon"></ion-icon>
+                </div>
+              </template>
+            </ion-thumbnail>
             <ion-label class="library-item-label">
               <h2>{{ lib.name }}</h2>
               <p>{{ lib.booksCount || 0 }} books</p>
             </ion-label>
           </ion-item>
+
+          <!-- Overlay divider to fill the left gap under the thumbnail -->
+          <div class="library-thumb-gap-divider" aria-hidden="true"></div>
 
           <ion-item-options slot="end">
             <ion-item-option @click="handleDelete(lib.id)">
@@ -115,11 +151,12 @@ import {
   IonItemOptions,
   IonItemOption,
   IonButtons,
+  IonThumbnail,
   modalController,
   onIonViewWillEnter,
   onIonViewDidEnter,
 } from "@ionic/vue";
-import { add, library, arrowDownOutline } from "ionicons/icons";
+import { add, library, arrowDownOutline, bookOutline } from "ionicons/icons";
 import { useLibraryList } from "./composables/useLibraryList";
 import { useLibrarySort } from "./composables/useLibrarySort";
 import { markRaw } from "vue";
@@ -388,7 +425,114 @@ ion-item-option {
   background-color: theme("colors.danger-red");
 }
 
+.library-item {
+  --inner-padding-start: 0;
+  --thumb-size: 64px;
+  --min-height: calc(var(--thumb-size) + 24px);
+  min-height: var(--min-height);
+}
+
 .library-item-label {
   padding-left: 12px;
+}
+
+.library-thumb {
+  --size: var(--thumb-size);
+  margin-left: 14px;
+  margin-right: 14px;
+  position: relative;
+}
+
+.library-thumb::after {
+  content: "";
+  position: absolute;
+  left: -14px;
+  right: -14px;
+  bottom: 0;
+  height: var(--inner-border-width, 0.55px);
+  background: var(--ion-item-border-color, var(--ion-border-color));
+  pointer-events: none;
+}
+
+.library-stack {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.stack-img {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 60px;
+  object-fit: contain;
+  border-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.stack-placeholder {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 54px;
+  width: 40px;
+  height: 60px;
+  background: var(--placeholder-bg);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.stack-placeholder-icon {
+  color: var(--ion-color-medium);
+  width: 26px;
+  height: 26px;
+}
+
+.stack-img.pos-0,
+.stack-placeholder.pos-0 {
+  left: 0;
+  z-index: 3;
+}
+.stack-img.pos-1,
+.stack-placeholder.pos-1 {
+  left: 20px;
+  z-index: 2;
+}
+.stack-img.pos-2,
+.stack-placeholder.pos-2 {
+  left: 38px;
+  z-index: 1;
+}
+
+.library-empty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border-radius: 8px;
+  margin-left: 6px;
+}
+
+.library-empty .empty-icon {
+  font-size: 46px;
+  color: var(--ion-color-medium);
+}
+
+.library-thumb-gap-divider {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: calc(14px + var(--thumb-size, 64px) + 14px);
+  height: var(--inner-border-width, 0.55px);
+  background: var(--ion-item-border-color, var(--ion-border-color));
+  pointer-events: none;
+  z-index: 2;
 }
 </style>

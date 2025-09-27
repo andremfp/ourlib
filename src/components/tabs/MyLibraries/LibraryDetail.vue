@@ -68,11 +68,28 @@
             class="book-item"
             @click="handleBookClick(book.id, $event)"
           >
+            <ion-thumbnail slot="start" class="book-thumb">
+              <img
+                v-if="book.thumbnailUrl"
+                :src="book.thumbnailUrl"
+                alt="Book cover"
+                class="w-full h-full object-contain"
+              />
+              <div v-else class="thumb-placeholder">
+                <ion-icon
+                  :icon="bookOutline"
+                  class="thumb-placeholder-icon"
+                ></ion-icon>
+              </div>
+            </ion-thumbnail>
             <ion-label class="book-item-label">
               <h2>{{ book.title }}</h2>
               <p>{{ book.authors?.join(", ") || "Unknown Author" }}</p>
             </ion-label>
           </ion-item>
+
+          <!-- Overlay divider to fill the left gap under the thumbnail -->
+          <div class="thumb-gap-divider" aria-hidden="true"></div>
 
           <ion-item-options slot="end">
             <ion-item-option @click="handleDelete(book.id)">
@@ -114,6 +131,7 @@ import {
   IonItemSliding,
   IonItemOptions,
   IonItemOption,
+  IonThumbnail,
   onIonViewWillLeave,
 } from "@ionic/vue";
 import { bookOutline, add, ellipsisHorizontal } from "ionicons/icons";
@@ -180,12 +198,24 @@ const handleBookDeleted = (event: Event) => {
   }
 };
 
+const handleBookUpdated = (event: Event) => {
+  const detail = (event as CustomEvent).detail;
+  if (detail && detail.bookId) {
+    const index = books.value.findIndex((b) => b.id === detail.bookId);
+    if (index > -1) {
+      books.value[index] = { ...books.value[index], ...detail.updatedBook };
+    }
+  }
+};
+
 onMounted(() => {
   window.addEventListener("ourlib:bookDeleted", handleBookDeleted);
+  window.addEventListener("ourlib:bookUpdated", handleBookUpdated);
 });
 
 onUnmounted(() => {
   window.removeEventListener("ourlib:bookDeleted", handleBookDeleted);
+  window.removeEventListener("ourlib:bookUpdated", handleBookUpdated);
 });
 
 // ============= Navigation =============
@@ -389,7 +419,71 @@ ion-item-option {
   background-color: theme("colors.danger-red");
 }
 
+ion-item-sliding {
+  position: relative;
+}
+
+.book-item {
+  position: relative;
+  --inner-padding-start: 0;
+  --thumb-size: 60px;
+  --min-height: calc(var(--thumb-size) + 24px);
+  min-height: var(--min-height);
+}
+
 .book-item-label {
-  padding-left: 12px;
+  padding-left: 2px;
+}
+
+.book-item-label h2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+.book-item-label p {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.book-thumb {
+  --size: var(--thumb-size);
+  margin-right: 12px;
+  margin-left: 12px;
+  position: relative;
+}
+
+.book-thumb::after {
+  display: none;
+}
+
+.thumb-placeholder {
+  width: 100%;
+  height: 100%;
+  background: var(--placeholder-bg);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.thumb-placeholder-icon {
+  width: 32px;
+  height: 32px;
+  color: var(--ion-color-medium);
+}
+
+.thumb-gap-divider {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: calc(12px + var(--thumb-size, 60px) + 12px);
+  height: var(--inner-border-width, 0.55px);
+  background: var(--ion-item-border-color, var(--ion-border-color));
+  pointer-events: none;
+  z-index: 2;
 }
 </style>

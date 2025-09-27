@@ -141,6 +141,7 @@ onMounted(() => {
         :interface-options="{ cssClass: 'generic-modal' }"
         placeholder="Select a library"
         aria-label="Library"
+        v-model="selectedLibraryId"
         :disabled="!libraries || libraries.length === 0"
       >
         <ion-select-option
