@@ -1,18 +1,34 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import { IonPage, IonContent, IonInput, IonButton, IonNote } from "@ionic/vue";
+import {
+  IonPage,
+  IonContent,
+  IonInput,
+  IonButton,
+  IonNote,
+  IonIcon,
+} from "@ionic/vue";
 import { auth, firestore } from "../firebase";
-import { createUserWithEmailAndPassword, signOut } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  signOut,
+  GoogleAuthProvider,
+  signInWithPopup,
+  sendEmailVerification,
+} from "firebase/auth";
 import { doc, setDoc, Timestamp } from "firebase/firestore";
 import logger from "@/utils/logger";
 import { UI_LIMITS } from "@/constants/constants";
+import { logoGoogle } from "ionicons/icons";
+import EmailVerificationSent from "@/components/modals/EmailVerificationSent.vue";
 
 const email = ref("");
 const password = ref("");
 const confirmPassword = ref("");
 const errorMessage = ref("");
 const router = useRouter();
+const isGoogleLoading = ref(false);
 
 /**
  * Validate password against the rules in UI_LIMITS.PASSWORD
@@ -95,6 +111,17 @@ const register = async () => {
 
     logger.info("User registered successfully");
 
+    // Send verification email
+    try {
+      await sendEmailVerification(user);
+      logger.info("Verification email sent");
+    } catch (verificationError: any) {
+      logger.error(
+        "Failed to send verification email:",
+        verificationError?.message || verificationError,
+      );
+    }
+
     // Store user information in Firestore
     const userRef = doc(firestore, "users", user.uid);
     await setDoc(userRef, {
@@ -104,9 +131,19 @@ const register = async () => {
       updatedAt: Timestamp.now(),
     });
 
-    logger.info("User data stored, signing out and redirecting to Login");
+    logger.info("User data stored; showing verification modal");
+
+    // Show modal informing verification email sent; redirect after close
+    const { modalController } = await import("@ionic/vue");
+    const modal = await modalController.create({
+      component: EmailVerificationSent,
+      componentProps: { email: email.value },
+      cssClass: "generic-modal",
+    });
+    await modal.present();
+    await modal.onDidDismiss();
+
     await signOut(auth);
-    // Clear form fields after successful registration
     email.value = "";
     password.value = "";
     confirmPassword.value = "";
@@ -132,6 +169,58 @@ const register = async () => {
   }
 };
 
+const registerWithGoogle = async () => {
+  errorMessage.value = "";
+  try {
+    isGoogleLoading.value = true;
+
+    const provider = new GoogleAuthProvider();
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+
+    // Store user information in Firestore (create or update)
+    const emailValue = user.email || "";
+    const usernameValue = emailValue
+      ? emailValue.split("@")[0]
+      : (user.displayName || "user").replace(/\s+/g, "").toLowerCase();
+
+    const userRef = doc(firestore, "users", user.uid);
+    await setDoc(
+      userRef,
+      {
+        email: emailValue,
+        username: usernameValue,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      },
+      { merge: true },
+    );
+
+    logger.info("User registered with Google successfully");
+    router.push("/");
+  } catch (error: any) {
+    logger.error("Google registration error:", error?.message || error);
+    switch (error?.code) {
+      case "auth/popup-closed-by-user":
+      case "auth/cancelled-popup-request":
+        errorMessage.value = "Sign-in was cancelled.";
+        break;
+      case "auth/popup-blocked":
+        errorMessage.value =
+          "Popup was blocked. Please allow popups and try again.";
+        break;
+      case "auth/network-request-failed":
+        errorMessage.value = "Network error. Please check your connection.";
+        break;
+      default:
+        errorMessage.value =
+          "An error occurred during Google sign up. Please try again.";
+    }
+  } finally {
+    isGoogleLoading.value = false;
+  }
+};
+
 const goToLogin = () => {
   router.push("/login");
 };
@@ -152,8 +241,30 @@ const goToLogin = () => {
               to start your library
             </p>
           </div>
+          <ion-button
+            expand="block"
+            class="ion-margin-top mt-8"
+            :disabled="isGoogleLoading"
+            @click="registerWithGoogle"
+          >
+            <ion-icon :icon="logoGoogle" class="mr-2"></ion-icon>
+            <ion-spinner
+              v-if="isGoogleLoading"
+              name="crescent"
+              class="ion-margin-end"
+            ></ion-spinner>
+            {{ isGoogleLoading ? "Signing up..." : "Continue with Google" }}
+          </ion-button>
 
-          <form @submit.prevent="register" class="mt-8 space-y-4">
+          <div class="flex items-center my-6">
+            <div class="flex-1 h-px bg-gray-300 dark:bg-gray-700"></div>
+            <span class="px-3 text-sm text-gray-500 dark:text-gray-400"
+              >Or continue with email</span
+            >
+            <div class="flex-1 h-px bg-gray-300 dark:bg-gray-700"></div>
+          </div>
+
+          <form @submit.prevent="register" class="space-y-4">
             <ion-input
               v-model="email"
               id="email"

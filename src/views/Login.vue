@@ -7,18 +7,26 @@ import {
   IonInput,
   IonButton,
   IonSpinner,
+  IonIcon,
 } from "@ionic/vue";
-import { auth } from "@/firebase";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth, firestore } from "@/firebase";
+import {
+  signInWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
+} from "firebase/auth";
+import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
 import logger from "@/utils/logger";
 import logoLight from "@/assets/ourlib-logo.webp";
 import logoDark from "@/assets/ourlib-logo-dark.webp";
+import { logoGoogle } from "ionicons/icons";
 
 const router = useRouter();
 const email = ref("");
 const password = ref("");
 const errorMessage = ref("");
 const isLoading = ref(false);
+const isGoogleLoading = ref(false);
 
 const validateInputs = (): { valid: boolean; message: string } => {
   if (!email.value.trim()) {
@@ -46,7 +54,32 @@ const handleLogin = async () => {
     isLoading.value = true;
 
     // Login with Firebase
-    await signInWithEmailAndPassword(auth, email.value.trim(), password.value);
+    const credential = await signInWithEmailAndPassword(
+      auth,
+      email.value.trim(),
+      password.value,
+    );
+
+    // Enforce email verification for email/password sign-ins
+    const currentUser = credential.user;
+    if (currentUser && !currentUser.emailVerified) {
+      errorMessage.value =
+        "Please verify your email address. We've resent the verification email.";
+      try {
+        // Resend verification email
+        await import("firebase/auth").then(async (m) => {
+          await m.sendEmailVerification(currentUser);
+        });
+      } catch (verificationError: any) {
+        logger.error(
+          "Failed to resend verification email:",
+          verificationError?.message || verificationError,
+        );
+      }
+      // Sign out and stop login flow
+      await auth.signOut();
+      return;
+    }
 
     logger.info("User logged in successfully");
     // Clear inputs after successful login
@@ -89,6 +122,56 @@ const handleLogin = async () => {
   }
 };
 
+const handleLoginWithGoogle = async () => {
+  errorMessage.value = "";
+  try {
+    isGoogleLoading.value = true;
+
+    const provider = new GoogleAuthProvider();
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+
+    // Ensure Firestore user document exists
+    const userRef = doc(firestore, "users", user.uid);
+    const snap = await getDoc(userRef);
+    if (!snap.exists()) {
+      const emailValue = user.email || "";
+      const usernameValue = emailValue
+        ? emailValue.split("@")[0]
+        : (user.displayName || "user").replace(/\s+/g, "").toLowerCase();
+      await setDoc(userRef, {
+        email: emailValue,
+        username: usernameValue,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      });
+    }
+
+    logger.info("User logged in with Google successfully");
+    router.push("/");
+  } catch (error: any) {
+    logger.error("Google login error:", error?.message || error);
+    switch (error?.code) {
+      case "auth/popup-closed-by-user":
+      case "auth/cancelled-popup-request":
+        errorMessage.value = "Sign-in was cancelled.";
+        break;
+      case "auth/popup-blocked":
+        errorMessage.value =
+          "Popup was blocked. Please allow popups and try again.";
+        break;
+      case "auth/network-request-failed":
+        errorMessage.value = "Network error. Please check your connection.";
+        break;
+      default:
+        errorMessage.value =
+          "An error occurred during Google login. Please try again.";
+    }
+  } finally {
+    isGoogleLoading.value = false;
+  }
+};
+
 const goToRegister = () => {
   router.push("/register");
 };
@@ -117,12 +200,34 @@ const goToRegister = () => {
             </h1>
             <p class="mt-2 text-gray-600 dark:text-gray-200">Welcome back</p>
           </div>
+          <ion-button
+            expand="block"
+            class="ion-margin-top mt-8"
+            :disabled="isLoading || isGoogleLoading"
+            @click="handleLoginWithGoogle"
+          >
+            <ion-icon :icon="logoGoogle" class="mr-2"></ion-icon>
+            <ion-spinner
+              v-if="isGoogleLoading"
+              name="crescent"
+              class="ion-margin-end"
+            ></ion-spinner>
+            {{ isGoogleLoading ? "Signing in..." : "Continue with Google" }}
+          </ion-button>
 
-          <form @submit.prevent="handleLogin" class="mt-8 space-y-4">
+          <div class="flex items-center my-6">
+            <div class="flex-1 h-px bg-gray-300 dark:bg-gray-700"></div>
+            <span class="px-3 text-sm text-gray-500 dark:text-gray-400"
+              >Or continue with email</span
+            >
+            <div class="flex-1 h-px bg-gray-300 dark:bg-gray-700"></div>
+          </div>
+
+          <form @submit.prevent="handleLogin" class="space-y-4">
             <ion-input
               v-model="email"
               type="text"
-              :disabled="isLoading"
+              :disabled="isLoading || isGoogleLoading"
               autocomplete="email"
               placeholder="Email"
               fill="outline"
@@ -133,7 +238,7 @@ const goToRegister = () => {
             <ion-input
               v-model="password"
               type="password"
-              :disabled="isLoading"
+              :disabled="isLoading || isGoogleLoading"
               autocomplete="current-password"
               placeholder="Password"
               fill="outline"
@@ -149,7 +254,7 @@ const goToRegister = () => {
               type="submit"
               expand="block"
               class="ion-margin-top"
-              :disabled="isLoading"
+              :disabled="isLoading || isGoogleLoading"
             >
               <ion-spinner
                 v-if="isLoading"
@@ -164,9 +269,9 @@ const goToRegister = () => {
             expand="block"
             fill="clear"
             @click="goToRegister"
-            :disabled="isLoading"
+            :disabled="isLoading || isGoogleLoading"
           >
-            Create an account
+            Don't have an account? Register
           </ion-button>
         </div>
       </div>
