@@ -8,18 +8,32 @@ import {
   IonButton,
   IonSpinner,
   IonIcon,
+  IonNote,
 } from "@ionic/vue";
 import { auth } from "@/firebase";
-import { confirmPasswordReset, verifyPasswordResetCode } from "firebase/auth";
+import {
+  confirmPasswordReset,
+  applyActionCode,
+  verifyPasswordResetCode,
+} from "firebase/auth";
 import logger from "@/utils/logger";
 import { UI_LIMITS } from "@/constants/constants";
 import logoLight from "@/assets/ourlib-logo.webp";
 import logoDark from "@/assets/ourlib-logo-dark.webp";
-import { eyeOutline, eyeOffOutline } from "ionicons/icons";
+import {
+  checkmarkCircleOutline,
+  closeCircleOutline,
+  eyeOutline,
+  eyeOffOutline,
+  keyOutline,
+  mailOutline,
+} from "ionicons/icons";
 
 const router = useRouter();
 const route = useRoute();
 
+const mode = ref("");
+const oobCode = ref("");
 const newPassword = ref("");
 const confirmPassword = ref("");
 const errorMessage = ref("");
@@ -85,7 +99,7 @@ const validatePassword = (
   return { valid: true, message: "" };
 };
 
-const handleResetPassword = async () => {
+const handlePasswordReset = async () => {
   errorMessage.value = "";
   successMessage.value = "";
 
@@ -102,16 +116,9 @@ const handleResetPassword = async () => {
     return;
   }
 
-  const oobCode = route.query.oobCode as string;
-  if (!oobCode) {
-    errorMessage.value =
-      "Invalid reset link. Please request a new password reset.";
-    return;
-  }
-
   try {
     isLoading.value = true;
-    await confirmPasswordReset(auth, oobCode, newPassword.value);
+    await confirmPasswordReset(auth, oobCode.value, newPassword.value);
 
     successMessage.value =
       "Password reset successfully! Redirecting to login...";
@@ -150,41 +157,94 @@ const handleResetPassword = async () => {
   }
 };
 
-// Validate the reset code on component mount
-onMounted(async () => {
-  const oobCode = route.query.oobCode as string;
-  const mode = route.query.mode as string;
-
-  if ((mode !== "resetPassword" && mode !== "action") || !oobCode) {
-    errorMessage.value =
-      "Invalid reset link. Please request a new password reset.";
-    isValidatingCode.value = false;
-    return;
-  }
-
+const handleEmailVerification = async () => {
   try {
-    // Verify the reset code and get user email
-    const email = await verifyPasswordResetCode(auth, oobCode);
-    userEmail.value = email;
-    logger.info("Password reset code verified for:", email);
+    await applyActionCode(auth, oobCode.value);
+
+    successMessage.value = "Email verified successfully! You can now log in.";
+    logger.info("Email verification successful");
+
+    // Redirect to login after 3 seconds
+    setTimeout(() => {
+      router.push("/login");
+    }, 3000);
   } catch (error: any) {
-    logger.error("Invalid reset code:", error?.message || error);
+    logger.error("Email verification error:", error?.message || error);
+
     switch (error?.code) {
       case "auth/expired-action-code":
         errorMessage.value =
-          "Reset link has expired. Please request a new password reset.";
+          "Verification link has expired. Please request a new verification email.";
         break;
       case "auth/invalid-action-code":
         errorMessage.value =
-          "Invalid reset link. Please request a new password reset.";
+          "Invalid verification link. Please request a new verification email.";
+        break;
+      case "auth/user-disabled":
+        errorMessage.value = "This account has been disabled.";
         break;
       default:
         errorMessage.value =
-          "Invalid reset link. Please request a new password reset.";
+          "An error occurred while verifying your email. Please try again.";
     }
   } finally {
     isValidatingCode.value = false;
   }
+};
+
+const handleAction = async () => {
+  if (!mode.value || !oobCode.value) {
+    errorMessage.value =
+      "Invalid link. Please check your email for the correct link.";
+    isValidatingCode.value = false;
+    return;
+  }
+
+  if (mode.value === "verifyEmail") {
+    await handleEmailVerification();
+  } else if (mode.value === "resetPassword") {
+    // For password reset, we need to verify the code first to get the email
+    try {
+      const email = await verifyPasswordResetCode(auth, oobCode.value);
+      userEmail.value = email;
+      logger.info("Password reset code verified for:", email);
+    } catch (error: any) {
+      logger.error("Invalid reset code:", error?.message || error);
+      switch (error?.code) {
+        case "auth/expired-action-code":
+          errorMessage.value =
+            "Reset link has expired. Please request a new password reset.";
+          break;
+        case "auth/invalid-action-code":
+          errorMessage.value =
+            "Invalid reset link. Please request a new password reset.";
+          break;
+        default:
+          errorMessage.value =
+            "Invalid reset link. Please request a new password reset.";
+      }
+    } finally {
+      isValidatingCode.value = false;
+    }
+  } else {
+    errorMessage.value =
+      "Invalid action. Please check your email for the correct link.";
+    isValidatingCode.value = false;
+  }
+};
+
+// Handle the action on component mount
+onMounted(async () => {
+  mode.value = (route.query.mode as string) || "";
+  oobCode.value = (route.query.oobCode as string) || "";
+
+  // If no email action parameters, redirect to home
+  if (!mode.value || !oobCode.value) {
+    router.replace("/");
+    return;
+  }
+
+  await handleAction();
 });
 </script>
 
@@ -207,10 +267,18 @@ onMounted(async () => {
             <h1
               class="text-2xl font-bold mt-4 text-gray-800 dark:text-gray-100"
             >
-              Reset Password
+              <span v-if="mode === 'verifyEmail'">Verify Email</span>
+              <span v-else-if="mode === 'resetPassword'">Reset Password</span>
+              <span v-else>Email Action</span>
             </h1>
             <p class="mt-2 text-gray-600 dark:text-gray-200">
-              Enter your new password
+              <span v-if="mode === 'verifyEmail'"
+                >Verifying your email address...</span
+              >
+              <span v-else-if="mode === 'resetPassword'"
+                >Enter your new password</span
+              >
+              <span v-else>Processing your request...</span>
             </p>
             <p
               v-if="userEmail"
@@ -220,16 +288,26 @@ onMounted(async () => {
             </p>
           </div>
 
+          <!-- Loading state -->
           <div v-if="isValidatingCode" class="mt-8 text-center">
+            <ion-icon
+              :icon="mode === 'verifyEmail' ? mailOutline : keyOutline"
+              class="w-16 h-16 mx-auto text-blue-500 mb-4"
+            ></ion-icon>
             <ion-spinner name="crescent"></ion-spinner>
             <p class="mt-2 text-gray-600 dark:text-gray-200">
-              Verifying reset link...
+              <span v-if="mode === 'verifyEmail'">Verifying your email...</span>
+              <span v-else-if="mode === 'resetPassword'"
+                >Validating reset link...</span
+              >
+              <span v-else>Processing...</span>
             </p>
           </div>
 
+          <!-- Password reset form -->
           <form
-            v-else
-            @submit.prevent="handleResetPassword"
+            v-else-if="mode === 'resetPassword' && !successMessage"
+            @submit.prevent="handlePasswordReset"
             class="mt-8 space-y-4"
           >
             <div>
@@ -293,14 +371,6 @@ onMounted(async () => {
               </div>
             </ion-note>
 
-            <div v-if="errorMessage" class="text-red-500 text-sm">
-              {{ errorMessage }}
-            </div>
-
-            <div v-if="successMessage" class="text-green-600 text-sm">
-              {{ successMessage }}
-            </div>
-
             <ion-button
               type="submit"
               expand="block"
@@ -316,12 +386,39 @@ onMounted(async () => {
             </ion-button>
           </form>
 
+          <!-- Success message -->
+          <div v-if="successMessage" class="mt-8 text-center">
+            <ion-icon
+              :icon="checkmarkCircleOutline"
+              class="w-16 h-16 mx-auto text-green-600 mb-4"
+            ></ion-icon>
+            <p class="text-green-600 text-lg font-medium">
+              {{ successMessage }}
+            </p>
+            <p class="mt-2 text-sm text-gray-600 dark:text-gray-200">
+              Redirecting to login...
+            </p>
+          </div>
+
+          <!-- Error message -->
+          <div v-if="errorMessage" class="mt-8 text-center">
+            <ion-icon
+              :icon="closeCircleOutline"
+              class="w-16 h-16 mx-auto text-red-500 mb-4"
+            ></ion-icon>
+            <p class="text-red-500 text-lg font-medium">
+              {{ errorMessage }}
+            </p>
+          </div>
+
+          <!-- Back to login button -->
           <ion-button
+            v-if="!isValidatingCode"
             expand="block"
             fill="clear"
             @click="router.push('/login')"
             :disabled="isLoading"
-            class="mt-4"
+            class="mt-6"
           >
             Back to Login
           </ion-button>

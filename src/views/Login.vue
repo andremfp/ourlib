@@ -75,7 +75,11 @@ const handleLogin = async () => {
       try {
         // Resend verification email
         await import("firebase/auth").then(async (m) => {
-          await m.sendEmailVerification(currentUser);
+          const actionCodeSettings = {
+            url: `${window.location.origin}/email-actions`,
+            handleCodeInApp: true,
+          };
+          await m.sendEmailVerification(currentUser, actionCodeSettings);
         });
       } catch (verificationError: any) {
         logger.error(
@@ -211,7 +215,7 @@ const handleForgotPassword = async () => {
 
     // Get the current domain for the action URL
     const actionCodeSettings = {
-      url: `${window.location.origin}/reset-password`,
+      url: `${window.location.origin}/email-actions`,
       handleCodeInApp: true,
     };
 

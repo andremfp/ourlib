@@ -113,7 +113,11 @@ const register = async () => {
 
     // Send verification email
     try {
-      await sendEmailVerification(user);
+      const actionCodeSettings = {
+        url: `${window.location.origin}/email-actions`,
+        handleCodeInApp: true,
+      };
+      await sendEmailVerification(user, actionCodeSettings);
       logger.info("Verification email sent");
     } catch (verificationError: any) {
       logger.error(
