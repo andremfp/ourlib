@@ -20,7 +20,7 @@ import {
 import { doc, setDoc, Timestamp } from "firebase/firestore";
 import logger from "@/utils/logger";
 import { UI_LIMITS } from "@/constants/constants";
-import { logoGoogle } from "ionicons/icons";
+import { logoGoogle, eyeOutline, eyeOffOutline } from "ionicons/icons";
 import EmailVerificationSent from "@/components/modals/EmailVerificationSent.vue";
 
 const email = ref("");
@@ -29,6 +29,8 @@ const confirmPassword = ref("");
 const errorMessage = ref("");
 const router = useRouter();
 const isGoogleLoading = ref(false);
+const showPassword = ref(false);
+const showConfirmPassword = ref(false);
 
 /**
  * Validate password against the rules in UI_LIMITS.PASSWORD
@@ -113,7 +115,11 @@ const register = async () => {
 
     // Send verification email
     try {
-      await sendEmailVerification(user);
+      const actionCodeSettings = {
+        url: `${window.location.origin}/email-actions`,
+        handleCodeInApp: true,
+      };
+      await sendEmailVerification(user, actionCodeSettings);
       logger.info("Verification email sent");
     } catch (verificationError: any) {
       logger.error(
@@ -279,13 +285,20 @@ const goToLogin = () => {
             <ion-input
               v-model="password"
               id="password"
-              type="password"
+              :type="showPassword ? 'text' : 'password'"
               placeholder="Password"
               autocomplete="new-password"
               fill="outline"
               mode="md"
               required
-            ></ion-input>
+            >
+              <ion-icon
+                slot="end"
+                :icon="showPassword ? eyeOffOutline : eyeOutline"
+                @click="showPassword = !showPassword"
+                class="cursor-pointer"
+              ></ion-icon>
+            </ion-input>
 
             <ion-note class="block">
               <div class="mt-1 text-xs">
@@ -311,13 +324,20 @@ const goToLogin = () => {
             <ion-input
               v-model="confirmPassword"
               id="confirmPassword"
-              type="password"
+              :type="showConfirmPassword ? 'text' : 'password'"
               placeholder="Repeat password"
               autocomplete="new-password"
               fill="outline"
               mode="md"
               required
-            ></ion-input>
+            >
+              <ion-icon
+                slot="end"
+                :icon="showConfirmPassword ? eyeOffOutline : eyeOutline"
+                @click="showConfirmPassword = !showConfirmPassword"
+                class="cursor-pointer"
+              ></ion-icon>
+            </ion-input>
 
             <div v-if="errorMessage" class="text-red-500 text-sm">
               {{ errorMessage }}

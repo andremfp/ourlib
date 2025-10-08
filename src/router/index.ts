@@ -3,6 +3,7 @@ import type { RouteRecordRaw } from "vue-router";
 // Lazy-loaded route components
 const LoginView = () => import("@/views/Login.vue");
 const RegisterView = () => import("@/views/Register.vue");
+const EmailActionView = () => import("@/views/EmailAction.vue");
 const TabsPage = () => import("@/views/Tabs.vue");
 const NotFound = () => import("@/views/NotFound.vue");
 import logger from "@/utils/logger";
@@ -13,6 +14,11 @@ const routes: Array<RouteRecordRaw> = [
     path: "/",
     name: "home",
     component: TabsPage,
+  },
+  {
+    path: "/email-actions",
+    name: "email-actions",
+    component: EmailActionView,
   },
   {
     path: "/login",
@@ -55,7 +61,7 @@ router.beforeEach(async (to, _, next) => {
   const user = await getCurrentUser();
 
   // Define routes that do not require authentication
-  const publicPages = ["/login", "/register"];
+  const publicPages = ["/login", "/register", "/email-actions"];
   const authRequired = !publicPages.includes(to.path);
 
   if (to.name === "not-found") {
@@ -69,7 +75,8 @@ router.beforeEach(async (to, _, next) => {
     return next("/login");
   }
 
-  if (!authRequired && user) {
+  if (!authRequired && user && to.path !== "/email-actions") {
+    // For public pages (login/register) redirect logged-in users to home
     logger.info(`User is logged in. Redirecting from ${to.path} to /.`);
     return next("/");
   }

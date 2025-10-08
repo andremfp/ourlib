@@ -23,6 +23,10 @@
     {
       "source": "/hardcover-cover-proxy/:path*",
       "destination": "https://assets.hardcover.app/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
