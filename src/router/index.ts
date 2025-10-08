@@ -3,6 +3,7 @@ import type { RouteRecordRaw } from "vue-router";
 // Lazy-loaded route components
 const LoginView = () => import("@/views/Login.vue");
 const RegisterView = () => import("@/views/Register.vue");
+const ResetPasswordView = () => import("@/views/ResetPassword.vue");
 const TabsPage = () => import("@/views/Tabs.vue");
 const NotFound = () => import("@/views/NotFound.vue");
 import logger from "@/utils/logger";
@@ -23,6 +24,11 @@ const routes: Array<RouteRecordRaw> = [
     path: "/register",
     name: "register",
     component: RegisterView,
+  },
+  {
+    path: "/reset-password",
+    name: "reset-password",
+    component: ResetPasswordView,
   },
   {
     path: "/:catchAll(.*)",
@@ -55,7 +61,7 @@ router.beforeEach(async (to, _, next) => {
   const user = await getCurrentUser();
 
   // Define routes that do not require authentication
-  const publicPages = ["/login", "/register"];
+  const publicPages = ["/login", "/register", "/reset-password"];
   const authRequired = !publicPages.includes(to.path);
 
   if (to.name === "not-found") {

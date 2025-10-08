@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import {
   IonPage,
@@ -14,9 +14,13 @@ import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+  sendPasswordResetEmail,
 } from "firebase/auth";
 import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
 import logger from "@/utils/logger";
+import { UI_LIMITS } from "@/constants/constants";
 import logoLight from "@/assets/ourlib-logo.webp";
 import logoDark from "@/assets/ourlib-logo-dark.webp";
 import { logoGoogle } from "ionicons/icons";
@@ -25,8 +29,10 @@ const router = useRouter();
 const email = ref("");
 const password = ref("");
 const errorMessage = ref("");
+const successMessage = ref("");
 const isLoading = ref(false);
 const isGoogleLoading = ref(false);
+const isResettingPassword = ref(false);
 
 const validateInputs = (): { valid: boolean; message: string } => {
   if (!email.value.trim()) {
@@ -42,6 +48,7 @@ const validateInputs = (): { valid: boolean; message: string } => {
 
 const handleLogin = async () => {
   errorMessage.value = "";
+  successMessage.value = "";
 
   // Validate inputs
   const validation = validateInputs();
@@ -124,11 +131,24 @@ const handleLogin = async () => {
 
 const handleLoginWithGoogle = async () => {
   errorMessage.value = "";
+  successMessage.value = "";
   try {
     isGoogleLoading.value = true;
 
     const provider = new GoogleAuthProvider();
-    const result = await signInWithPopup(auth, provider);
+    // Use redirect for mobile browsers, popup for desktop
+    const isMobile =
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent,
+      );
+
+    let result;
+    if (isMobile) {
+      await signInWithRedirect(auth, provider);
+      return; // Redirect will handle the rest
+    } else {
+      result = await signInWithPopup(auth, provider);
+    }
     const user = result.user;
 
     // Ensure Firestore user document exists
@@ -175,6 +195,92 @@ const handleLoginWithGoogle = async () => {
 const goToRegister = () => {
   router.push("/register");
 };
+
+const handleForgotPassword = async () => {
+  errorMessage.value = "";
+  successMessage.value = "";
+
+  // Validate email input
+  if (!email.value.trim()) {
+    errorMessage.value = "Please enter your email address first.";
+    return;
+  }
+
+  try {
+    isResettingPassword.value = true;
+
+    // Get the current domain for the action URL
+    const actionCodeSettings = {
+      url: `${window.location.origin}/reset-password`,
+      handleCodeInApp: true,
+    };
+
+    await sendPasswordResetEmail(auth, email.value.trim(), actionCodeSettings);
+
+    successMessage.value = `Password reset email sent to ${email.value}! Check your inbox and follow the link to reset your password.`;
+    logger.info("Password reset email sent to:", email.value);
+  } catch (error: any) {
+    logger.error("Password reset error:", error?.message || error);
+
+    switch (error?.code) {
+      case "auth/user-not-found":
+        errorMessage.value = "No account found with this email address.";
+        break;
+      case "auth/invalid-email":
+        errorMessage.value = "Invalid email address.";
+        break;
+      case "auth/too-many-requests":
+        errorMessage.value = "Too many requests. Please try again later.";
+        break;
+      case "auth/network-request-failed":
+        errorMessage.value = "Network error. Please check your connection.";
+        break;
+      default:
+        errorMessage.value =
+          "Failed to send password reset email. Please try again.";
+    }
+  } finally {
+    isResettingPassword.value = false;
+  }
+};
+
+// Handle redirect result for mobile Google sign-in
+const handleRedirectResult = async () => {
+  try {
+    const result = await getRedirectResult(auth);
+    if (result) {
+      const user = result.user;
+
+      // Ensure Firestore user document exists
+      const userRef = doc(firestore, "users", user.uid);
+      const snap = await getDoc(userRef);
+      if (!snap.exists()) {
+        const emailValue = user.email || "";
+        const usernameValue = emailValue
+          ? emailValue.split("@")[0]
+          : (user.displayName || "user").replace(/\s+/g, "").toLowerCase();
+        await setDoc(userRef, {
+          email: emailValue,
+          username: usernameValue,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+        });
+      }
+
+      logger.info("User logged in with Google successfully (redirect)");
+      router.push("/");
+    }
+  } catch (error: any) {
+    logger.error("Google redirect login error:", error?.message || error);
+    errorMessage.value =
+      "An error occurred during Google login. Please try again.";
+  }
+};
+
+// Check for redirect result on component mount
+onMounted(() => {
+  handleRedirectResult();
+});
 </script>
 
 <template>
@@ -203,7 +309,7 @@ const goToRegister = () => {
           <ion-button
             expand="block"
             class="ion-margin-top mt-8"
-            :disabled="isLoading || isGoogleLoading"
+            :disabled="isLoading || isGoogleLoading || isResettingPassword"
             @click="handleLoginWithGoogle"
           >
             <ion-icon :icon="logoGoogle" class="mr-2"></ion-icon>
@@ -223,11 +329,12 @@ const goToRegister = () => {
             <div class="flex-1 h-px bg-gray-300 dark:bg-gray-700"></div>
           </div>
 
-          <form @submit.prevent="handleLogin" class="space-y-4">
+          <form @submit.prevent="handleLogin">
             <ion-input
               v-model="email"
+              class="ion-margin-bottom"
               type="text"
-              :disabled="isLoading || isGoogleLoading"
+              :disabled="isLoading || isGoogleLoading || isResettingPassword"
               autocomplete="email"
               placeholder="Email"
               fill="outline"
@@ -238,7 +345,7 @@ const goToRegister = () => {
             <ion-input
               v-model="password"
               type="password"
-              :disabled="isLoading || isGoogleLoading"
+              :disabled="isLoading || isGoogleLoading || isResettingPassword"
               autocomplete="current-password"
               placeholder="Password"
               fill="outline"
@@ -246,15 +353,43 @@ const goToRegister = () => {
               required
             ></ion-input>
 
+            <div class="flex justify-end">
+              <ion-button
+                fill="clear"
+                class="text-modal-text forgot-password-btn"
+                :disabled="isLoading || isGoogleLoading || isResettingPassword"
+                @click="handleForgotPassword"
+              >
+                <ion-spinner
+                  v-if="isResettingPassword"
+                  name="crescent"
+                  class="ion-margin-end"
+                ></ion-spinner>
+                {{ isResettingPassword ? "Sending..." : "Forgot password?" }}
+              </ion-button>
+            </div>
+
             <div v-if="errorMessage" class="text-red-500 text-sm">
               {{ errorMessage }}
+            </div>
+
+            <div v-if="successMessage" class="text-green-600 text-sm">
+              {{ successMessage }}
+              <div class="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                Password requirements:
+                {{ UI_LIMITS.PASSWORD.MIN_LENGTH }}-{{
+                  UI_LIMITS.PASSWORD.MAX_LENGTH
+                }}
+                characters with uppercase, lowercase, number, and special
+                character.
+              </div>
             </div>
 
             <ion-button
               type="submit"
               expand="block"
               class="ion-margin-top"
-              :disabled="isLoading || isGoogleLoading"
+              :disabled="isLoading || isGoogleLoading || isResettingPassword"
             >
               <ion-spinner
                 v-if="isLoading"
@@ -269,7 +404,7 @@ const goToRegister = () => {
             expand="block"
             fill="clear"
             @click="goToRegister"
-            :disabled="isLoading || isGoogleLoading"
+            :disabled="isLoading || isGoogleLoading || isResettingPassword"
           >
             Don't have an account? Register
           </ion-button>
@@ -278,3 +413,15 @@ const goToRegister = () => {
     </ion-content>
   </ion-page>
 </template>
+
+<style scoped>
+.forgot-password-btn {
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 4px;
+  --padding-bottom: 2px;
+  min-height: auto;
+  height: auto;
+  font-size: 0.9rem;
+}
+</style>
