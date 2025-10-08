@@ -20,10 +20,9 @@ import {
 } from "firebase/auth";
 import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
 import logger from "@/utils/logger";
-import { UI_LIMITS } from "@/constants/constants";
 import logoLight from "@/assets/ourlib-logo.webp";
 import logoDark from "@/assets/ourlib-logo-dark.webp";
-import { logoGoogle } from "ionicons/icons";
+import { logoGoogle, eyeOutline, eyeOffOutline } from "ionicons/icons";
 
 const router = useRouter();
 const email = ref("");
@@ -33,6 +32,7 @@ const successMessage = ref("");
 const isLoading = ref(false);
 const isGoogleLoading = ref(false);
 const isResettingPassword = ref(false);
+const showPassword = ref(false);
 
 const validateInputs = (): { valid: boolean; message: string } => {
   if (!email.value.trim()) {
@@ -348,14 +348,21 @@ onMounted(() => {
 
             <ion-input
               v-model="password"
-              type="password"
+              :type="showPassword ? 'text' : 'password'"
               :disabled="isLoading || isGoogleLoading || isResettingPassword"
               autocomplete="current-password"
               placeholder="Password"
               fill="outline"
               mode="md"
               required
-            ></ion-input>
+            >
+              <ion-icon
+                slot="end"
+                :icon="showPassword ? eyeOffOutline : eyeOutline"
+                @click="showPassword = !showPassword"
+                class="cursor-pointer"
+              ></ion-icon>
+            </ion-input>
 
             <div class="flex justify-end">
               <ion-button
@@ -379,14 +386,6 @@ onMounted(() => {
 
             <div v-if="successMessage" class="text-green-600 text-sm">
               {{ successMessage }}
-              <div class="mt-2 text-xs text-gray-600 dark:text-gray-400">
-                Password requirements:
-                {{ UI_LIMITS.PASSWORD.MIN_LENGTH }}-{{
-                  UI_LIMITS.PASSWORD.MAX_LENGTH
-                }}
-                characters with uppercase, lowercase, number, and special
-                character.
-              </div>
             </div>
 
             <ion-button
