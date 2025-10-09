@@ -396,10 +396,7 @@ export default defineComponent({
       <p class="text-light-secondary-text dark:text-dark-secondary-text">
         Point your camera at a book barcode
       </p>
-      <ion-button
-        @click="stopAndCancel"
-        class="bg-warning-red hover:bg-red-600 text-white font-semibold rounded-lg px-6 py-2 transition-colors"
-      >
+      <ion-button @click="stopAndCancel" class="stop-scanning-button">
         Stop Scanning
       </ion-button>
     </div>
@@ -487,5 +484,11 @@ export default defineComponent({
 }
 #html5-qrcode-reader a:hover {
   text-decoration: underline;
+}
+
+.stop-scanning-button {
+  --border-radius: 12px;
+  --border-width: 2px;
+  font-weight: 500;
 }
 </style>
