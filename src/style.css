@@ -134,3 +134,10 @@ ion-alert.generic-modal {
 
 /* ion-select with interface="alert" uses an overlay (ion-alert).
    To style it, pass interfaceOptions: { cssClass: 'generic-modal' } where used. */
+
+/* Safe area insets for tab bar - adapts to devices with/without navigation buttons */
+ion-tab-bar {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  /* Fallback for older browsers */
+  padding-bottom: constant(safe-area-inset-bottom, 0px);
+}
