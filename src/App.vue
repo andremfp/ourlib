@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from "vue";
 import { IonApp, IonRouterOutlet } from "@ionic/vue";
+import { useStatusBar } from "@/composables/useStatusBar";
 
 // This function toggles the 'dark' class on the body element
 const toggleDarkTheme = (shouldAdd: boolean) => {
@@ -14,6 +15,9 @@ const prefersDark = window.matchMedia("(prefers-color-scheme: dark)");
 const handleThemeChange = (e: MediaQueryListEvent) =>
   toggleDarkTheme(e.matches);
 
+// Initialize status bar color management
+const cleanupStatusBar = useStatusBar();
+
 onMounted(() => {
   // Set the initial theme based on the user's preference
   toggleDarkTheme(prefersDark.matches);
@@ -25,6 +29,9 @@ onMounted(() => {
 onUnmounted(() => {
   // Clean up the listener when the component is unmounted
   prefersDark.removeEventListener("change", handleThemeChange);
+
+  // Clean up status bar observer
+  cleanupStatusBar();
 });
 </script>
 
