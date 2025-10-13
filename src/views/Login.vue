@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref } from "vue";
 import { useRouter } from "vue-router";
 import {
   IonPage,
@@ -14,8 +14,6 @@ import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
   sendPasswordResetEmail,
 } from "firebase/auth";
 import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
@@ -140,19 +138,7 @@ const handleLoginWithGoogle = async () => {
     isGoogleLoading.value = true;
 
     const provider = new GoogleAuthProvider();
-    // Use redirect for mobile browsers, popup for desktop
-    const isMobile =
-      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-        navigator.userAgent,
-      );
-
-    let result;
-    if (isMobile) {
-      await signInWithRedirect(auth, provider);
-      return; // Redirect will handle the rest
-    } else {
-      result = await signInWithPopup(auth, provider);
-    }
+    const result = await signInWithPopup(auth, provider);
     const user = result.user;
 
     // Ensure Firestore user document exists
@@ -247,44 +233,6 @@ const handleForgotPassword = async () => {
     isResettingPassword.value = false;
   }
 };
-
-// Handle redirect result for mobile Google sign-in
-const handleRedirectResult = async () => {
-  try {
-    const result = await getRedirectResult(auth);
-    if (result) {
-      const user = result.user;
-
-      // Ensure Firestore user document exists
-      const userRef = doc(firestore, "users", user.uid);
-      const snap = await getDoc(userRef);
-      if (!snap.exists()) {
-        const emailValue = user.email || "";
-        const usernameValue = emailValue
-          ? emailValue.split("@")[0]
-          : (user.displayName || "user").replace(/\s+/g, "").toLowerCase();
-        await setDoc(userRef, {
-          email: emailValue,
-          username: usernameValue,
-          createdAt: Timestamp.now(),
-          updatedAt: Timestamp.now(),
-        });
-      }
-
-      logger.info("User logged in with Google successfully (redirect)");
-      router.push("/");
-    }
-  } catch (error: any) {
-    logger.error("Google redirect login error:", error?.message || error);
-    errorMessage.value =
-      "An error occurred during Google login. Please try again.";
-  }
-};
-
-// Check for redirect result on component mount
-onMounted(() => {
-  handleRedirectResult();
-});
 </script>
 
 <template>
